@@ -3,11 +3,11 @@
 	<map_type
 		name="Fractal"
 		display_name="Fractal"
-		description="A semi-fractal map type using squares"
+		description="A map type with lots of self-similarities"
 		dll_name="AhyangyiMaps"
 		type_name="AhyangyiMaps.FractalTypeGenerator"
-		min_planets="10"
-		max_planets="1600"
+		min_planets="40"
+		max_planets="300"
 		>
 		<map_option name="RandomExtraConnections" display_name="Random Extra Connections"
 			description="How many extra connections should there be?" default_id="0">
@@ -20,4 +20,47 @@
 			<choice_value id="6" display_name="Thirty" description="Thirty extra connections at random, but not overlapping other lines or planets." related_int_value="30" />
 		</map_option>
 	</map_type>
+	<map_type
+		name="Tessellation"
+		display_name="Tessellation"
+		description="Squares, honeycombs, brick walls, and various other regular formations"
+		dll_name="AhyangyiMaps"
+		type_name="AhyangyiMaps.TessellationTypeGenerator"
+		min_planets="40"
+		max_planets="300"
+		>
+    <map_option name="TilingScheme" display_name="Tiling Scheme"
+      description="What tiling should we use?" default_id="0">
+      <choice_value id="0" display_name="Square" description="A square grid" related_int_value="0" />
+      <choice_value id="1" display_name="Hexagon" description="Homeycomb-like grid." related_int_value="1" />
+      <choice_value id="2" display_name="Triangle" description="Triangluar grid." related_int_value="2" />
+      <choice_value id="3" display_name="Square Y" description="Squares with Y-shaped inner structures." related_int_value="100" />
+      <choice_value id="4" display_name="Diamond Y" description="Diamonds with Y-shaped inner structures." related_int_value="101" />
+    </map_option>
+    <map_option name="Dissonance" display_name="Dissonance"
+      description="How much should the honeycomb be broken apart?" default_id="2">
+      <choice_value id="0" display_name="Very Low" description="Almost no breaking apart, might have some cramped areas." related_int_value="180" />
+      <choice_value id="1" display_name="Normal" description="Almost no breaking apart, though there are some interesting gaps." related_int_value="200" />
+      <choice_value id="2" display_name="A Bit Extra" description="Things are breaking apart a bit more, leading to more chaos." related_int_value="220" />
+      <choice_value id="3" display_name="More Than Usual" description="Things are definitely unraveling in many areas." related_int_value="250" />
+      <choice_value id="4" display_name="Tattered" description="Hardly recognizable.  Much of the map is in pieces." related_int_value="300" />
+    </map_option>
+    <map_option name="RandomExtraConnections" display_name="Random Extra Connections"
+      description="How many extra connections should there be in random planets?" default_id="0">
+      <choice_value id="0" display_name="None" description="No extra connections beyond the default." related_int_value="0" />
+      <choice_value id="1" display_name="Five" description="Five extra connections at random, but not overlapping other lines or planets." related_int_value="5" />
+      <choice_value id="2" display_name="Ten" description="Ten extra connections at random, but not overlapping other lines or planets." related_int_value="10" />
+      <choice_value id="3" display_name="Fifteen" description="Fifteen extra connections at random, but not overlapping other lines or planets." related_int_value="15" />
+      <choice_value id="4" display_name="Twenty" description="Twenty extra connections at random, but not overlapping other lines or planets." related_int_value="20" />
+      <choice_value id="5" display_name="Twenty-Five" description="Twenty-Five extra connections at random, but not overlapping other lines or planets." related_int_value="25" />
+      <choice_value id="6" display_name="Thirty" description="Thirty extra connections at random, but not overlapping other lines or planets." related_int_value="30" />
+    </map_option>
+    <map_option name="SolarSnake" display_name="Solar Snake?"
+   description="Should we use the solar snake mode?" default_id="0">
+      <choice_value id="0" display_name="No" description="This is a normal tessellation map." related_int_value="0" />
+      <choice_value id="1" display_name="Yes" description="Planets are organized into a series of snaking lines, with only one path between all planets. This can lead to very challenging games since you can't easily bypass strong planets.
+
+Be sure to turn off random extra connections if you really want it to be true Solar Snake." related_int_value="1" />
+    </map_option>
+  </map_type>
 </root>
