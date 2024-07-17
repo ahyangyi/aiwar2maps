@@ -2,6 +2,8 @@ using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
 using System;
+using static Arcen.AIW2.External.TextVarMap;
+using System.IO;
 
 namespace AhyangyiMaps
 {
@@ -30,36 +32,34 @@ namespace AhyangyiMaps
             int numberOfRows = 9;
             int numberOfColumns = 16;
             int distanceBetweenPoints = planetType.GetData().InterStellarRadius * 4;
+            FakeGalaxy g = new FakeGalaxy();
 
-            ArcenPoint[][] pointRows = new ArcenPoint[numberOfRows][];
+            FakePlanet[][] pointRows = new FakePlanet[numberOfRows][];
             for (int i = 0; i < numberOfRows; ++i)
             {
-                pointRows[i] = new ArcenPoint[numberOfColumns];
+                pointRows[i] = new FakePlanet[numberOfColumns];
                 for (int j = 0; j < numberOfColumns; ++j)
                 {
-                    pointRows[i][j] = ArcenPoint.Create(j * distanceBetweenPoints, i * distanceBetweenPoints);
+                    pointRows[i][j] = g.AddPlanetAt(ArcenPoint.Create(j * distanceBetweenPoints, i * distanceBetweenPoints));
                 }
             }
 
-            Planet[][] planetRows = new Planet[numberOfRows][];
             for (int i = 0; i < pointRows.Length; i++)
             {
-                planetRows[i] = new Planet[pointRows[i].Length];
                 for (int j = 0; j < pointRows[i].Length; j++)
                 {
-                    ArcenPoint point = pointRows[i][j];
-                    planetRows[i][j] = galaxy.AddPlanet(planetType, point,
-                        World_AIW2.Instance.GetPlanetGravWellSizeForPlanetType(Context.RandomToUse, PlanetPopulationType.None));
                     if (i - 1 >= 0)
                     {
-                        planetRows[i][j].AddLinkTo(planetRows[i - 1][j]);
+                        pointRows[i][j].AddLinkTo(pointRows[i - 1][j]);
                     }
                     if (j - 1 >= 0)
                     {
-                        planetRows[i][j].AddLinkTo(planetRows[i][j - 1]);
+                        pointRows[i][j].AddLinkTo(pointRows[i][j - 1]);
                     }
                 }
             }
+
+            g.Populate(galaxy, planetType, Context.RandomToUse);
 
             // FIXME
             int randomExtraConnections = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Dissonance").RelatedIntValue * 5;

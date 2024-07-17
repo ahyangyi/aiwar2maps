@@ -26,6 +26,7 @@
     <OutputPath>..\ModdableLogicDLLs\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="FakeGalaxy.cs" />
     <Compile Include="FractalTypeGenerator.cs" />
     <Compile Include="TessellationTypeGenerator.cs" />
   </ItemGroup>
