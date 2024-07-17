@@ -1,5 +1,1 @@
-<color=#378aba>Ahyangyi</color> Maps</color>
-
-New map types with lots of customization options.
-
-* WIP...
+<color=#378aba>Ahyangyi</color>'s map generators. Contains new map types with lots of customization options.

@@ -1,5 +1,4 @@
-<color=#378aba>Ahyangyi</color> Maps
+<color=#378aba>Ahyangyi Maps</color>
 Ahyangyi
 YYMap
 378aba
-

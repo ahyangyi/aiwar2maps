@@ -23,7 +23,7 @@
 	<map_type
 		name="Tessellation"
 		display_name="Tessellation"
-		description="Squares, honeycombs, brick walls, and various other regular formations"
+		description="Squares, honeycombs, triangles, and various other regular formations"
 		dll_name="AhyangyiMaps"
 		type_name="AhyangyiMaps.TessellationTypeGenerator"
 		min_planets="40"
@@ -37,30 +37,48 @@
       <choice_value id="3" display_name="Square Y" description="Squares with Y-shaped inner structures." related_int_value="100" />
       <choice_value id="4" display_name="Diamond Y" description="Diamonds with Y-shaped inner structures." related_int_value="101" />
     </map_option>
+    <map_option name="MapShape" display_name="Map Shape"
+      description="What is the overall map shape?" default_id="0">
+      <choice_value id="0" display_name="16:9" description="A 16:9 rectangle." related_int_value="0" />
+      <choice_value id="1" display_name="1:1" description="A square." related_int_value="1" />
+      <choice_value id="2" display_name="Circle" description="A circle." related_int_value="2" />
+      <choice_value id="3" display_name="Natural" description="A map shape depending on the tiling scheme." related_int_value="3" />
+      <choice_value id="4" display_name="16:9 Mirrored" description="." related_int_value="4" />
+      <choice_value id="5" display_name="Natural Mirrored" description="." related_int_value="5" />
+      <choice_value id="6" display_name="2-way Rotational" description="." related_int_value="6" />
+      <choice_value id="7" display_name="2-way Rotational + Mirrored" description="." related_int_value="7" />
+      <choice_value id="8" display_name="3-way Rotational" description="." related_int_value="8" />
+      <choice_value id="9" display_name="3-way Rotational + Mirrored" description="." related_int_value="9" />
+      <choice_value id="10" display_name="4-way Rotational" description="." related_int_value="10" />
+      <choice_value id="11" display_name="5-way Rotational" description="." related_int_value="11" />
+    </map_option>
+    <map_option name="Connectivity" display_name="Connectivity"
+      description="How connected the planets should be?" default_id="2">
+      <choice_value id="0" display_name="Lowest" description="There are almost always only one way between any two planets." related_int_value="0" />
+      <choice_value id="1" display_name="Very Low" description="Much fewer than normal connections." related_int_value="1" />
+      <choice_value id="2" display_name="Low" description="Fewer than normal connections." related_int_value="2" />
+      <choice_value id="3" display_name="Normal" description="A normal and balanced map." related_int_value="3" />
+      <choice_value id="4" display_name="High" description="More than normal connections." related_int_value="4" />
+      <choice_value id="5" display_name="Very High" description="A very crowded map." related_int_value="5" />
+      <choice_value id="6" display_name="Highest" description="Add as many extra connections as possible." related_int_value="6" />
+    </map_option>
+    <map_option name="Evenness" display_name="Evenness"
+      description="How even should be the connections to be distributed?\n\nThis option has no effect with Highest connectivity and Lowest dissonance." default_id="3">
+      <choice_value id="0" display_name="Homogeneous" description="." related_int_value="0" />
+      <choice_value id="1" display_name="Very Evem" description="." related_int_value="1" />
+      <choice_value id="2" display_name="Low" description="." related_int_value="2" />
+      <choice_value id="3" display_name="Normal" description="A normal amount of variance in the number of connections of each planet." related_int_value="3" />
+      <choice_value id="4" display_name="High" description="." related_int_value="4" />
+      <choice_value id="5" display_name="Very High" description="." related_int_value="5" />
+      <choice_value id="6" display_name="Highest" description="Add as many extra connections as possible." related_int_value="6" />
+    </map_option>
     <map_option name="Dissonance" display_name="Dissonance"
-      description="How much should the honeycomb be broken apart?" default_id="2">
-      <choice_value id="0" display_name="Very Low" description="Almost no breaking apart, might have some cramped areas." related_int_value="180" />
-      <choice_value id="1" display_name="Normal" description="Almost no breaking apart, though there are some interesting gaps." related_int_value="200" />
-      <choice_value id="2" display_name="A Bit Extra" description="Things are breaking apart a bit more, leading to more chaos." related_int_value="220" />
-      <choice_value id="3" display_name="More Than Usual" description="Things are definitely unraveling in many areas." related_int_value="250" />
-      <choice_value id="4" display_name="Tattered" description="Hardly recognizable.  Much of the map is in pieces." related_int_value="300" />
-    </map_option>
-    <map_option name="RandomExtraConnections" display_name="Random Extra Connections"
-      description="How many extra connections should there be in random planets?" default_id="0">
-      <choice_value id="0" display_name="None" description="No extra connections beyond the default." related_int_value="0" />
-      <choice_value id="1" display_name="Five" description="Five extra connections at random, but not overlapping other lines or planets." related_int_value="5" />
-      <choice_value id="2" display_name="Ten" description="Ten extra connections at random, but not overlapping other lines or planets." related_int_value="10" />
-      <choice_value id="3" display_name="Fifteen" description="Fifteen extra connections at random, but not overlapping other lines or planets." related_int_value="15" />
-      <choice_value id="4" display_name="Twenty" description="Twenty extra connections at random, but not overlapping other lines or planets." related_int_value="20" />
-      <choice_value id="5" display_name="Twenty-Five" description="Twenty-Five extra connections at random, but not overlapping other lines or planets." related_int_value="25" />
-      <choice_value id="6" display_name="Thirty" description="Thirty extra connections at random, but not overlapping other lines or planets." related_int_value="30" />
-    </map_option>
-    <map_option name="SolarSnake" display_name="Solar Snake?"
-   description="Should we use the solar snake mode?" default_id="0">
-      <choice_value id="0" display_name="No" description="This is a normal tessellation map." related_int_value="0" />
-      <choice_value id="1" display_name="Yes" description="Planets are organized into a series of snaking lines, with only one path between all planets. This can lead to very challenging games since you can't easily bypass strong planets.
-
-Be sure to turn off random extra connections if you really want it to be true Solar Snake." related_int_value="1" />
+      description="How much should the tessellation be broken apart?" default_id="1">
+      <choice_value id="0" display_name="None" description="Absolutely no breaking apart." related_int_value="0" />
+      <choice_value id="1" display_name="Normal" description="Almost no breaking apart, though there are some interesting gaps." related_int_value="1" />
+      <choice_value id="2" display_name="A Bit Extra" description="Things are breaking apart a bit more, leading to more chaos." related_int_value="2" />
+      <choice_value id="3" display_name="More Than Usual" description="Things are definitely unraveling in many areas." related_int_value="3" />
+      <choice_value id="4" display_name="Tattered" description="Hardly recognizable.  Much of the map is in pieces." related_int_value="4" />
     </map_option>
   </map_type>
 </root>
