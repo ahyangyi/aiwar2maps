@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-	<map_type
+  <!--
+  <map_type
 		name="Fractal"
 		display_name="Fractal"
 		description="A map type with lots of self-similarities"
@@ -20,6 +21,7 @@
 			<choice_value id="6" display_name="Thirty" description="Thirty extra connections at random, but not overlapping other lines or planets." related_int_value="30" />
 		</map_option>
 	</map_type>
+  -->
 	<map_type
 		name="Tessellation"
 		display_name="Tessellation"
@@ -29,28 +31,34 @@
 		min_planets="40"
 		max_planets="300"
 		>
-    <map_option name="TilingScheme" display_name="Tiling Scheme"
-      description="What tiling should we use?" default_id="0">
+    <map_option name="Tessellation" display_name="Tessellation"
+      description="What tessellation should we use?" default_id="0">
       <choice_value id="0" display_name="Square" description="A square grid" related_int_value="0" />
       <choice_value id="1" display_name="Hexagon" description="Homeycomb-like grid." related_int_value="1" />
       <choice_value id="2" display_name="Triangle" description="Triangluar grid." related_int_value="2" />
-      <choice_value id="3" display_name="Square Y" description="Squares with Y-shaped inner structures." related_int_value="100" />
-      <choice_value id="4" display_name="Diamond Y" description="Diamonds with Y-shaped inner structures." related_int_value="101" />
+      <choice_value id="3" display_name="Square Y" description="Squares with Y-shaped divisions." related_int_value="100" />
+      <choice_value id="4" display_name="Square Y Mirrored" description="Squares with Y-shaped divisions, mirrored." related_int_value="101" />
+      <choice_value id="5" display_name="Diamond Y" description="Diamonds with Y-shaped divisions." related_int_value="102" />
     </map_option>
-    <map_option name="MapShape" display_name="Map Shape"
+    <map_option name="AspectRatio" display_name="Aspect Ratio"
+      description="What is the aspect ratio of the map?" default_id="0">
+      <choice_value id="0" display_name="16:9" description="A wide galaxy." related_int_value="0" />
+      <choice_value id="1" display_name="1:1" description="A square galaxy." related_int_value="1" />
+      <choice_value id="2" display_name="9:16" description="A tall galaxy." related_int_value="2" />
+    </map_option>
+    <!--
+    <map_option name="GalaxyLayout" display_name="Galaxy Layout"
       description="What is the overall map shape?" default_id="0">
-      <choice_value id="0" display_name="16:9" description="A 16:9 rectangle." related_int_value="0" />
-      <choice_value id="1" display_name="1:1" description="A square." related_int_value="1" />
-      <choice_value id="2" display_name="Circle" description="A circle." related_int_value="2" />
-      <choice_value id="3" display_name="Natural" description="A map shape depending on the tiling scheme." related_int_value="3" />
-      <choice_value id="4" display_name="16:9 Mirrored" description="." related_int_value="4" />
-      <choice_value id="5" display_name="Natural Mirrored" description="." related_int_value="5" />
-      <choice_value id="6" display_name="2-way Rotational" description="." related_int_value="6" />
-      <choice_value id="7" display_name="2-way Rotational + Mirrored" description="." related_int_value="7" />
-      <choice_value id="8" display_name="3-way Rotational" description="." related_int_value="8" />
-      <choice_value id="9" display_name="3-way Rotational + Mirrored" description="." related_int_value="9" />
-      <choice_value id="10" display_name="4-way Rotational" description="." related_int_value="10" />
-      <choice_value id="11" display_name="5-way Rotational" description="." related_int_value="11" />
+      <choice_value id="0" display_name="Rectangular" description="A rectangle galaxy." related_int_value="100" />
+      <choice_value id="1" display_name="Rotund" description="A round, hexagonal or otherwise blunt-shaped galaxy." related_int_value="101" />
+      <choice_value id="2" display_name="Angular" description="A triangluar, pyramid or otherwise angular galaxy." related_int_value="102" />
+      <choice_value id="3" display_name="Mirrored" description="." related_int_value="150" />
+      <choice_value id="4" display_name="2-way Rotational" description="." related_int_value="200" />
+      <choice_value id="5" display_name="2-way Rotational + Mirrored" description="." related_int_value="250" />
+      <choice_value id="6" display_name="3-way Rotational" description="." related_int_value="300" />
+      <choice_value id="7" display_name="3-way Rotational + Mirrored" description="." related_int_value="350" />
+      <choice_value id="8" display_name="4-way Rotational" description="." related_int_value="400" />
+      <choice_value id="9" display_name="5-way Rotational" description="." related_int_value="500" />
     </map_option>
     <map_option name="Connectivity" display_name="Connectivity"
       description="How connected the planets should be?" default_id="2">
@@ -72,6 +80,7 @@
       <choice_value id="5" display_name="Very High" description="." related_int_value="5" />
       <choice_value id="6" display_name="Highest" description="Add as many extra connections as possible." related_int_value="6" />
     </map_option>
+    -->
     <map_option name="Dissonance" display_name="Dissonance"
       description="How much should the tessellation be broken apart?" default_id="1">
       <choice_value id="0" display_name="None" description="Absolutely no breaking apart." related_int_value="0" />
