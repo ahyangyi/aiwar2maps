@@ -55,9 +55,13 @@ namespace AhyangyiMaps
             {
                 g = MakeTriangleGalaxy(planetType, aspectRatio, numPlanets);
             }
-            else
+            else if (tessellation == 100)
             {
                 g = MakeSquareYGalaxy(planetType, aspectRatio, numPlanets);
+            }
+            else
+            {
+                g = MakeSquareYMirrorGalaxy(planetType, aspectRatio, numPlanets);
             }
             g.Populate(galaxy, planetType, Context.RandomToUse);
 
@@ -317,6 +321,88 @@ namespace AhyangyiMaps
                         centers[i][j].AddLinkTo(bottoms[i][j]);
                         corners[i + 1][j].AddLinkTo(bottoms[i][j]);
                         corners[i + 1][j + 1].AddLinkTo(bottoms[i][j]);
+                    }
+                }
+            }
+            return g;
+        }
+        protected FakeGalaxy MakeSquareYMirrorGalaxy(PlanetType planetType, FInt aspectRatio, int numPlanets)
+        {
+            int unit = planetType.GetData().InterStellarRadius * 10;
+            int rows = 5;
+            int columns = 8;
+            FInt badness = (FInt)1000000;
+            for (int r = 3; r <= 20; r += 2)
+            {
+                for (int c = 2; c <= 20; ++c)
+                {
+                    int planets = r * c + (r - 1) * (c - 1) + (r / 2) * (c - 1);
+                    FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
+                    FInt currentAspectRatio = (FInt)(r - 1) / (FInt)(c - 1);
+                    FInt p1 = currentAspectRatio / aspectRatio;
+                    FInt p2 = aspectRatio / currentAspectRatio;
+                    FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
+                    FInt current_badness = planetBadness + aspectRatioBadness;
+                    if (current_badness < badness)
+                    {
+                        badness = current_badness;
+                        rows = r;
+                        columns = c;
+                    }
+                }
+            }
+            FakeGalaxy g = new FakeGalaxy();
+
+            FakePlanet[][] corners = new FakePlanet[rows][];
+            FakePlanet[][] centers = new FakePlanet[rows - 1][];
+            FakePlanet[][] bottoms = new FakePlanet[rows / 2][];
+            for (int i = 0; i < rows; ++i)
+            {
+                corners[i] = new FakePlanet[columns];
+                if (i + 1 < rows)
+                {
+                    centers[i] = new FakePlanet[columns - 1];
+                }
+                for (int j = 0; j < columns; ++j)
+                {
+                    corners[i][j] = g.AddPlanetAt(ArcenPoint.Create(j * 2 * unit, (rows - i - 1) * 2 * unit));
+                    if (i + 1 < rows && j + 1 < columns)
+                    {
+                        centers[i][j] = g.AddPlanetAt(ArcenPoint.Create((j * 2 + 1) * unit, ((rows - i - 1) * 2 - 1) * unit));
+                    }
+                }
+            }
+            for (int i = 0; i < rows / 2; ++i)
+            {
+                bottoms[i] = new FakePlanet[columns - 1];
+                for (int j = 0; j < columns - 1; ++j)
+                {
+                    bottoms[i][j] = g.AddPlanetAt(ArcenPoint.Create((j * 2 + 1) * unit, ((rows - i * 2 - 1) * 2 - 2) * unit));
+                }
+            }
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < columns; j++)
+                {
+                    if (i + 1 < rows)
+                    {
+                        corners[i][j].AddLinkTo(corners[i + 1][j]);
+                    }
+                    if (i % 2 == 0 && j + 1 < columns)
+                    {
+                        corners[i][j].AddLinkTo(corners[i][j + 1]);
+                    }
+                    if (i + 1 < rows && j + 1 < columns)
+                    {
+                        corners[i + i % 2][j].AddLinkTo(centers[i][j]);
+                        corners[i + i % 2][j + 1].AddLinkTo(centers[i][j]);
+                        centers[i][j].AddLinkTo(bottoms[i / 2][j]);
+                    }
+                    if (i % 2 == 1 && j + 1 < columns)
+                    {
+                        corners[i][j].AddLinkTo(bottoms[i / 2][j]);
+                        corners[i][j + 1].AddLinkTo(bottoms[i / 2][j]);
                     }
                 }
             }
