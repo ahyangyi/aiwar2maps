@@ -58,6 +58,33 @@ namespace AhyangyiMaps
                 planet.Wobble(planetType, wobble, rng);
             }
         }
+        public bool IsConnected()
+        {
+            if (planets.Count == 0)
+            {
+                return true;
+            }
+
+            System.Collections.Generic.HashSet<FakePlanet> visited = new System.Collections.Generic.HashSet<FakePlanet>();
+            System.Collections.Generic.List<FakePlanet> queue = new System.Collections.Generic.List<FakePlanet>();
+            visited.Add(planets[0]);
+            queue.Add(planets[0]);
+
+            for (int i = 0; i < queue.Count; ++i)
+            {
+                FakePlanet cur = queue[i];
+                foreach (FakePlanet neighbor in cur.links)
+                {
+                    if (!visited.Contains(neighbor))
+                    {
+                        visited.Add(neighbor);
+                        queue.Add(neighbor);
+                    }
+                }
+            }
+
+            return queue.Count == planets.Count;
+        }
 
         public void Populate(Galaxy galaxy, PlanetType planetType, RandomGenerator rng)
         {
