@@ -16,12 +16,9 @@ namespace AhyangyiMaps
 
         }
 
-        public void GenerateMapStructureOnly(Galaxy galaxy, ArcenHostOnlySimContext Context, MapConfiguration mapConfig, MapTypeData mapType)
+        public void GenerateMapStructureOnly(Galaxy galaxy, ArcenHostOnlySimContext context, MapConfiguration mapConfig, MapTypeData mapType)
         {
-            if (MapgenLogger.IsActive)
-                MapgenLogger.Log("GenerateMapStructureOnly: Mapgen_Honeycomb : " + galaxy.GetTotalPlanetCount() + " planets at start.");
-
-            this.InnerGenerate(galaxy, Context, mapConfig, PlanetType.Normal, mapType);
+            this.InnerGenerate(galaxy, context, mapConfig, PlanetType.Normal, mapType);
         }
 
         protected void InnerGenerate(Galaxy galaxy, ArcenHostOnlySimContext Context, MapConfiguration mapConfig, PlanetType planetType, MapTypeData mapType)

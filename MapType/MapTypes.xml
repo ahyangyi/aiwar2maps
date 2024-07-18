@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
   <map_type
 		name="Fractal"
 		display_name="Fractal"
@@ -10,18 +9,7 @@
 		min_planets="40"
 		max_planets="300"
 		>
-		<map_option name="RandomExtraConnections" display_name="Random Extra Connections"
-			description="How many extra connections should there be?" default_id="0">
-			<choice_value id="0" display_name="None" description="No extra connections beyond the default." related_int_value="0" />
-			<choice_value id="1" display_name="Five" description="Five extra connections at random, but not overlapping other lines or planets." related_int_value="5" />
-			<choice_value id="2" display_name="Ten" description="Ten extra connections at random, but not overlapping other lines or planets." related_int_value="10" />
-			<choice_value id="3" display_name="Fifteen" description="Fifteen extra connections at random, but not overlapping other lines or planets." related_int_value="15" />
-			<choice_value id="4" display_name="Twenty" description="Twenty extra connections at random, but not overlapping other lines or planets." related_int_value="20" />
-			<choice_value id="5" display_name="Twenty-Five" description="Twenty-Five extra connections at random, but not overlapping other lines or planets." related_int_value="25" />
-			<choice_value id="6" display_name="Thirty" description="Thirty extra connections at random, but not overlapping other lines or planets." related_int_value="30" />
-		</map_option>
 	</map_type>
-  -->
 	<map_type
 		name="Tessellation"
 		display_name="Tessellation"
