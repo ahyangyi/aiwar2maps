@@ -89,7 +89,6 @@ namespace AhyangyiMaps
                 return;
 
             AngleDegrees startingAngleOffsetForChildren = startingAngleOffset.Add(AngleDegrees.Create((float)Context.RandomToUse.Next(40, 50)));
-            //FInt distanceToChildrenForChildren = distanceToChildren / FInt.FromParts( 2, 250 );
             FInt distanceToChildrenForChildren = distanceToChildren / FInt.FromParts(2, 150);
 
             int defaultNumChildren = 4;

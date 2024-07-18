@@ -1,14 +1,5 @@
 using Arcen.AIW2.Core;
-using Arcen.AIW2.External;
 using Arcen.Universal;
-using System;
-using System.IO;
-using System.Linq;
-using System.Runtime.Remoting.Contexts;
-using UnityEngine;
-using UnityEngine.Assertions;
-using static Arcen.AIW2.Core.Galaxy;
-using static Arcen.AIW2.External.Window_SetupMapTabLeft;
 
 
 namespace AhyangyiMaps
@@ -18,7 +9,7 @@ namespace AhyangyiMaps
         public ArcenPoint location;
         public System.Collections.Generic.List<FakePlanet> links;
 
-        public FakePlanet (ArcenPoint location)
+        public FakePlanet(ArcenPoint location)
         {
             this.location = location;
             links = new System.Collections.Generic.List<FakePlanet>();
@@ -42,14 +33,14 @@ namespace AhyangyiMaps
 
         public FakePlanet AddPlanetAt(ArcenPoint location)
         {
-            FakePlanet ret = new FakePlanet(location); 
+            FakePlanet ret = new FakePlanet(location);
             planets.Add(ret);
             return ret;
         }
 
         public void Populate(Galaxy galaxy, PlanetType planetType, RandomGenerator rng)
         {
-            System.Collections.Generic.Dictionary< FakePlanet, Planet> dict = new System.Collections.Generic.Dictionary<FakePlanet, Planet>();
+            System.Collections.Generic.Dictionary<FakePlanet, Planet> dict = new System.Collections.Generic.Dictionary<FakePlanet, Planet>();
             foreach (FakePlanet planet in planets)
             {
                 dict[planet] = galaxy.AddPlanet(planetType, planet.location,
