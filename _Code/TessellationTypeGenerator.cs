@@ -67,6 +67,9 @@ namespace AhyangyiMaps
             {
                 g = MakeDiamondYGalaxy(planetType, aspectRatio, numPlanets);
             }
+
+            int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
+            g.Wobble(planetType, wobble, Context.RandomToUse);
             g.Populate(galaxy, planetType, Context.RandomToUse);
 
             // FIXME

@@ -20,6 +20,19 @@ namespace AhyangyiMaps
             links.Add(other);
             other.links.Add(this);
         }
+
+        public void Wobble(PlanetType planetType, int wobble, RandomGenerator rng)
+        {
+            int dx, dy;
+            do
+            {
+                dx = rng.Next(-1000, 1000);
+                dy = rng.Next(-1000, 1000);
+            } while (dx * dx + dy * dy > 1000 * 1000);
+
+            location.X += planetType.GetData().InterStellarRadius * wobble * dx * 3 / 100000;
+            location.Y += planetType.GetData().InterStellarRadius * wobble * dy * 3 / 100000;
+        }
     }
 
     public class FakeGalaxy
@@ -36,6 +49,14 @@ namespace AhyangyiMaps
             FakePlanet ret = new FakePlanet(location);
             planets.Add(ret);
             return ret;
+        }
+
+        public void Wobble(PlanetType planetType, int wobble, RandomGenerator rng)
+        {
+            foreach (FakePlanet planet in planets)
+            {
+                planet.Wobble(planetType, wobble, rng);
+            }
         }
 
         public void Populate(Galaxy galaxy, PlanetType planetType, RandomGenerator rng)
