@@ -29,6 +29,7 @@
     <Compile Include="FakeGalaxy.cs" />
     <Compile Include="FractalTypeGenerator.cs" />
     <Compile Include="TessellationTypeGenerator.cs" />
+    <ExtraContent Include="..\MapType\MapTypes.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(AIW2Root)\XmlMods\Base.props" />

@@ -26,6 +26,10 @@ namespace AhyangyiMaps
             int numPlanets = mapConfig.GetClampedNumberOfPlanetsForMapType(mapType);
             int tessellation = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Tessellation").RelatedIntValue;
             int mapShapeEnum = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "AspectRatio").RelatedIntValue;
+            int dissonance = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Dissonance").RelatedIntValue;
+
+            int numPlanetsToMake = numPlanets * (11 + dissonance) / 11;
+
             FInt aspectRatio;
             if (mapShapeEnum == 0)
             {
@@ -42,37 +46,40 @@ namespace AhyangyiMaps
             FakeGalaxy g;
             if (tessellation == 0)
             {
-                g = MakeSquareGalaxy(planetType, aspectRatio, numPlanets);
+                g = MakeSquareGalaxy(planetType, aspectRatio, numPlanetsToMake);
             }
             else if (tessellation == 1)
             {
-                g = MakeHexagonGalaxy(planetType, aspectRatio, numPlanets);
+                g = MakeHexagonGalaxy(planetType, aspectRatio, numPlanetsToMake);
             }
             else if (tessellation == 2)
             {
-                g = MakeTriangleGalaxy(planetType, aspectRatio, numPlanets);
+                g = MakeTriangleGalaxy(planetType, aspectRatio, numPlanetsToMake);
             }
             else if (tessellation == 100)
             {
-                g = MakeSquareYGalaxy(planetType, aspectRatio, numPlanets);
+                g = MakeSquareYGalaxy(planetType, aspectRatio, numPlanetsToMake);
             }
             else if (tessellation == 101)
             {
-                g = MakeSquareYMirrorGalaxy(planetType, aspectRatio, numPlanets);
+                g = MakeSquareYMirrorGalaxy(planetType, aspectRatio, numPlanetsToMake);
             }
             else
             {
-                g = MakeDiamondYGalaxy(planetType, aspectRatio, numPlanets);
+                g = MakeDiamondYGalaxy(planetType, aspectRatio, numPlanetsToMake);
             }
 
             int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
             g.Wobble(planetType, wobble, Context.RandomToUse);
 
-            g.Populate(galaxy, planetType, Context.RandomToUse);
+            int planetsToRemove = dissonance == 0? 0 : g.planets.Count - numPlanets;
+            for (int i = 0; i < planetsToRemove; ++i)
+            {
+                FakePlanet j = g.planets[Context.RandomToUse.Next(0, g.planets.Count - 1)];
+                g.RemovePlanet(j);
+            }
 
-            // FIXME
-            int randomExtraConnections = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Dissonance").RelatedIntValue * 5;
-            BadgerUtilityMethods.RandomlyConnectXPlanetsWithoutIntersectingOthers(galaxy, randomExtraConnections, 40, 20, Context);
+            g.Populate(galaxy, planetType, Context.RandomToUse);
 
             BadgerUtilityMethods.makeSureGalaxyIsFullyConnected(true, galaxy);
         }

@@ -21,6 +21,18 @@ namespace AhyangyiMaps
             other.links.Add(this);
         }
 
+        public void RemoveLinkTo(FakePlanet other)
+        {
+            links.Remove(other);
+            other.links.Remove(this);
+        }
+        public void RemoveAllLinks()
+        {
+            foreach (FakePlanet other in links)
+                other.links.Remove(this);
+            this.links.Clear();
+        }
+
         public void Wobble(PlanetType planetType, int wobble, RandomGenerator rng)
         {
             int dx, dy;
@@ -49,6 +61,12 @@ namespace AhyangyiMaps
             FakePlanet ret = new FakePlanet(location);
             planets.Add(ret);
             return ret;
+        }
+
+        public void RemovePlanet(FakePlanet planet)
+        {
+            planet.RemoveAllLinks();
+            planets.Remove(planet);
         }
 
         public void Wobble(PlanetType planetType, int wobble, RandomGenerator rng)

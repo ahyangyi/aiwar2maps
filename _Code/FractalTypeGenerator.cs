@@ -17,7 +17,6 @@ namespace AhyangyiMaps
 
         }
 
-        private int numPlanetTotalToHave;
         public void GenerateMapStructureOnly(Galaxy galaxy, ArcenHostOnlySimContext context, MapConfiguration mapConfig, MapTypeData mapType)
         {
             FakeGalaxy g = MakeRepTile(context.RandomToUse);

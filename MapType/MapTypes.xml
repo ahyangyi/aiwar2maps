@@ -17,7 +17,7 @@
 		dll_name="AhyangyiMaps"
 		type_name="AhyangyiMaps.TessellationTypeGenerator"
 		min_planets="40"
-		max_planets="300"
+		max_planets="1000"
 		>
     <map_option name="Tessellation" display_name="Tessellation"
       description="What tessellation should we use?" default_id="0">
@@ -44,20 +44,22 @@
 			default_value="10"
 			>
     </map_option>
-    <!--
     <map_option name="GalaxyLayout" display_name="Galaxy Layout"
       description="What is the overall map shape?" default_id="0">
       <choice_value id="0" display_name="Rectangular" description="A rectangle galaxy." related_int_value="100" />
-      <choice_value id="1" display_name="Rotund" description="A round, hexagonal or otherwise blunt-shaped galaxy." related_int_value="101" />
+      <choice_value id="1" display_name="Rounded" description="A circle, hexagonal or otherwise rounded galaxy." related_int_value="101" />
       <choice_value id="2" display_name="Angular" description="A triangluar, pyramid or otherwise angular galaxy." related_int_value="102" />
       <choice_value id="3" display_name="Mirrored" description="." related_int_value="150" />
       <choice_value id="4" display_name="2-way Rotational" description="." related_int_value="200" />
+      <!--
       <choice_value id="5" display_name="2-way Rotational + Mirrored" description="." related_int_value="250" />
       <choice_value id="6" display_name="3-way Rotational" description="." related_int_value="300" />
       <choice_value id="7" display_name="3-way Rotational + Mirrored" description="." related_int_value="350" />
       <choice_value id="8" display_name="4-way Rotational" description="." related_int_value="400" />
       <choice_value id="9" display_name="5-way Rotational" description="." related_int_value="500" />
+      -->
     </map_option>
+    <!--
     <map_option name="Connectivity" display_name="Connectivity"
       description="How connected the planets should be?" default_id="2">
       <choice_value id="0" display_name="Lowest" description="There are almost always only one way between any two planets." related_int_value="0" />
@@ -80,11 +82,11 @@
     </map_option>
     -->
     <map_option name="Dissonance" display_name="Dissonance"
-      description="How much should the tessellation be broken apart?" default_id="1">
+      description="How much should the tessellation be broken apart?" default_id="0">
       <choice_value id="0" display_name="None" description="Absolutely no breaking apart." related_int_value="0" />
-      <choice_value id="1" display_name="Normal" description="Almost no breaking apart, though there are some interesting gaps." related_int_value="1" />
+      <choice_value id="1" display_name="A Little" description="Almost no breaking apart, though there are some interesting gaps." related_int_value="1" />
       <choice_value id="2" display_name="A Bit Extra" description="Things are breaking apart a bit more, leading to more chaos." related_int_value="2" />
-      <choice_value id="3" display_name="More Than Usual" description="Things are definitely unraveling in many areas." related_int_value="3" />
+      <choice_value id="3" display_name="A Lot" description="Things are definitely unraveling in many areas." related_int_value="3" />
       <choice_value id="4" display_name="Tattered" description="Hardly recognizable.  Much of the map is in pieces." related_int_value="4" />
     </map_option>
   </map_type>
