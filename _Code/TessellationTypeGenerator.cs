@@ -29,7 +29,7 @@ namespace AhyangyiMaps
             int dissonance = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Dissonance").RelatedIntValue;
             int galaxyLayout = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "GalaxyLayout").RelatedIntValue;
 
-            int numPlanetsToMake = numPlanets * (11 + dissonance) / 11;
+            int numPlanetsToMake = numPlanets * 12 / (12 - dissonance);
 
             FInt aspectRatio;
             if (mapShapeEnum == 0)
@@ -51,11 +51,11 @@ namespace AhyangyiMaps
             }
             else if (tessellation == 1)
             {
-                g = MakeHexagonGalaxy(planetType, aspectRatio, numPlanetsToMake);
+                g = MakeHexagonGalaxy(planetType, aspectRatio, galaxyLayout, numPlanetsToMake);
             }
             else if (tessellation == 2)
             {
-                g = MakeTriangleGalaxy(planetType, aspectRatio, numPlanetsToMake);
+                g = MakeTriangleGalaxy(planetType, aspectRatio, galaxyLayout, numPlanetsToMake);
             }
             else if (tessellation == 100)
             {
@@ -63,15 +63,15 @@ namespace AhyangyiMaps
             }
             else if (tessellation == 101)
             {
-                g = MakeSquareYMirrorGalaxy(planetType, aspectRatio, numPlanetsToMake);
+                g = MakeSquareYMirrorGalaxy(planetType, aspectRatio, galaxyLayout, numPlanetsToMake);
             }
             else if (tessellation == 102)
             {
-                g = MakeDiamondYGalaxy(planetType, aspectRatio, numPlanetsToMake);
+                g = MakeDiamondYGalaxy(planetType, aspectRatio, galaxyLayout, numPlanetsToMake);
             }
             else
             {
-                g = MakeDiamondYFlowerGalaxy(planetType, aspectRatio, numPlanetsToMake);
+                g = MakeDiamondYFlowerGalaxy(planetType, aspectRatio, galaxyLayout, numPlanetsToMake);
             }
 
             int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
@@ -88,7 +88,7 @@ namespace AhyangyiMaps
 
             g.Populate(galaxy, planetType, Context.RandomToUse);
 
-            //BadgerUtilityMethods.makeSureGalaxyIsFullyConnected(true, galaxy);
+            BadgerUtilityMethods.makeSureGalaxyIsFullyConnected(true, galaxy);
         }
 
         protected FakeGalaxy MakeSquareGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyLayout, int numPlanets)
@@ -97,9 +97,9 @@ namespace AhyangyiMaps
             int rows = 9;
             int columns = 16;
             FInt badness = (FInt)1000000;
-            for (int r = 2; r <= 30; ++r)
+            for (int r = 2; r <= 100; ++r)
             {
-                for (int c = 2; c <= 30; ++c)
+                for (int c = 2; c <= 100; ++c)
                 {
                     int planets = r * c;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -128,24 +128,6 @@ namespace AhyangyiMaps
                 }
             }
 
-            if (galaxyLayout == 150)
-            {
-                for (int i = 0; i < rows; ++i)
-                    for (int j = 0; j < columns; ++j)
-                        if (j * 2 < columns)
-                        {
-                            pointRows[i][j].counterparts.Add(pointRows[i][columns - 1 - j]);
-                        }
-                        else if (j * 2 + 1 == columns)
-                        {
-                            // Mark symmetry
-                        }
-                        else
-                        {
-                            g.MarkSecondary(pointRows[i][j]);
-                        }
-            }
-
             for (int i = 0; i < pointRows.Length; i++)
             {
                 for (int j = 0; j < pointRows[i].Length; j++)
@@ -160,19 +142,23 @@ namespace AhyangyiMaps
                     }
                 }
             }
+            if (galaxyLayout == 150)
+            {
+                g.MakeBilateral();
+            }
             return g;
         }
 
-        protected FakeGalaxy MakeHexagonGalaxy(PlanetType planetType, FInt aspectRatio, int numPlanets)
+        protected FakeGalaxy MakeHexagonGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyLayout, int numPlanets)
         {
             int xunit = planetType.GetData().InterStellarRadius * 8660 / 1000;
             int yunit = planetType.GetData().InterStellarRadius * 5;
             int rows = 9;
             int columns = 16;
             FInt badness = (FInt)1000000;
-            for (int r = 1; r <= 25; ++r)
+            for (int r = 1; r <= 70; ++r)
             {
-                for (int c = 1; c <= 40; ++c)
+                for (int c = 1; c <= 120; c += (galaxyLayout == 150? 2 : 1))
                 {
                     // FIXME: rough estimation
                     int planets = (r + 1) * (c + 1);
@@ -230,23 +216,28 @@ namespace AhyangyiMaps
                     }
                 }
             }
+            if (galaxyLayout == 150)
+            {
+                g.MakeBilateral();
+            }
             return g;
         }
 
         // FIXME move to seperate namespace/class
         readonly int[] dr = { 1, 2, 1, -1, -2, -1 };
         readonly int[] dc = { -1, 0, 1, 1, 0, -1 };
-        protected FakeGalaxy MakeTriangleGalaxy(PlanetType planetType, FInt aspectRatio, int numPlanets)
+        protected FakeGalaxy MakeTriangleGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyLayout, int numPlanets)
         {
             int xunit = planetType.GetData().InterStellarRadius * 8660 / 1000;
             int yunit = planetType.GetData().InterStellarRadius * 5;
             int rows = 9;
             int columns = 16;
             FInt badness = (FInt)1000000;
-            for (int r = 2; r <= 25; ++r)
+            for (int r = 2; r <= 70; ++r)
             {
-                for (int c = 2; c <= 40; ++c)
+                for (int c = 2; c <= 120; ++c)
                 {
+                    if (galaxyLayout == 150 && c % 2 == 0) continue;
                     // FIXME: rough estimation
                     int planets = (r * c) / 2;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -287,6 +278,10 @@ namespace AhyangyiMaps
                     }
                 }
             }
+            if (galaxyLayout == 150)
+            {
+                g.MakeBilateral();
+            }
             return g;
         }
 
@@ -296,9 +291,9 @@ namespace AhyangyiMaps
             int rows = 5;
             int columns = 8;
             FInt badness = (FInt)1000000;
-            for (int r = 2; r <= 20; ++r)
+            for (int r = 2; r <= 60; ++r)
             {
-                for (int c = 2; c <= 20; ++c)
+                for (int c = 2; c <= 60; ++c)
                 {
                     int planets = r * c + (r - 1) * (c - 1) * 2;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -339,40 +334,6 @@ namespace AhyangyiMaps
                 }
             }
 
-            if (galaxyLayout == 150)
-            {
-                for (int i = 0; i < rows; ++i)
-                    for (int j = 0; j < columns; ++j)
-                        if (j * 2 + 1 < columns)
-                        {
-                            corners[i][j].counterparts.Add(corners[i][columns - 1 - j]);
-                        }
-                        else if (j * 2 + 1 == columns)
-                        {
-                            // Mark symmetry
-                        }
-                        else
-                        {
-                            g.MarkSecondary(corners[i][j]);
-                        }
-                for (int i = 0; i < rows - 1; ++i)
-                    for (int j = 0; j < columns - 1; ++j)
-                        if (j * 2 + 2 < columns)
-                        {
-                            centers[i][j].counterparts.Add(centers[i][columns - 2 - j]);
-                            bases[i][j].counterparts.Add(bases[i][columns - 2 - j]);
-                        }
-                        else if (j * 2 + 2 == columns)
-                        {
-                            // Mark symmetry
-                        }
-                        else
-                        {
-                            g.MarkSecondary(centers[i][j]);
-                            g.MarkSecondary(bases[i][j]);
-                        }
-            }
-
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < columns; j++)
@@ -395,17 +356,23 @@ namespace AhyangyiMaps
                     }
                 }
             }
+
+            if (galaxyLayout == 150)
+            {
+                g.MakeBilateral();
+            }
+
             return g;
         }
-        protected FakeGalaxy MakeSquareYMirrorGalaxy(PlanetType planetType, FInt aspectRatio, int numPlanets)
+        protected FakeGalaxy MakeSquareYMirrorGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyLayout, int numPlanets)
         {
             int unit = planetType.GetData().InterStellarRadius * 10;
             int rows = 5;
             int columns = 8;
             FInt badness = (FInt)1000000;
-            for (int r = 3; r <= 20; r += 2)
+            for (int r = 3; r <= 70; r += 2)
             {
-                for (int c = 2; c <= 20; ++c)
+                for (int c = 2; c <= 70; ++c)
                 {
                     int planets = r * c + (r - 1) * (c - 1) + (r / 2) * (c - 1);
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -477,18 +444,25 @@ namespace AhyangyiMaps
                     }
                 }
             }
+
+            if (galaxyLayout == 150)
+            {
+                g.MakeBilateral();
+            }
+
             return g;
         }
-        protected FakeGalaxy MakeDiamondYGalaxy(PlanetType planetType, FInt aspectRatio, int numPlanets)
+        protected FakeGalaxy MakeDiamondYGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyLayout, int numPlanets)
         {
             int unit = planetType.GetData().InterStellarRadius * 7071 / 1000;
             int rows = 5;
             int columns = 8;
             FInt badness = (FInt)1000000;
-            for (int r = 2; r <= 20; r++)
+            for (int r = 2; r <= 60; r++)
             {
-                for (int c = 2; c <= 20; c++)
+                for (int c = 2; c <= 60; c++)
                 {
+                    if (galaxyLayout == 150 && c % 2 == 0) continue;
                     // FIXME: only works when both are odd
                     int planets = 2 * r * c + r + c + 3;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -558,9 +532,15 @@ namespace AhyangyiMaps
                     }
                 }
             }
+
+            if (galaxyLayout == 150)
+            {
+                g.MakeBilateral();
+            }
+
             return g;
         }
-        protected FakeGalaxy MakeDiamondYFlowerGalaxy(PlanetType planetType, FInt aspectRatio, int numPlanets)
+        protected FakeGalaxy MakeDiamondYFlowerGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyLayout, int numPlanets)
         {
             // FIXME move to seperate namespace/class
             int[] dr = { 1, 2, 1, 0, -1, -2, -1, 0 };
@@ -570,9 +550,9 @@ namespace AhyangyiMaps
             int rows = 5;
             int columns = 8;
             FInt badness = (FInt)1000000;
-            for (int r = 3; r <= 20; r += 2)
+            for (int r = 3; r <= 70; r += 2)
             {
-                for (int c = 3; c <= 20; c += 2)
+                for (int c = 3; c <= 70; c += (galaxyLayout == 150 ? 4 : 2))
                 {
                     // FIXME: simple estimation
                     int planets = r * c * 2;
@@ -667,6 +647,11 @@ namespace AhyangyiMaps
                         }
                     }
                 }
+            }
+
+            if (galaxyLayout == 150)
+            {
+                g.MakeBilateral();
             }
 
             return g;

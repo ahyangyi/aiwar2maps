@@ -1,5 +1,6 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
+using System.Linq;
 
 
 namespace AhyangyiMaps
@@ -126,6 +127,31 @@ namespace AhyangyiMaps
             }
 
             return queue.Count == planets.Count;
+        }
+
+        public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet> MakeLocationIndex()
+        {
+            return planets.ToDictionary(planet => planet.location, planet => planet);
+        }
+
+        public void MakeBilateral()
+        { 
+            int maxX = planets.Max(planet => planet.location.X);
+            var locationIndex = MakeLocationIndex();
+
+            foreach (FakePlanet planet in planets)
+            {
+                if (planet.location.X * 2 < maxX)
+                {
+                    FakePlanet other = locationIndex[ArcenPoint.Create(maxX - planet.location.X, planet.location.Y)];
+                    planet.counterparts.Add(other);
+                    MarkSecondary(other);
+                }
+                else if (planet.location.X * 2 == maxX)
+                {
+                    // Fill in symmetry stuff
+                }
+            }
         }
 
         public void Populate(Galaxy galaxy, PlanetType planetType, RandomGenerator rng)
