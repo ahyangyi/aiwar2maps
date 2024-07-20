@@ -81,8 +81,8 @@ namespace AhyangyiMaps
             {
                 while (g.planets.Count > numPlanets)
                 {
-                    FakePlanet j = g.primaryPlanets[Context.RandomToUse.Next(0, g.primaryPlanets.Count - 1)];
-                    g.RemovePlanetAndCounterparts(j);
+                    SymmetricGroup s = g.symmetricGroups[Context.RandomToUse.Next(0, g.symmetricGroups.Count - 1)];
+                    g.RemoveSymmetricGroup(s);
                 }
             }
 

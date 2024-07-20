@@ -1,8 +1,7 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
-using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 
 
 namespace AhyangyiMaps
@@ -19,7 +18,7 @@ namespace AhyangyiMaps
             this.yy = yy;
         }
 
-        public (FInt, FInt) Apply (FInt x, FInt y)
+        public (FInt, FInt) Apply(FInt x, FInt y)
         {
             return (this.xx * x + this.yx * y, this.xy * x + this.yy * y);
         }
@@ -34,14 +33,12 @@ namespace AhyangyiMaps
     {
         public ArcenPoint location;
         public System.Collections.Generic.List<FakePlanet> links;
-        public System.Collections.Generic.List<FakePlanet> counterparts;
         public Matrix2x2 wobbleMatrix = Matrix2x2.Identity;
 
         public FakePlanet(ArcenPoint location)
         {
             this.location = location;
             links = new System.Collections.Generic.List<FakePlanet>();
-            counterparts = new System.Collections.Generic.List<FakePlanet>();
         }
 
         public void AddLinkTo(FakePlanet other)
@@ -62,11 +59,24 @@ namespace AhyangyiMaps
                 other.links.Remove(this);
             this.links.Clear();
         }
-        public void ApplyWobble(int wobble, FInt dx, FInt dy)
+        public void Wobble(int wobble, FInt dx, FInt dy)
         {
             (dx, dy) = wobbleMatrix.Apply(dx, dy);
             location.X += (dx * wobble).GetNearestIntPreferringLower();
             location.Y += (dy * wobble).GetNearestIntPreferringLower();
+        }
+    }
+
+    public class SymmetricGroup
+    {
+        public System.Collections.Generic.List<FakePlanet> planets;
+        public int rotational, reflectional;
+
+        public SymmetricGroup(System.Collections.Generic.List<FakePlanet> planets, int rotational, int reflectional)
+        {
+            this.planets = planets;
+            this.rotational = rotational;
+            this.reflectional = reflectional;
         }
 
         public void Wobble(PlanetType planetType, int wobble, RandomGenerator rng)
@@ -82,10 +92,9 @@ namespace AhyangyiMaps
             dx2 = (FInt)(planetType.GetData().InterStellarRadius) * 3 * dx / 100000;
             dy2 = (FInt)(planetType.GetData().InterStellarRadius) * 3 * dy / 100000;
 
-            ApplyWobble(wobble, dx2, dy2);
-            foreach (FakePlanet planet in counterparts)
+            foreach (FakePlanet planet in planets)
             {
-                planet.ApplyWobble(wobble, dx2, dy2);
+                planet.Wobble(wobble, dx2, dy2);
             }
         }
     }
@@ -93,51 +102,42 @@ namespace AhyangyiMaps
     public class FakeGalaxy
     {
         public System.Collections.Generic.List<FakePlanet> planets;
-        public System.Collections.Generic.List<FakePlanet> primaryPlanets;
+        public System.Collections.Generic.List<SymmetricGroup> symmetricGroups;
 
         public FakeGalaxy()
         {
             planets = new System.Collections.Generic.List<FakePlanet>();
-            primaryPlanets = new System.Collections.Generic.List<FakePlanet>();
+            symmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
         }
 
-        public FakePlanet AddPlanetAt(ArcenPoint location, bool isPrimary=true)
+        public FakePlanet AddPlanetAt(ArcenPoint location)
         {
-            FakePlanet ret = new FakePlanet(location);
-            planets.Add(ret);
-            if (isPrimary)
-            {
-                primaryPlanets.Add(ret);
-            }
-            return ret;
+            FakePlanet planet = new FakePlanet(location);
+            planets.Add(planet);
+            symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, 1, 1));
+            return planet;
         }
 
-        public void MarkSecondary(FakePlanet planet)
-        {
-            primaryPlanets.Remove(planet);
-        }
-
-        protected void RemovePlanet(FakePlanet planet)
+        protected void RemovePlanetButDoesNotUpdateSymmetricGroups(FakePlanet planet)
         {
             planet.RemoveAllLinks();
             planets.Remove(planet);
-            primaryPlanets.Remove(planet);
         }
 
-        public void RemovePlanetAndCounterparts(FakePlanet planet)
+        public void RemoveSymmetricGroup(SymmetricGroup symmetricGroup)
         {
-            foreach (FakePlanet counterpart in planet.counterparts)
+            foreach (FakePlanet counterpart in symmetricGroup.planets)
             {
-                RemovePlanet(counterpart);
+                RemovePlanetButDoesNotUpdateSymmetricGroups(counterpart);
             }
-            RemovePlanet(planet);
+            symmetricGroups.Remove(symmetricGroup);
         }
 
         public void Wobble(PlanetType planetType, int wobble, RandomGenerator rng)
         {
-            foreach (FakePlanet planet in primaryPlanets)
+            foreach (SymmetricGroup symmetricGroup in symmetricGroups)
             {
-                planet.Wobble(planetType, wobble, rng);
+                symmetricGroup.Wobble(planetType, wobble, rng);
             }
         }
         public bool IsConnected()
@@ -147,8 +147,8 @@ namespace AhyangyiMaps
                 return true;
             }
 
-            System.Collections.Generic.HashSet<FakePlanet> visited = new System.Collections.Generic.HashSet<FakePlanet>();
-            System.Collections.Generic.List<FakePlanet> queue = new System.Collections.Generic.List<FakePlanet>();
+            var visited = new HashSet<FakePlanet>();
+            var queue = new System.Collections.Generic.List<FakePlanet>();
             visited.Add(planets[0]);
             queue.Add(planets[0]);
 
@@ -178,18 +178,19 @@ namespace AhyangyiMaps
             int maxX = planets.Max(planet => planet.location.X);
             var locationIndex = MakeLocationIndex();
 
+            symmetricGroups.Clear();
             foreach (FakePlanet planet in planets)
             {
                 if (planet.location.X * 2 < maxX)
                 {
                     FakePlanet other = locationIndex[ArcenPoint.Create(maxX - planet.location.X, planet.location.Y)];
                     other.wobbleMatrix = Matrix2x2.FlipX;
-                    planet.counterparts.Add(other);
-                    MarkSecondary(other);
+                    symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, other }, 1, 2));
                 }
                 else if (planet.location.X * 2 == maxX)
                 {
                     planet.wobbleMatrix = Matrix2x2.ProjectToY;
+                    new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, 1, 1);
                 }
             }
         }
@@ -200,14 +201,18 @@ namespace AhyangyiMaps
             int maxY = planets.Max(planet => planet.location.Y);
             var locationIndex = MakeLocationIndex();
 
+            symmetricGroups.Clear();
             foreach (FakePlanet planet in planets)
             {
                 if (planet.location.X * 2 < maxX || planet.location.X * 2 == maxX && planet.location.Y * 2 < maxY)
                 {
                     FakePlanet other = locationIndex[ArcenPoint.Create(maxX - planet.location.X, maxY - planet.location.Y)];
                     other.wobbleMatrix = Matrix2x2.Rotation2;
-                    planet.counterparts.Add(other);
-                    MarkSecondary(other);
+                    symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, other }, 2, 1));
+                }
+                else if (planet.location.X * 2 == maxX && planet.location.Y * 2 == maxY)
+                {
+                    symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, 1, 1));
                 }
             }
         }
