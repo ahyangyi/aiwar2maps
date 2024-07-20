@@ -8,11 +8,13 @@ namespace AhyangyiMaps
     {
         public ArcenPoint location;
         public System.Collections.Generic.List<FakePlanet> links;
+        public System.Collections.Generic.List<FakePlanet> counterparts;
 
         public FakePlanet(ArcenPoint location)
         {
             this.location = location;
             links = new System.Collections.Generic.List<FakePlanet>();
+            counterparts = new System.Collections.Generic.List<FakePlanet>();
         }
 
         public void AddLinkTo(FakePlanet other)
@@ -26,6 +28,7 @@ namespace AhyangyiMaps
             links.Remove(other);
             other.links.Remove(this);
         }
+
         public void RemoveAllLinks()
         {
             foreach (FakePlanet other in links)
@@ -50,23 +53,44 @@ namespace AhyangyiMaps
     public class FakeGalaxy
     {
         public System.Collections.Generic.List<FakePlanet> planets;
+        public System.Collections.Generic.List<FakePlanet> primaryPlanets;
 
         public FakeGalaxy()
         {
             planets = new System.Collections.Generic.List<FakePlanet>();
+            primaryPlanets = new System.Collections.Generic.List<FakePlanet>();
         }
 
-        public FakePlanet AddPlanetAt(ArcenPoint location)
+        public FakePlanet AddPlanetAt(ArcenPoint location, bool isPrimary=true)
         {
             FakePlanet ret = new FakePlanet(location);
             planets.Add(ret);
+            if (isPrimary)
+            {
+                primaryPlanets.Add(ret);
+            }
             return ret;
         }
 
-        public void RemovePlanet(FakePlanet planet)
+        public void MarkSecondary(FakePlanet planet)
+        {
+            primaryPlanets.Remove(planet);
+        }
+
+        protected void RemovePlanet(FakePlanet planet)
         {
             planet.RemoveAllLinks();
             planets.Remove(planet);
+            primaryPlanets.Remove(planet);
+        }
+
+        public void RemovePlanetAndCounterparts(FakePlanet planet)
+        {
+            foreach (FakePlanet counterpart in planet.counterparts)
+            {
+                RemovePlanet(counterpart);
+            }
+            RemovePlanet(planet);
         }
 
         public void Wobble(PlanetType planetType, int wobble, RandomGenerator rng)

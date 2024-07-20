@@ -25,8 +25,9 @@
       <choice_value id="1" display_name="Hexagon" description="Homeycomb-like grid." related_int_value="1" />
       <choice_value id="2" display_name="Triangle" description="Triangluar grid." related_int_value="2" />
       <choice_value id="3" display_name="Square Y" description="Squares with Y-shaped divisions." related_int_value="100" />
-      <choice_value id="4" display_name="Square Y Mirrored" description="Squares with Y-shaped divisions, mirrored." related_int_value="101" />
+      <choice_value id="4" display_name="Square Y Alternative" description="Squares with Y-shaped divisions, mirrored." related_int_value="101" />
       <choice_value id="5" display_name="Diamond Y" description="Diamonds with Y-shaped divisions." related_int_value="102" />
+      <choice_value id="6" display_name="Diamond Y Alternative" description="Diamonds with Y-shaped divisions, rotated." related_int_value="103" />
     </map_option>
     <map_option name="AspectRatio" display_name="Aspect Ratio"
       description="What is the aspect ratio of the map?" default_id="0">
@@ -34,24 +35,16 @@
       <choice_value id="1" display_name="1:1" description="A square galaxy." related_int_value="1" />
       <choice_value id="2" display_name="9:16" description="A tall galaxy." related_int_value="2" />
     </map_option>
-    <map_option
-			name="Wobble"
-			display_name="Wobble"
-			description="How much should the position of planets vary from the base position?"
-			type="CustomSliderArbitraryOptions"
-			option_names="0%,1%,2%,3%,4%,5%,6%,7%,8%,9%,10%,11%,12%,13%,14%,15%,16%,17%,18%,19%,20%,21%,22%,23%,24%,25%,26%,27%,28%,29%,30%,31%,32%,33%,34%,35%,36%,37%,38%,39%,40%,41%,42%,43%,44%,45%,46%,47%,48%,49%,50%,51%,52%,53%,54%,55%,56%,57%,58%,59%,60%,61%,62%,63%,64%,65%,66%,67%,68%,69%,70%,71%,72%,73%,74%,75%,76%,77%,78%,79%,80%,81%,82%,83%,84%,85%,86%,87%,88%,89%,90%,91%,92%,93%,94%,95%,96%,97%,98%,99%,100%"
-			option_values="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100"
-			default_value="10"
-			>
-    </map_option>
     <map_option name="GalaxyLayout" display_name="Galaxy Layout"
       description="What is the overall map shape?" default_id="0">
       <choice_value id="0" display_name="Rectangular" description="A rectangle galaxy." related_int_value="100" />
+      <!--
       <choice_value id="1" display_name="Rounded" description="A circle, hexagonal or otherwise rounded galaxy." related_int_value="101" />
       <choice_value id="2" display_name="Angular" description="A triangluar, pyramid or otherwise angular galaxy." related_int_value="102" />
+      -->
       <choice_value id="3" display_name="Mirrored" description="." related_int_value="150" />
-      <choice_value id="4" display_name="2-way Rotational" description="." related_int_value="200" />
       <!--
+      <choice_value id="4" display_name="2-way Rotational" description="." related_int_value="200" />
       <choice_value id="5" display_name="2-way Rotational + Mirrored" description="." related_int_value="250" />
       <choice_value id="6" display_name="3-way Rotational" description="." related_int_value="300" />
       <choice_value id="7" display_name="3-way Rotational + Mirrored" description="." related_int_value="350" />
@@ -88,6 +81,16 @@
       <choice_value id="2" display_name="A Bit Extra" description="Things are breaking apart a bit more, leading to more chaos." related_int_value="2" />
       <choice_value id="3" display_name="A Lot" description="Things are definitely unraveling in many areas." related_int_value="3" />
       <choice_value id="4" display_name="Tattered" description="Hardly recognizable.  Much of the map is in pieces." related_int_value="4" />
+    </map_option>
+    <map_option
+			name="Wobble"
+			display_name="Wobble"
+			description="How much should the position of planets vary from the base position?"
+			type="CustomSliderArbitraryOptions"
+			option_names="0%,1%,2%,3%,4%,5%,6%,7%,8%,9%,10%,11%,12%,13%,14%,15%,16%,17%,18%,19%,20%,21%,22%,23%,24%,25%,26%,27%,28%,29%,30%,31%,32%,33%,34%,35%,36%,37%,38%,39%,40%,41%,42%,43%,44%,45%,46%,47%,48%,49%,50%,51%,52%,53%,54%,55%,56%,57%,58%,59%,60%,61%,62%,63%,64%,65%,66%,67%,68%,69%,70%,71%,72%,73%,74%,75%,76%,77%,78%,79%,80%,81%,82%,83%,84%,85%,86%,87%,88%,89%,90%,91%,92%,93%,94%,95%,96%,97%,98%,99%,100%"
+			option_values="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100"
+			default_value="10"
+			>
     </map_option>
   </map_type>
 </root>

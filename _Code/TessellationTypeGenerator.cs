@@ -27,6 +27,7 @@ namespace AhyangyiMaps
             int tessellation = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Tessellation").RelatedIntValue;
             int mapShapeEnum = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "AspectRatio").RelatedIntValue;
             int dissonance = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Dissonance").RelatedIntValue;
+            int galaxyLayout = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "GalaxyLayout").RelatedIntValue;
 
             int numPlanetsToMake = numPlanets * (11 + dissonance) / 11;
 
@@ -46,7 +47,7 @@ namespace AhyangyiMaps
             FakeGalaxy g;
             if (tessellation == 0)
             {
-                g = MakeSquareGalaxy(planetType, aspectRatio, numPlanetsToMake);
+                g = MakeSquareGalaxy(planetType, aspectRatio, galaxyLayout, numPlanetsToMake);
             }
             else if (tessellation == 1)
             {
@@ -58,7 +59,7 @@ namespace AhyangyiMaps
             }
             else if (tessellation == 100)
             {
-                g = MakeSquareYGalaxy(planetType, aspectRatio, numPlanetsToMake);
+                g = MakeSquareYGalaxy(planetType, aspectRatio, galaxyLayout, numPlanetsToMake);
             }
             else if (tessellation == 101)
             {
@@ -72,11 +73,10 @@ namespace AhyangyiMaps
             int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
             g.Wobble(planetType, wobble, Context.RandomToUse);
 
-            int planetsToRemove = dissonance == 0? 0 : g.planets.Count - numPlanets;
-            for (int i = 0; i < planetsToRemove; ++i)
+            while (g.planets.Count > numPlanets)
             {
-                FakePlanet j = g.planets[Context.RandomToUse.Next(0, g.planets.Count - 1)];
-                g.RemovePlanet(j);
+                FakePlanet j = g.primaryPlanets[Context.RandomToUse.Next(0, g.primaryPlanets.Count - 1)];
+                g.RemovePlanetAndCounterparts(j);
             }
 
             g.Populate(galaxy, planetType, Context.RandomToUse);
@@ -84,7 +84,7 @@ namespace AhyangyiMaps
             BadgerUtilityMethods.makeSureGalaxyIsFullyConnected(true, galaxy);
         }
 
-        protected FakeGalaxy MakeSquareGalaxy(PlanetType planetType, FInt aspectRatio, int numPlanets)
+        protected FakeGalaxy MakeSquareGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyLayout, int numPlanets)
         {
             int unit = planetType.GetData().InterStellarRadius * 10;
             int rows = 9;
@@ -119,6 +119,24 @@ namespace AhyangyiMaps
                 {
                     pointRows[i][j] = g.AddPlanetAt(ArcenPoint.Create(j * unit, i * unit));
                 }
+            }
+
+            if (galaxyLayout == 150)
+            {
+                for (int i = 0; i < rows; ++i)
+                    for (int j = 0; j < columns; ++j)
+                        if (j * 2 < columns)
+                        {
+                            pointRows[i][j].counterparts.Add(pointRows[i][columns - 1 - j]);
+                        }
+                        else if (j * 2 + 1 == columns)
+                        {
+                            // Mark symmetry
+                        }
+                        else
+                        {
+                            g.MarkSecondary(pointRows[i][j]);
+                        }
             }
 
             for (int i = 0; i < pointRows.Length; i++)
@@ -265,7 +283,7 @@ namespace AhyangyiMaps
             return g;
         }
 
-        protected FakeGalaxy MakeSquareYGalaxy(PlanetType planetType, FInt aspectRatio, int numPlanets)
+        protected FakeGalaxy MakeSquareYGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyLayout, int numPlanets)
         {
             int unit = planetType.GetData().InterStellarRadius * 10;
             int rows = 5;
@@ -294,14 +312,14 @@ namespace AhyangyiMaps
 
             FakePlanet[][] corners = new FakePlanet[rows][];
             FakePlanet[][] centers = new FakePlanet[rows - 1][];
-            FakePlanet[][] bottoms = new FakePlanet[rows - 1][];
+            FakePlanet[][] bases = new FakePlanet[rows - 1][];
             for (int i = 0; i < rows; ++i)
             {
                 corners[i] = new FakePlanet[columns];
                 if (i + 1 < rows)
                 {
                     centers[i] = new FakePlanet[columns - 1];
-                    bottoms[i] = new FakePlanet[columns - 1];
+                    bases[i] = new FakePlanet[columns - 1];
                 }
                 for (int j = 0; j < columns; ++j)
                 {
@@ -309,9 +327,43 @@ namespace AhyangyiMaps
                     if (i + 1 < rows && j + 1 < columns)
                     {
                         centers[i][j] = g.AddPlanetAt(ArcenPoint.Create((j * 2 + 1) * unit, ((rows - i - 1) * 2 - 1) * unit));
-                        bottoms[i][j] = g.AddPlanetAt(ArcenPoint.Create((j * 2 + 1) * unit, ((rows - i - 1) * 2 - 2) * unit));
+                        bases[i][j] = g.AddPlanetAt(ArcenPoint.Create((j * 2 + 1) * unit, ((rows - i - 1) * 2 - 2) * unit));
                     }
                 }
+            }
+
+            if (galaxyLayout == 150)
+            {
+                for (int i = 0; i < rows; ++i)
+                    for (int j = 0; j < columns; ++j)
+                        if (j * 2 + 1 < columns)
+                        {
+                            corners[i][j].counterparts.Add(corners[i][columns - 1 - j]);
+                        }
+                        else if (j * 2 + 1 == columns)
+                        {
+                            // Mark symmetry
+                        }
+                        else
+                        {
+                            g.MarkSecondary(corners[i][j]);
+                        }
+                for (int i = 0; i < rows - 1; ++i)
+                    for (int j = 0; j < columns - 1; ++j)
+                        if (j * 2 + 2 < columns)
+                        {
+                            centers[i][j].counterparts.Add(centers[i][columns - 2 - j]);
+                            bases[i][j].counterparts.Add(bases[i][columns - 2 - j]);
+                        }
+                        else if (j * 2 + 2 == columns)
+                        {
+                            // Mark symmetry
+                        }
+                        else
+                        {
+                            g.MarkSecondary(centers[i][j]);
+                            g.MarkSecondary(bases[i][j]);
+                        }
             }
 
             for (int i = 0; i < rows; i++)
@@ -330,9 +382,9 @@ namespace AhyangyiMaps
                     {
                         corners[i][j].AddLinkTo(centers[i][j]);
                         corners[i][j + 1].AddLinkTo(centers[i][j]);
-                        centers[i][j].AddLinkTo(bottoms[i][j]);
-                        corners[i + 1][j].AddLinkTo(bottoms[i][j]);
-                        corners[i + 1][j + 1].AddLinkTo(bottoms[i][j]);
+                        centers[i][j].AddLinkTo(bases[i][j]);
+                        corners[i + 1][j].AddLinkTo(bases[i][j]);
+                        corners[i + 1][j + 1].AddLinkTo(bases[i][j]);
                     }
                 }
             }
