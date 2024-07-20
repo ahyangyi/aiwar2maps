@@ -24,8 +24,13 @@ namespace AhyangyiMaps
         }
 
         public static Matrix2x2 Identity = new Matrix2x2(FInt.One, FInt.Zero, FInt.Zero, FInt.One);
+        public static Matrix2x2 Zero = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, FInt.Zero);
         public static Matrix2x2 FlipX = new Matrix2x2((FInt)(-1), FInt.Zero, FInt.Zero, FInt.One);
+        public static Matrix2x2 FlipY = new Matrix2x2(FInt.One, FInt.Zero, FInt.Zero, (FInt)(-1));
+        public static Matrix2x2 ProjectToX = new Matrix2x2(FInt.One, FInt.Zero, FInt.Zero, FInt.Zero);
+        public static Matrix2x2 ProjectToNegX = new Matrix2x2((FInt)(-1), FInt.Zero, FInt.Zero, FInt.Zero);
         public static Matrix2x2 ProjectToY = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, FInt.One);
+        public static Matrix2x2 ProjectToNegY = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, (FInt)(-1));
         public static Matrix2x2 Rotation2 = new Matrix2x2((FInt)(-1), FInt.Zero, FInt.Zero, (FInt)(-1));
     }
 
@@ -212,7 +217,55 @@ namespace AhyangyiMaps
                 }
                 else if (planet.location.X * 2 == maxX && planet.location.Y * 2 == maxY)
                 {
+                    planet.wobbleMatrix = Matrix2x2.Zero;
                     symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, 1, 1));
+                }
+            }
+        }
+
+        public void MakeRotational2Bilateral()
+        {
+            int maxX = planets.Max(planet => planet.location.X);
+            int maxY = planets.Max(planet => planet.location.Y);
+            var locationIndex = MakeLocationIndex();
+
+            symmetricGroups.Clear();
+            foreach (FakePlanet planet in planets)
+            {
+                if (planet.location.X * 2 < maxX)
+                {
+                    if (planet.location.Y * 2 < maxY)
+                    {
+                        FakePlanet rot = locationIndex[ArcenPoint.Create(maxX - planet.location.X, maxY - planet.location.Y)];
+                        FakePlanet flipX = locationIndex[ArcenPoint.Create(maxX - planet.location.X, planet.location.Y)];
+                        FakePlanet flipY = locationIndex[ArcenPoint.Create(planet.location.X, maxY - planet.location.Y)];
+                        rot.wobbleMatrix = Matrix2x2.Rotation2;
+                        flipX.wobbleMatrix = Matrix2x2.FlipX;
+                        flipY.wobbleMatrix = Matrix2x2.FlipY;
+                        symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, flipX, rot, flipY}, 2, 2));
+                    }
+                    else if (planet.location.Y * 2 == maxY)
+                    {
+                        FakePlanet flipX = locationIndex[ArcenPoint.Create(maxX - planet.location.X, planet.location.Y)];
+                        planet.wobbleMatrix = Matrix2x2.ProjectToX;
+                        flipX.wobbleMatrix = Matrix2x2.ProjectToNegX;
+                        symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, flipX}, 1, 2));
+                    }
+                }
+                else if (planet.location.X * 2 == maxX)
+                {
+                    if (planet.location.Y * 2 < maxY)
+                    {
+                        FakePlanet flipY = locationIndex[ArcenPoint.Create(planet.location.X, maxY - planet.location.Y)];
+                        planet.wobbleMatrix = Matrix2x2.ProjectToY;
+                        flipY.wobbleMatrix = Matrix2x2.ProjectToNegY;
+                        symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, flipY }, 1, 2));
+                    }
+                    else if (planet.location.Y * 2 == maxY)
+                    {
+                        planet.wobbleMatrix = Matrix2x2.Zero;
+                        symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, 1, 1));
+                    }
                 }
             }
         }
