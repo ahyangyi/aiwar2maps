@@ -1,5 +1,6 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
+using DiffLib;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -32,14 +33,14 @@ namespace AhyangyiMaps
         public static Matrix2x2 ProjectToY = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, FInt.One);
         public static Matrix2x2 ProjectToNegY = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, (FInt)(-1));
         public static Matrix2x2 Rotation2 = new Matrix2x2((FInt)(-1), FInt.Zero, FInt.Zero, (FInt)(-1));
+        public static Matrix2x2 Rotation3_1 = new Matrix2x2(FInt.Create(-500, false), FInt.Create(866, false), FInt.Create(-866, false), FInt.Create(-500, false));
+        public static Matrix2x2 Rotation3_2 = new Matrix2x2(FInt.Create(-500, false), FInt.Create(-866, false), FInt.Create(866, false), FInt.Create(-500, false));
     }
-
     public class FakePlanet
     {
         public ArcenPoint location;
         public System.Collections.Generic.List<FakePlanet> links;
         public Matrix2x2 wobbleMatrix = Matrix2x2.Identity;
-
         public FakePlanet(ArcenPoint location)
         {
             this.location = location;
@@ -269,6 +270,50 @@ namespace AhyangyiMaps
                 }
             }
         }
+
+        // FIXME more general?
+        public void MakeRotational3(int cx, int cy)
+        {
+            var planetsToRemove = new System.Collections.Generic.List<FakePlanet>();
+            var newSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
+            var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
+            var rotationLookup = new System.Collections.Generic.Dictionary<(FakePlanet, int), FakePlanet>();
+
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                int xdiff = planet.location.X - cx;
+                int ydiff = cy - planet.location.Y;
+                if (xdiff > ydiff * 1.732 || xdiff <= -ydiff * 1.732)
+                {
+                    planetsToRemove.Add(planet);
+                }
+                else
+                {
+                    var rot1 = AddPlanetAt(ArcenPoint.Create((int)(cx + ydiff * 1.732 / 2 - xdiff * 0.5), (int)(cy + ydiff * 0.5 + xdiff * 1.732 / 2)));
+                    var rot2 = AddPlanetAt(ArcenPoint.Create((int)(cx - ydiff * 1.732 / 2 - xdiff * 0.5), (int)(cy + ydiff * 0.5 - xdiff * 1.732 / 2)));
+                    rot1.wobbleMatrix = Matrix2x2.Rotation3_1;
+                    rot2.wobbleMatrix = Matrix2x2.Rotation3_2;
+                    rotationLookup[(planet, 1)] = rot1;
+                    rotationLookup[(planet, 2)] = rot2;
+                    newSymmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet , rot1, rot2}, 3, 1));
+                }
+            }
+            foreach (FakePlanet planet in planetsToRemove)
+                RemovePlanetButDoesNotUpdateSymmetricGroups(planet);
+            symmetricGroups = newSymmetricGroups;
+            foreach (var group in symmetricGroups)
+            {
+                var planet = group.planets[0];
+                foreach (var neighbor in planet.links)
+                {
+                    for (int i = 1; i < 3; ++i)
+                    {
+                        group.planets[i].AddLinkTo(rotationLookup[(neighbor, i)]);
+                    }
+                }
+            }
+        }
+
 
         public void Populate(Galaxy galaxy, PlanetType planetType, RandomGenerator rng)
         {
