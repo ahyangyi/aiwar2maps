@@ -1,6 +1,5 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
-using DiffLib;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -243,14 +242,14 @@ namespace AhyangyiMaps
                         rot.wobbleMatrix = Matrix2x2.Rotation2;
                         flipX.wobbleMatrix = Matrix2x2.FlipX;
                         flipY.wobbleMatrix = Matrix2x2.FlipY;
-                        symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, flipX, rot, flipY}, 2, 2));
+                        symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, flipX, rot, flipY }, 2, 2));
                     }
                     else if (planet.location.Y * 2 == maxY)
                     {
                         FakePlanet flipX = locationIndex[ArcenPoint.Create(maxX - planet.location.X, planet.location.Y)];
                         planet.wobbleMatrix = Matrix2x2.ProjectToX;
                         flipX.wobbleMatrix = Matrix2x2.ProjectToNegX;
-                        symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, flipX}, 1, 2));
+                        symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, flipX }, 1, 2));
                     }
                 }
                 else if (planet.location.X * 2 == maxX)
@@ -278,12 +277,14 @@ namespace AhyangyiMaps
             var newSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
             var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
             var rotationLookup = new System.Collections.Generic.Dictionary<(FakePlanet, int), FakePlanet>();
+            var groupLookup = new System.Collections.Generic.Dictionary<FakePlanet, SymmetricGroup>();
+            var locationIndex = MakeLocationIndex();
 
             foreach (FakePlanet planet in planetsBackup)
             {
                 int xdiff = planet.location.X - cx;
                 int ydiff = cy - planet.location.Y;
-                if (xdiff > ydiff * 1.732 || xdiff <= -ydiff * 1.732)
+                if (xdiff >= ydiff * 1.732 || xdiff <= -ydiff * 1.732)
                 {
                     planetsToRemove.Add(planet);
                 }
@@ -295,7 +296,9 @@ namespace AhyangyiMaps
                     rot2.wobbleMatrix = Matrix2x2.Rotation3_2;
                     rotationLookup[(planet, 1)] = rot1;
                     rotationLookup[(planet, 2)] = rot2;
-                    newSymmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet , rot1, rot2}, 3, 1));
+                    var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, rot1, rot2 }, 3, 1);
+                    newSymmetricGroups.Add(group);
+                    groupLookup[planet] = group;
                 }
             }
             foreach (FakePlanet planet in planetsToRemove)
@@ -309,6 +312,21 @@ namespace AhyangyiMaps
                     for (int i = 1; i < 3; ++i)
                     {
                         group.planets[i].AddLinkTo(rotationLookup[(neighbor, i)]);
+                    }
+                }
+
+                var symPoint = ArcenPoint.Create(cx * 2 - planet.location.X, planet.location.Y);
+                if (locationIndex.ContainsKey(symPoint))
+                {
+                    var other = locationIndex[symPoint];
+
+                    if (planet.location.X >= other.location.X && groupLookup.ContainsKey(other))
+                    {
+                        var otherGroup = groupLookup[other];
+                        for (int i = 0; i < 3; ++i)
+                        {
+                            group.planets[i].AddLinkTo(otherGroup.planets[(i + 1) % 3]);
+                        }
                     }
                 }
             }

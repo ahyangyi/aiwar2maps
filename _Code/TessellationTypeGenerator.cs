@@ -396,7 +396,7 @@ namespace AhyangyiMaps
             }
             else if (symmetry == 300)
             {
-                g.MakeRotational3(columns * unit, rows * unit * 2);
+                g.MakeRotational3((columns - 1) * unit, (rows - 1) * unit * 2);
             }
 
             return g;
@@ -496,7 +496,7 @@ namespace AhyangyiMaps
             }
             else if (symmetry == 300)
             {
-                g.MakeRotational3(columns * unit, rows * unit * 2);
+                g.MakeRotational3((columns - 1) * unit, (rows - 1) * unit * 2);
             }
 
             return g;
