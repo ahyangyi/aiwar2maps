@@ -18,22 +18,51 @@ namespace AhyangyiMaps
             this.yy = yy;
         }
 
+        public static Matrix2x2 Rotation(FInt xx, FInt xy)
+        {
+            return new Matrix2x2(xx, xy, -xy, xx);
+        }
+
         public (FInt, FInt) Apply(FInt x, FInt y)
         {
             return (this.xx * x + this.yx * y, this.xy * x + this.yy * y);
         }
 
-        public static Matrix2x2 Identity = new Matrix2x2(FInt.One, FInt.Zero, FInt.Zero, FInt.One);
-        public static Matrix2x2 Zero = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, FInt.Zero);
+        public (int, int) Apply(int x, int y)
+        {
+            return ((this.xx * x + this.yx * y).GetNearestIntPreferringLower(), (this.xy * x + this.yy * y).GetNearestIntPreferringLower());
+        }
+
+        public ArcenPoint Apply(ArcenPoint reference, int x, int y)
+        {
+            (x, y) = Apply(x, y);
+            return ArcenPoint.Create(reference.X + x, reference.Y + y);
+        }
+
+        public static Matrix2x2 Identity = Matrix2x2.Rotation(FInt.One, FInt.Zero);
+        public static Matrix2x2 Zero = Matrix2x2.Rotation(FInt.Zero, FInt.Zero);
         public static Matrix2x2 FlipX = new Matrix2x2((FInt)(-1), FInt.Zero, FInt.Zero, FInt.One);
         public static Matrix2x2 FlipY = new Matrix2x2(FInt.One, FInt.Zero, FInt.Zero, (FInt)(-1));
         public static Matrix2x2 ProjectToX = new Matrix2x2(FInt.One, FInt.Zero, FInt.Zero, FInt.Zero);
         public static Matrix2x2 ProjectToNegX = new Matrix2x2((FInt)(-1), FInt.Zero, FInt.Zero, FInt.Zero);
         public static Matrix2x2 ProjectToY = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, FInt.One);
         public static Matrix2x2 ProjectToNegY = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, (FInt)(-1));
-        public static Matrix2x2 Rotation2 = new Matrix2x2((FInt)(-1), FInt.Zero, FInt.Zero, (FInt)(-1));
-        public static Matrix2x2 Rotation3_1 = new Matrix2x2(FInt.Create(-500, false), FInt.Create(866, false), FInt.Create(-866, false), FInt.Create(-500, false));
-        public static Matrix2x2 Rotation3_2 = new Matrix2x2(FInt.Create(-500, false), FInt.Create(-866, false), FInt.Create(866, false), FInt.Create(-500, false));
+        public static Matrix2x2 Rotation2 = Matrix2x2.Rotation((FInt)(-1), FInt.Zero);
+        public static Matrix2x2 Rotation3_1 = Matrix2x2.Rotation(FInt.Create(-500, false), FInt.Create(866, false));
+        public static Matrix2x2 Rotation3_2 = Matrix2x2.Rotation(FInt.Create(-500, false), FInt.Create(-866, false));
+        public static Matrix2x2[] Rotation3 = { Identity, Rotation3_1, Rotation3_2 };
+        public static Matrix2x2 Rotation4_1 = Matrix2x2.Rotation(FInt.Zero, FInt.One);
+        public static Matrix2x2 Rotation4_3 = Matrix2x2.Rotation(FInt.Zero, (FInt)(-1));
+        public static Matrix2x2[] Rotation4 = { Identity, Rotation4_1, Rotation2, Rotation4_3 };
+        public static Matrix2x2 Rotation5_1 = Matrix2x2.Rotation(FInt.Create(309, false), FInt.Create(951, false));
+        public static Matrix2x2 Rotation5_2 = Matrix2x2.Rotation(FInt.Create(-809, false), FInt.Create(588, false));
+        public static Matrix2x2 Rotation5_3 = Matrix2x2.Rotation(FInt.Create(-809, false), FInt.Create(-588, false));
+        public static Matrix2x2 Rotation5_4 = Matrix2x2.Rotation(FInt.Create(309, false), FInt.Create(-951, false));
+        public static Matrix2x2[] Rotation5 = { Identity, Rotation5_1, Rotation5_2, Rotation5_3, Rotation5_4 };
+        public static Matrix2x2 Rotation6_1 = Matrix2x2.Rotation(FInt.Create(500, false), FInt.Create(866, false));
+        public static Matrix2x2 Rotation6_5 = Matrix2x2.Rotation(FInt.Create(500, false), FInt.Create(-866, false));
+        public static Matrix2x2[] Rotation6 = { Identity, Rotation6_1, Rotation3_1, Rotation2, Rotation3_2, Rotation6_5 };
+        public static Matrix2x2[][] Rotations = { null, null, null, Rotation3, Rotation4, Rotation5, Rotation6 };
     }
     public class FakePlanet
     {
@@ -271,8 +300,9 @@ namespace AhyangyiMaps
         }
 
         // FIXME more general?
-        public void MakeRotational3(int cx, int cy)
+        public void MakeRotationalGeneric(int cx, int cy, int d, int n)
         {
+            var center = ArcenPoint.Create(cx, cy);
             var planetsToRemove = new System.Collections.Generic.List<FakePlanet>();
             var newSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
             var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
@@ -280,23 +310,27 @@ namespace AhyangyiMaps
             var groupLookup = new System.Collections.Generic.Dictionary<FakePlanet, SymmetricGroup>();
             var locationIndex = MakeLocationIndex();
 
+            var rotations = Matrix2x2.Rotations[n];
+            FInt[] slopes = { FInt.Zero, FInt.Zero, FInt.Zero, FInt.Create(1732, false), FInt.Create(1000, false), FInt.Create(727, false), FInt.Create(577, false) };
+
             foreach (FakePlanet planet in planetsBackup)
             {
                 int xdiff = planet.location.X - cx;
-                int ydiff = cy - planet.location.Y;
-                if (xdiff >= ydiff * 1.732 || xdiff <= -ydiff * 1.732)
+                int ydiff = planet.location.Y - cy;
+                if (xdiff >= -ydiff * slopes[n] || xdiff <= ydiff * slopes[n])
                 {
                     planetsToRemove.Add(planet);
                 }
                 else
                 {
-                    var rot1 = AddPlanetAt(ArcenPoint.Create((int)(cx + ydiff * 1.732 / 2 - xdiff * 0.5), (int)(cy + ydiff * 0.5 + xdiff * 1.732 / 2)));
-                    var rot2 = AddPlanetAt(ArcenPoint.Create((int)(cx - ydiff * 1.732 / 2 - xdiff * 0.5), (int)(cy + ydiff * 0.5 - xdiff * 1.732 / 2)));
-                    rot1.wobbleMatrix = Matrix2x2.Rotation3_1;
-                    rot2.wobbleMatrix = Matrix2x2.Rotation3_2;
-                    rotationLookup[(planet, 1)] = rot1;
-                    rotationLookup[(planet, 2)] = rot2;
-                    var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, rot1, rot2 }, 3, 1);
+                    var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, n, 1);
+                    for (int j = 1; j < n; ++j)
+                    {
+                        var rot = AddPlanetAt(rotations[j].Apply(center, xdiff, ydiff));
+                        rot.wobbleMatrix = rotations[j];
+                        rotationLookup[(planet, j)] = rot;
+                        group.planets.Add(rot);
+                    }
                     newSymmetricGroups.Add(group);
                     groupLookup[planet] = group;
                 }
@@ -309,12 +343,16 @@ namespace AhyangyiMaps
                 var planet = group.planets[0];
                 foreach (var neighbor in planet.links)
                 {
-                    for (int i = 1; i < 3; ++i)
+                    for (int i = 1; i < n; ++i)
                     {
                         group.planets[i].AddLinkTo(rotationLookup[(neighbor, i)]);
                     }
                 }
 
+                int xdiff = planet.location.X - cx;
+                int ydiff = planet.location.Y - cy;
+                if (xdiff < -ydiff * slopes[n] - d && xdiff > ydiff * slopes[n] + d)
+                    continue;
                 var symPoint = ArcenPoint.Create(cx * 2 - planet.location.X, planet.location.Y);
                 if (locationIndex.ContainsKey(symPoint))
                 {
@@ -323,9 +361,9 @@ namespace AhyangyiMaps
                     if (planet.location.X >= other.location.X && groupLookup.ContainsKey(other))
                     {
                         var otherGroup = groupLookup[other];
-                        for (int i = 0; i < 3; ++i)
+                        for (int i = 0; i < n; ++i)
                         {
-                            group.planets[i].AddLinkTo(otherGroup.planets[(i + 1) % 3]);
+                            group.planets[i].AddLinkTo(otherGroup.planets[(i + 1) % n]);
                         }
                     }
                 }

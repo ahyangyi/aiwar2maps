@@ -155,9 +155,9 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry == 300)
+            else if (symmetry >= 300 && symmetry % 100 == 0)
             {
-                g.MakeRotational3((columns - 1) * unit / 2, (rows - 1) * unit);
+                g.MakeRotationalGeneric((columns - 1) * unit / 2, (rows - 1) * unit, unit, symmetry / 100);
             }
             return g;
         }
@@ -394,9 +394,9 @@ namespace AhyangyiMaps
             {
                 g.MakeBilateral();
             }
-            else if (symmetry == 300)
+            else if (symmetry >= 300 && symmetry % 100 == 0)
             {
-                g.MakeRotational3((columns - 1) * unit, (rows - 1) * unit * 2);
+                g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100);
             }
 
             return g;
@@ -494,9 +494,9 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry == 300)
+            else if (symmetry >= 300 && symmetry % 100 == 0)
             {
-                g.MakeRotational3((columns - 1) * unit, (rows - 1) * unit * 2);
+                g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100);
             }
 
             return g;
