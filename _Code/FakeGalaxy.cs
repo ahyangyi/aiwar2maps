@@ -87,11 +87,10 @@ namespace AhyangyiMaps
             other.links.Remove(this);
         }
 
-        public void RemoveAllLinks()
+        public void RemoveAllLinksOnlyUsableForRemovingPlanetFromGalaxy()
         {
             foreach (FakePlanet other in links)
                 other.links.Remove(this);
-            this.links.Clear();
         }
         public void Wobble(int wobble, FInt dx, FInt dy)
         {
@@ -154,7 +153,7 @@ namespace AhyangyiMaps
 
         protected void RemovePlanetButDoesNotUpdateSymmetricGroups(FakePlanet planet)
         {
-            planet.RemoveAllLinks();
+            planet.RemoveAllLinksOnlyUsableForRemovingPlanetFromGalaxy();
             planets.Remove(planet);
         }
 
@@ -310,6 +309,10 @@ namespace AhyangyiMaps
             var groupLookup = new System.Collections.Generic.Dictionary<FakePlanet, SymmetricGroup>();
             var locationIndex = MakeLocationIndex();
 
+            var intersectorConnection = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+            var mergeRightToLeft = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+            var mergeLeftToRight = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+
             var rotations = Matrix2x2.Rotations[n];
             FInt[] slopes = { FInt.Zero, FInt.Zero, FInt.Zero, FInt.Create(1732, false), FInt.Create(1000, false), FInt.Create(727, false), FInt.Create(577, false) };
 
@@ -317,23 +320,58 @@ namespace AhyangyiMaps
             {
                 int xdiff = planet.location.X - cx;
                 int ydiff = planet.location.Y - cy;
-                if (xdiff >= -ydiff * slopes[n] || xdiff <= ydiff * slopes[n])
+                if (xdiff >= -ydiff * slopes[n] + d / 2 || xdiff <= ydiff * slopes[n] - d / 2)
                 {
+                    // planet way out of the sector, removing
+
                     planetsToRemove.Add(planet);
+                    continue;
                 }
-                else
+
+                var symPoint = ArcenPoint.Create(cx * 2 - planet.location.X, planet.location.Y);
+                if ((xdiff >= -ydiff * slopes[n] - d / 2 || xdiff <= ydiff * slopes[n] + d / 2) && locationIndex.ContainsKey(symPoint))
                 {
-                    var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, n, 1);
-                    for (int j = 1; j < n; ++j)
+                    if (xdiff == 0)
                     {
-                        var rot = AddPlanetAt(rotations[j].Apply(center, xdiff, ydiff));
-                        rot.wobbleMatrix = rotations[j];
-                        rotationLookup[(planet, j)] = rot;
-                        group.planets.Add(rot);
+                        // special case, no merge
+                        // FIXME handle this
                     }
-                    newSymmetricGroups.Add(group);
-                    groupLookup[planet] = group;
+                    else
+                    {
+                        // planet on borderline, adjusting to the border
+                        if (xdiff < 0)
+                        {
+                            // planet on the left side
+                            var other = locationIndex[symPoint];
+                            mergeLeftToRight[planet] = other;
+                            mergeRightToLeft[other] = planet;
+                            planet.location.X = (cx + ydiff * slopes[n]).GetNearestIntPreferringLower();
+                            xdiff = planet.location.X - cx;
+                        }
+                        else
+                        {
+                            // planet on the right side
+                            planetsToRemove.Add(planet);
+                            continue;
+                        }
+                    }
                 }
+                else if (xdiff >= -ydiff * slopes[n] - d && locationIndex.ContainsKey(symPoint))
+                {
+                    var other = locationIndex[symPoint];
+                    intersectorConnection[planet] = other;
+                }
+
+                var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, n, 1);
+                for (int j = 1; j < n; ++j)
+                {
+                    var rot = AddPlanetAt(rotations[j].Apply(center, xdiff, ydiff));
+                    rot.wobbleMatrix = rotations[j];
+                    rotationLookup[(planet, j)] = rot;
+                    group.planets.Add(rot);
+                }
+                newSymmetricGroups.Add(group);
+                groupLookup[planet] = group;
             }
             foreach (FakePlanet planet in planetsToRemove)
                 RemovePlanetButDoesNotUpdateSymmetricGroups(planet);
@@ -349,21 +387,31 @@ namespace AhyangyiMaps
                     }
                 }
 
-                int xdiff = planet.location.X - cx;
-                int ydiff = planet.location.Y - cy;
-                if (xdiff < -ydiff * slopes[n] - d && xdiff > ydiff * slopes[n] + d)
-                    continue;
-                var symPoint = ArcenPoint.Create(cx * 2 - planet.location.X, planet.location.Y);
-                if (locationIndex.ContainsKey(symPoint))
+                if (intersectorConnection.ContainsKey(planet))
                 {
-                    var other = locationIndex[symPoint];
-
-                    if (planet.location.X >= other.location.X && groupLookup.ContainsKey(other))
+                    var otherGroup = groupLookup[intersectorConnection[planet]];
+                    for (int i = 0; i < n; ++i)
                     {
-                        var otherGroup = groupLookup[other];
+                        group.planets[i].AddLinkTo(otherGroup.planets[(i + 1) % n]);
+                    }
+                }
+            }
+            foreach (var group in symmetricGroups)
+            {
+                var planet = group.planets[0];
+                if (mergeLeftToRight.ContainsKey(planet))
+                {
+                    var rightPlanet = mergeLeftToRight[planet];
+                    foreach (var neighbor in rightPlanet.links)
+                    {
+                        if (!groupLookup.ContainsKey(neighbor))
+                        {
+                            continue;
+                        }
+                        var otherGroup = groupLookup[neighbor];
                         for (int i = 0; i < n; ++i)
                         {
-                            group.planets[i].AddLinkTo(otherGroup.planets[(i + 1) % n]);
+                            group.planets[i].AddLinkTo(otherGroup.planets[(i + n - 1) % n]);
                         }
                     }
                 }

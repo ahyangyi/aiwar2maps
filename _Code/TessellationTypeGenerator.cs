@@ -157,7 +157,7 @@ namespace AhyangyiMaps
             }
             else if (symmetry >= 300 && symmetry % 100 == 0)
             {
-                g.MakeRotationalGeneric((columns - 1) * unit / 2, (rows - 1) * unit, unit, symmetry / 100);
+                g.MakeRotationalGeneric((columns - 1) * unit / 2, (rows - 1) * unit + unit /* fixme */, unit, symmetry / 100);
             }
             return g;
         }
