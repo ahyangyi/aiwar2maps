@@ -2,6 +2,7 @@ using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
 using System;
+using static UnityEngine.UI.CanvasScaler;
 
 namespace AhyangyiMaps
 {
@@ -176,6 +177,7 @@ namespace AhyangyiMaps
                     if (symmetry == 150 && c % 2 == 0) continue;
                     if (symmetry == 200 && (r + c) % 2 == 1) continue;
                     if (symmetry == 250 && (r % 2 == 0 || c % 2 == 0)) continue;
+                    if (symmetry >= 300 && c % 2 == 0) continue;
                     // FIXME: rough estimation
                     int planets = (r + 1) * (c + 1);
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -244,6 +246,10 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
+            else if (symmetry >= 300 && symmetry % 100 == 0)
+            {
+                g.MakeRotationalGeneric((columns + 1) * xunit / 2, (rows * 3 + 1) * yunit + yunit /* fixme */, yunit * 2, symmetry / 100);
+            }
             return g;
         }
 
@@ -263,6 +269,7 @@ namespace AhyangyiMaps
                     if (symmetry == 150 && c % 2 == 0) continue;
                     if (symmetry == 200 && (r + c) % 2 == 1) continue;
                     if (symmetry == 250 && (r % 2 == 0 || c % 2 == 0)) continue;
+                    if (symmetry >= 300 && c % 2 == 0) continue;
                     // FIXME: rough estimation
                     int planets = (r * c) / 2;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -314,6 +321,10 @@ namespace AhyangyiMaps
             else if (symmetry == 250)
             {
                 g.MakeRotational2Bilateral();
+            }
+            else if (symmetry >= 300 && symmetry % 100 == 0)
+            {
+                g.MakeRotationalGeneric((columns - 1) * xunit / 2, (rows - 1) * yunit + yunit /* fixme */, yunit * 2, symmetry / 100);
             }
             return g;
         }
@@ -512,6 +523,7 @@ namespace AhyangyiMaps
                 for (int c = 2; c <= 60; c++)
                 {
                     if (symmetry == 150 && c % 2 == 0) continue;
+                    if (symmetry >= 300 && c % 2 == 0) continue;
                     // FIXME: only works when both are odd
                     int planets = 2 * r * c + r + c + 3;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -586,6 +598,10 @@ namespace AhyangyiMaps
             {
                 g.MakeBilateral();
             }
+            else if (symmetry >= 300 && symmetry % 100 == 0)
+            {
+                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit + unit /* fixme */, unit, symmetry / 100);
+            }
 
             return g;
         }
@@ -606,6 +622,7 @@ namespace AhyangyiMaps
                     if (symmetry == 150 && c % 4 == 1) continue;
                     if (symmetry == 200 && ((r + c) % 4 == 0)) continue;
                     if (symmetry == 250 && (r % 4 == 1 || c % 4 == 1)) continue;
+                    if (symmetry >= 300 && c % 4 == 1) continue;
                     // FIXME: simple estimation
                     int planets = r * c * 2;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -712,6 +729,10 @@ namespace AhyangyiMaps
             else if (symmetry == 250)
             {
                 g.MakeRotational2Bilateral();
+            }
+            else if (symmetry >= 300 && symmetry % 100 == 0)
+            {
+                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit + unit /* fixme */, unit, symmetry / 100);
             }
 
             return g;

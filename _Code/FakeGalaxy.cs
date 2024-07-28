@@ -320,6 +320,13 @@ namespace AhyangyiMaps
             {
                 int xdiff = planet.location.X - cx;
                 int ydiff = planet.location.Y - cy;
+
+                if (ydiff > 0)
+                {
+                    planetsToRemove.Add(planet);
+                    continue;
+                }
+
                 if (xdiff >= -ydiff * slopes[n] + d / 2 || xdiff <= ydiff * slopes[n] - d / 2)
                 {
                     // planet way out of the sector, removing
