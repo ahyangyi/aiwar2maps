@@ -305,7 +305,6 @@ namespace AhyangyiMaps
             var planetsToRemove = new System.Collections.Generic.List<FakePlanet>();
             var newSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
             var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
-            var rotationLookup = new System.Collections.Generic.Dictionary<(FakePlanet, int), FakePlanet>();
             var groupLookup = new System.Collections.Generic.Dictionary<FakePlanet, SymmetricGroup>();
             var locationIndex = MakeLocationIndex();
 
@@ -315,6 +314,7 @@ namespace AhyangyiMaps
 
             var rotations = Matrix2x2.Rotations[n];
             FInt[] slopes = { FInt.Zero, FInt.Zero, FInt.Zero, FInt.Create(1732, false), FInt.Create(1000, false), FInt.Create(727, false), FInt.Create(577, false) };
+            bool hasCenter = false;
 
             foreach (FakePlanet planet in planetsBackup)
             {
@@ -334,7 +334,12 @@ namespace AhyangyiMaps
                     if (xdiff == 0)
                     {
                         // special case, no merge
-                        // FIXME handle this
+                        if (ydiff == 0)
+                        {
+                            // planet at center of symmetry, needs special handling
+                            hasCenter = true;
+                            continue;
+                        }
                     }
                     else
                     {
@@ -367,7 +372,6 @@ namespace AhyangyiMaps
                 {
                     var rot = AddPlanetAt(rotations[j].Apply(center, xdiff, ydiff));
                     rot.wobbleMatrix = rotations[j];
-                    rotationLookup[(planet, j)] = rot;
                     group.planets.Add(rot);
                 }
                 newSymmetricGroups.Add(group);
@@ -381,9 +385,13 @@ namespace AhyangyiMaps
                 var planet = group.planets[0];
                 foreach (var neighbor in planet.links)
                 {
-                    for (int i = 1; i < n; ++i)
+                    if (groupLookup.ContainsKey(neighbor))
                     {
-                        group.planets[i].AddLinkTo(rotationLookup[(neighbor, i)]);
+                        var neighborGroup = groupLookup[neighbor];
+                        for (int i = 1; i < n; ++i)
+                        {
+                            group.planets[i].AddLinkTo(neighborGroup.planets[i]);
+                        }
                     }
                 }
 
@@ -413,6 +421,25 @@ namespace AhyangyiMaps
                         {
                             group.planets[i].AddLinkTo(otherGroup.planets[(i + n - 1) % n]);
                         }
+                    }
+                }
+            }
+
+            if (hasCenter)
+            {
+                var centerPlanet = locationIndex[center];
+                var neighbors = centerPlanet.links.ToList();
+
+                centerPlanet.wobbleMatrix = Matrix2x2.Zero;
+                var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { centerPlanet }, 1, 1);
+                newSymmetricGroups.Add(group);
+
+                foreach (var neighbor in neighbors)
+                {
+                    var neighborGroup = groupLookup[neighbor];
+                    for (int i = 0; i < n; ++i)
+                    {
+                        centerPlanet.AddLinkTo(neighborGroup.planets[i]);
                     }
                 }
             }
