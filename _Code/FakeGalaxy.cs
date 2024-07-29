@@ -23,6 +23,11 @@ namespace AhyangyiMaps
             return new Matrix2x2(xx, xy, -xy, xx);
         }
 
+        public static Matrix2x2 operator * (Matrix2x2 a, Matrix2x2 b)
+        {
+            return new Matrix2x2(a.xx * b.xx + a.xy * b.yx, a.xx * b.xy + a.xy * b.yy, a.yx * b.xx + a.yy * b.yx, a.yx * b.xy + a.yy * b.yy);
+        }
+
         public (FInt, FInt) Apply(FInt x, FInt y)
         {
             return (this.xx * x + this.yx * y, this.xy * x + this.yy * y);
@@ -47,6 +52,7 @@ namespace AhyangyiMaps
         public static Matrix2x2 ProjectToNegX = new Matrix2x2((FInt)(-1), FInt.Zero, FInt.Zero, FInt.Zero);
         public static Matrix2x2 ProjectToY = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, FInt.One);
         public static Matrix2x2 ProjectToNegY = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, (FInt)(-1));
+
         public static Matrix2x2 Rotation2 = Matrix2x2.Rotation((FInt)(-1), FInt.Zero);
         public static Matrix2x2 Rotation3_1 = Matrix2x2.Rotation(FInt.Create(-500, false), FInt.Create(866, false));
         public static Matrix2x2 Rotation3_2 = Matrix2x2.Rotation(FInt.Create(-500, false), FInt.Create(-866, false));
@@ -63,6 +69,12 @@ namespace AhyangyiMaps
         public static Matrix2x2 Rotation6_5 = Matrix2x2.Rotation(FInt.Create(500, false), FInt.Create(-866, false));
         public static Matrix2x2[] Rotation6 = { Identity, Rotation6_1, Rotation3_1, Rotation2, Rotation3_2, Rotation6_5 };
         public static Matrix2x2[][] Rotations = { null, null, null, Rotation3, Rotation4, Rotation5, Rotation6 };
+
+        public static Matrix2x2[] Rotation3ReflectLeft = { ProjectToY * Rotation3_1, ProjectToY * Rotation3_2, ProjectToY };
+        public static Matrix2x2[] Rotation3ReflectCenter = { ProjectToY, ProjectToY * Rotation3_1, ProjectToY * Rotation3_2 };
+
+        public static Matrix2x2[][] RotationReflectLeft = { null, null, null, Rotation3ReflectLeft, null, null, null };
+        public static Matrix2x2[][] RotationReflectCenter = { null, null, null, Rotation3ReflectCenter, null, null, null };
     }
     public class FakePlanet
     {
@@ -298,14 +310,13 @@ namespace AhyangyiMaps
             }
         }
 
-        // FIXME more general?
-        public void MakeRotationalGeneric(int cx, int cy, int d, int n)
+        public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional)
         {
             var center = ArcenPoint.Create(cx, cy);
             var planetsToRemove = new System.Collections.Generic.List<FakePlanet>();
             var newSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
             var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
-            var groupLookup = new System.Collections.Generic.Dictionary<FakePlanet, SymmetricGroup>();
+            var rotationGroupLookup = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
             var locationIndex = MakeLocationIndex();
 
             var intersectorConnection = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
@@ -313,6 +324,8 @@ namespace AhyangyiMaps
             var mergeLeftToRight = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
 
             var rotations = Matrix2x2.Rotations[n];
+            var reflectionLeft = Matrix2x2.RotationReflectLeft[n];
+            var reflectionCenter = Matrix2x2.RotationReflectCenter[n];
             FInt[] slopes = { FInt.Zero, FInt.Zero, FInt.Zero, FInt.Create(1732, false), FInt.Create(1000, false), FInt.Create(727, false), FInt.Create(577, false) };
             bool hasCenter = false;
 
@@ -374,59 +387,122 @@ namespace AhyangyiMaps
                     intersectorConnection[planet] = other;
                 }
 
-                var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, n, 1);
-                for (int j = 1; j < n; ++j)
+                if (reflectional)
                 {
-                    var rot = AddPlanetAt(rotations[j].Apply(center, xdiff, ydiff));
-                    rot.wobbleMatrix = rotations[j];
-                    group.planets.Add(rot);
+                    if (mergeLeftToRight.ContainsKey(planet))
+                    {
+                        // "left" reflectional planets
+                        var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, n, 1);
+                        planet.wobbleMatrix = reflectionLeft[0];
+                        for (int j = 1; j < n; ++j)
+                        {
+                            var rot = AddPlanetAt(rotations[j].Apply(center, xdiff, ydiff));
+                            rot.wobbleMatrix = reflectionLeft[j];
+                            group.planets.Add(rot);
+                        }
+                        newSymmetricGroups.Add(group);
+                        rotationGroupLookup[planet] = group.planets;
+                    }
+                    else if (xdiff == 0)
+                    {
+                        // "central" reflectional planets
+                        var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, n, 1);
+                        planet.wobbleMatrix = reflectionCenter[0];
+                        for (int j = 1; j < n; ++j)
+                        {
+                            var rot = AddPlanetAt(rotations[j].Apply(center, xdiff, ydiff));
+                            rot.wobbleMatrix = reflectionCenter[j];
+                            group.planets.Add(rot);
+                        }
+                        newSymmetricGroups.Add(group);
+                        rotationGroupLookup[planet] = group.planets;
+                    }
+                    else if (xdiff < 0)
+                    {
+                        var other = locationIndex[symPoint];
+                        var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet, other }, n, 2);
+                        var subGroupLeft = new System.Collections.Generic.List<FakePlanet> { planet };
+                        var subGroupRight = new System.Collections.Generic.List<FakePlanet> { other };
+
+                        other.wobbleMatrix = Matrix2x2.FlipX;
+
+                        for (int j = 1; j < n; ++j)
+                        {
+                            var rot = AddPlanetAt(rotations[j].Apply(center, xdiff, ydiff));
+                            var rotOther = AddPlanetAt(rotations[j].Apply(center, -xdiff, ydiff));
+                            rot.wobbleMatrix = rotations[j];
+                            rotOther.wobbleMatrix = Matrix2x2.FlipX * rotations[j];
+                            group.planets.Add(rot);
+                            group.planets.Add(rotOther);
+                            subGroupLeft.Add(rot);
+                            subGroupRight.Add(rotOther);
+                        }
+                        newSymmetricGroups.Add(group);
+                        rotationGroupLookup[planet] = subGroupLeft;
+                        rotationGroupLookup[other] = subGroupRight;
+                    }
                 }
-                newSymmetricGroups.Add(group);
-                groupLookup[planet] = group;
+                else
+                {
+                    var group = new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, n, 1);
+                    for (int j = 1; j < n; ++j)
+                    {
+                        var rot = AddPlanetAt(rotations[j].Apply(center, xdiff, ydiff));
+                        rot.wobbleMatrix = rotations[j];
+                        group.planets.Add(rot);
+                    }
+                    newSymmetricGroups.Add(group);
+                    rotationGroupLookup[planet] = group.planets;
+                }
             }
+
+            // Apply various lazy operations recorded above
             foreach (FakePlanet planet in planetsToRemove)
-                RemovePlanetButDoesNotUpdateSymmetricGroups(planet);
-            symmetricGroups = newSymmetricGroups;
-            foreach (var group in symmetricGroups)
             {
-                var planet = group.planets[0];
+                RemovePlanetButDoesNotUpdateSymmetricGroups(planet);
+            }
+            symmetricGroups = newSymmetricGroups;
+
+            foreach (var group in rotationGroupLookup.Values)
+            {
+                var planet = group[0];
                 foreach (var neighbor in planet.links)
                 {
-                    if (groupLookup.ContainsKey(neighbor))
+                    if (rotationGroupLookup.ContainsKey(neighbor))
                     {
-                        var neighborGroup = groupLookup[neighbor];
+                        var neighborGroup = rotationGroupLookup[neighbor];
                         for (int i = 1; i < n; ++i)
                         {
-                            group.planets[i].AddLinkTo(neighborGroup.planets[i]);
+                            group[i].AddLinkTo(neighborGroup[i]);
                         }
                     }
                 }
 
                 if (intersectorConnection.ContainsKey(planet))
                 {
-                    var otherGroup = groupLookup[intersectorConnection[planet]];
+                    var otherGroup = rotationGroupLookup[intersectorConnection[planet]];
                     for (int i = 0; i < n; ++i)
                     {
-                        group.planets[i].AddLinkTo(otherGroup.planets[(i + 1) % n]);
+                        group[i].AddLinkTo(otherGroup[(i + 1) % n]);
                     }
                 }
             }
-            foreach (var group in symmetricGroups)
+            foreach (var group in rotationGroupLookup.Values)
             {
-                var planet = group.planets[0];
+                var planet = group[0];
                 if (mergeLeftToRight.ContainsKey(planet))
                 {
                     var rightPlanet = mergeLeftToRight[planet];
                     foreach (var neighbor in rightPlanet.links)
                     {
-                        if (!groupLookup.ContainsKey(neighbor))
+                        if (!rotationGroupLookup.ContainsKey(neighbor))
                         {
                             continue;
                         }
-                        var otherGroup = groupLookup[neighbor];
+                        var otherGroup = rotationGroupLookup[neighbor];
                         for (int i = 0; i < n; ++i)
                         {
-                            group.planets[i].AddLinkTo(otherGroup.planets[(i + n - 1) % n]);
+                            group[i].AddLinkTo(otherGroup[(i + n - 1) % n]);
                         }
                     }
                 }
@@ -443,10 +519,10 @@ namespace AhyangyiMaps
 
                 foreach (var neighbor in neighbors)
                 {
-                    var neighborGroup = groupLookup[neighbor];
+                    var neighborGroup = rotationGroupLookup[neighbor];
                     for (int i = 0; i < n; ++i)
                     {
-                        centerPlanet.AddLinkTo(neighborGroup.planets[i]);
+                        centerPlanet.AddLinkTo(neighborGroup[i]);
                     }
                 }
             }

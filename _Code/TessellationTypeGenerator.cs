@@ -2,7 +2,6 @@ using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
 using System;
-using static UnityEngine.UI.CanvasScaler;
 
 namespace AhyangyiMaps
 {
@@ -156,9 +155,9 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry >= 300 && symmetry % 100 == 0)
+            else if (symmetry >= 300)
             {
-                g.MakeRotationalGeneric((columns - 1) * unit / 2, (rows - 1) * unit + unit /* fixme */, unit, symmetry / 100);
+                g.MakeRotationalGeneric((columns - 1) * unit / 2, (rows - 1) * unit + unit /* fixme */, unit, symmetry / 100, symmetry % 100 == 50);
             }
             return g;
         }
@@ -246,9 +245,9 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry >= 300 && symmetry % 100 == 0)
+            else if (symmetry >= 300)
             {
-                g.MakeRotationalGeneric((columns + 1) * xunit / 2, (rows * 3 + 1) * yunit + yunit /* fixme */, yunit * 2, symmetry / 100);
+                g.MakeRotationalGeneric((columns + 1) * xunit / 2, (rows * 3 + 1) * yunit + yunit /* fixme */, yunit * 2, symmetry / 100, symmetry % 100 == 50);
             }
             return g;
         }
@@ -322,9 +321,9 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry >= 300 && symmetry % 100 == 0)
+            else if (symmetry >= 300)
             {
-                g.MakeRotationalGeneric((columns - 1) * xunit / 2, (rows - 1) * yunit + yunit /* fixme */, yunit * 2, symmetry / 100);
+                g.MakeRotationalGeneric((columns - 1) * xunit / 2, (rows - 1) * yunit + yunit /* fixme */, yunit * 2, symmetry / 100, symmetry % 100 == 50);
             }
             return g;
         }
@@ -405,9 +404,9 @@ namespace AhyangyiMaps
             {
                 g.MakeBilateral();
             }
-            else if (symmetry >= 300 && symmetry % 100 == 0)
+            else if (symmetry >= 300)
             {
-                g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100);
+                g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100, symmetry % 100 == 50);
             }
 
             return g;
@@ -505,9 +504,9 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry >= 300 && symmetry % 100 == 0)
+            else if (symmetry >= 300)
             {
-                g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100);
+                g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100, symmetry % 100 == 50);
             }
 
             return g;
@@ -598,9 +597,9 @@ namespace AhyangyiMaps
             {
                 g.MakeBilateral();
             }
-            else if (symmetry >= 300 && symmetry % 100 == 0)
+            else if (symmetry >= 300)
             {
-                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit + unit /* fixme */, unit, symmetry / 100);
+                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit + unit /* fixme */, unit, symmetry / 100, symmetry % 100 == 50);
             }
 
             return g;
@@ -730,9 +729,9 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry >= 300 && symmetry % 100 == 0)
+            else if (symmetry >= 300)
             {
-                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit + unit /* fixme */, unit, symmetry / 100);
+                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit + unit /* fixme */, unit, symmetry / 100, symmetry % 100 == 50);
             }
 
             return g;
