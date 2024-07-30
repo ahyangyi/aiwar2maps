@@ -23,7 +23,7 @@ namespace AhyangyiMaps
             return new Matrix2x2(xx, xy, -xy, xx);
         }
 
-        public static Matrix2x2 operator * (Matrix2x2 a, Matrix2x2 b)
+        public static Matrix2x2 operator *(Matrix2x2 a, Matrix2x2 b)
         {
             return new Matrix2x2(a.xx * b.xx + a.xy * b.yx, a.xx * b.xy + a.xy * b.yy, a.yx * b.xx + a.yy * b.yx, a.yx * b.xy + a.yy * b.yy);
         }
@@ -313,7 +313,7 @@ namespace AhyangyiMaps
         public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional)
         {
             var center = ArcenPoint.Create(cx, cy);
-            var planetsToRemove = new System.Collections.Generic.List<FakePlanet>();
+            var planetsToRemove = new System.Collections.Generic.HashSet<FakePlanet>();
             var newSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
             var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
             var rotationGroupLookup = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
@@ -327,6 +327,9 @@ namespace AhyangyiMaps
             var reflectionLeft = Matrix2x2.RotationReflectLeft[n];
             var reflectionCenter = Matrix2x2.RotationReflectCenter[n];
             FInt[] slopes = { FInt.Zero, FInt.Zero, FInt.Zero, FInt.Create(1732, false), FInt.Create(1000, false), FInt.Create(727, false), FInt.Create(577, false) };
+            FInt slope = slopes[n];
+            FInt[] distanceCoefficients = { FInt.Zero, FInt.Zero, FInt.Zero, FInt.Create(2000, false), FInt.Create(1414, false), FInt.Create(1236, false), FInt.Create(1155, false) };
+            FInt distanceCoefficient = distanceCoefficients[n];
             bool hasCenter = false;
 
             foreach (FakePlanet planet in planetsBackup)
@@ -340,7 +343,7 @@ namespace AhyangyiMaps
                     continue;
                 }
 
-                if (xdiff >= -ydiff * slopes[n] + d / 2 || xdiff <= ydiff * slopes[n] - d / 2)
+                if (xdiff > -ydiff * slope || xdiff < ydiff * slope)
                 {
                     // planet way out of the sector, removing
 
@@ -349,7 +352,7 @@ namespace AhyangyiMaps
                 }
 
                 var symPoint = ArcenPoint.Create(cx * 2 - planet.location.X, planet.location.Y);
-                if ((xdiff >= -ydiff * slopes[n] - d / 2 || xdiff <= ydiff * slopes[n] + d / 2) && locationIndex.ContainsKey(symPoint))
+                if ((xdiff > -ydiff * slope - d * distanceCoefficient / 2 || xdiff < ydiff * slope + d * distanceCoefficient / 2) && locationIndex.ContainsKey(symPoint))
                 {
                     if (xdiff == 0)
                     {
@@ -370,7 +373,7 @@ namespace AhyangyiMaps
                             var other = locationIndex[symPoint];
                             mergeLeftToRight[planet] = other;
                             mergeRightToLeft[other] = planet;
-                            planet.location.X = (cx + ydiff * slopes[n]).GetNearestIntPreferringLower();
+                            planet.location.X = (cx + ydiff * slope).GetNearestIntPreferringLower();
                             xdiff = planet.location.X - cx;
                         }
                         else
@@ -380,11 +383,6 @@ namespace AhyangyiMaps
                             continue;
                         }
                     }
-                }
-                else if (xdiff >= -ydiff * slopes[n] - d && locationIndex.ContainsKey(symPoint))
-                {
-                    var other = locationIndex[symPoint];
-                    intersectorConnection[planet] = other;
                 }
 
                 if (reflectional)
@@ -463,6 +461,44 @@ namespace AhyangyiMaps
             }
             symmetricGroups = newSymmetricGroups;
 
+            // Decide intersector connections
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                if (planetsToRemove.Contains(planet))
+                {
+                    continue;
+                }
+                if (mergeLeftToRight.ContainsKey(planet))
+                {
+                    continue;
+                }
+                int xdiff = planet.location.X - cx;
+                int ydiff = planet.location.Y - cy;
+                var symPoint = ArcenPoint.Create(cx * 2 - planet.location.X, planet.location.Y);
+
+                if (xdiff <= ydiff * slope + d * distanceCoefficient && locationIndex.ContainsKey(symPoint))
+                {
+                    bool hasAlternativeConnection = false;
+                    foreach (FakePlanet neighbor in planet.links)
+                    {
+                        int neighborXdiff = neighbor.location.X - cx;
+                        int neighborYdiff = neighbor.location.Y - cy;
+
+                        if (mergeLeftToRight.ContainsKey(neighbor) &&
+                            neighbor.location.GetDistanceTo(planet.location, false) < (xdiff - ydiff * slope) * FInt.Create(1414, false) / distanceCoefficient)
+                        {
+                            hasAlternativeConnection = true;
+                        }
+                    }
+
+                    if (!hasAlternativeConnection)
+                    {
+                        var other = locationIndex[symPoint];
+                        intersectorConnection[planet] = other;
+                    }
+                }
+            }
+
             foreach (var group in rotationGroupLookup.Values)
             {
                 var planet = group[0];
@@ -483,7 +519,7 @@ namespace AhyangyiMaps
                     var otherGroup = rotationGroupLookup[intersectorConnection[planet]];
                     for (int i = 0; i < n; ++i)
                     {
-                        group[i].AddLinkTo(otherGroup[(i + 1) % n]);
+                        group[i].AddLinkTo(otherGroup[(i + n - 1) % n]);
                     }
                 }
             }
@@ -527,7 +563,6 @@ namespace AhyangyiMaps
                 }
             }
         }
-
 
         public void Populate(Galaxy galaxy, PlanetType planetType, RandomGenerator rng)
         {

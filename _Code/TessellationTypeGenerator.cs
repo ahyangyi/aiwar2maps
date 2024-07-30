@@ -514,6 +514,7 @@ namespace AhyangyiMaps
         protected FakeGalaxy MakeDiamondYGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
             int unit = planetType.GetData().InterStellarRadius * 7071 / 1000;
+            int dunit = planetType.GetData().InterStellarRadius * 10;
             int rows = 5;
             int columns = 8;
             FInt badness = (FInt)1000000;
@@ -522,7 +523,7 @@ namespace AhyangyiMaps
                 for (int c = 2; c <= 60; c++)
                 {
                     if (symmetry == 150 && c % 2 == 0) continue;
-                    if (symmetry >= 300 && c % 2 == 0) continue;
+                    if (symmetry >= 300 && (r * 2 + c) % 4 != 3) continue;
                     // FIXME: only works when both are odd
                     int planets = 2 * r * c + r + c + 3;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -599,7 +600,7 @@ namespace AhyangyiMaps
             }
             else if (symmetry >= 300)
             {
-                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit + unit /* fixme */, unit, symmetry / 100, symmetry % 100 == 50);
+                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50);
             }
 
             return g;
@@ -611,6 +612,7 @@ namespace AhyangyiMaps
             int[] dc = { 1, 0, -1, -2, -1, 0, 1, 2 };
 
             int unit = planetType.GetData().InterStellarRadius * 7071 / 1000;
+            int dunit = planetType.GetData().InterStellarRadius * 10;
             int rows = 5;
             int columns = 8;
             FInt badness = (FInt)1000000;
@@ -731,7 +733,7 @@ namespace AhyangyiMaps
             }
             else if (symmetry >= 300)
             {
-                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit + unit /* fixme */, unit, symmetry / 100, symmetry % 100 == 50);
+                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50);
             }
 
             return g;
