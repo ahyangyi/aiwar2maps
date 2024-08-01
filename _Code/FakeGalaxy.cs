@@ -3,7 +3,6 @@ using Arcen.Universal;
 using System.Collections.Generic;
 using System.Linq;
 
-
 namespace AhyangyiMaps
 {
     public struct Matrix2x2
@@ -79,12 +78,12 @@ namespace AhyangyiMaps
     public class FakePlanet
     {
         public ArcenPoint location;
-        public System.Collections.Generic.List<FakePlanet> links;
+        public HashSet<FakePlanet> links;
         public Matrix2x2 wobbleMatrix = Matrix2x2.Identity;
         public FakePlanet(ArcenPoint location)
         {
             this.location = location;
-            links = new System.Collections.Generic.List<FakePlanet>();
+            links = new HashSet<FakePlanet>();
         }
 
         public void AddLinkTo(FakePlanet other)
@@ -148,11 +147,13 @@ namespace AhyangyiMaps
     {
         public System.Collections.Generic.List<FakePlanet> planets;
         public System.Collections.Generic.List<SymmetricGroup> symmetricGroups;
+        public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet> locationIndex;
 
         public FakeGalaxy()
         {
             planets = new System.Collections.Generic.List<FakePlanet>();
             symmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
+            locationIndex = new System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet>();
         }
 
         public FakePlanet AddPlanetAt(ArcenPoint location)
@@ -160,6 +161,7 @@ namespace AhyangyiMaps
             FakePlanet planet = new FakePlanet(location);
             planets.Add(planet);
             symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, 1, 1));
+            locationIndex[planet.location] = planet;
             return planet;
         }
 
@@ -167,12 +169,16 @@ namespace AhyangyiMaps
         {
             planet.RemoveAllLinksOnlyUsableForRemovingPlanetFromGalaxy();
             planets.Remove(planet);
+            locationIndex.Remove(planet.location);
         }
 
         protected void RemovePlanetsButDoesNotUpdateSymmetricGroups(HashSet<FakePlanet> planetsToRemove)
         {
             foreach (FakePlanet planet in planetsToRemove)
+            {
                 planet.RemoveAllLinksOnlyUsableForRemovingPlanetFromGalaxy();
+                locationIndex.Remove(planet.location);
+            }
 
             var newPlanets = new System.Collections.Generic.List<FakePlanet>();
             foreach (FakePlanet planet in planets)
@@ -232,7 +238,6 @@ namespace AhyangyiMaps
         public void MakeBilateral()
         {
             int maxX = planets.Max(planet => planet.location.X);
-            var locationIndex = MakeLocationIndex();
 
             symmetricGroups.Clear();
             foreach (FakePlanet planet in planets)
@@ -255,7 +260,6 @@ namespace AhyangyiMaps
         {
             int maxX = planets.Max(planet => planet.location.X);
             int maxY = planets.Max(planet => planet.location.Y);
-            var locationIndex = MakeLocationIndex();
 
             symmetricGroups.Clear();
             foreach (FakePlanet planet in planets)
@@ -278,7 +282,6 @@ namespace AhyangyiMaps
         {
             int maxX = planets.Max(planet => planet.location.X);
             int maxY = planets.Max(planet => planet.location.Y);
-            var locationIndex = MakeLocationIndex();
 
             symmetricGroups.Clear();
             foreach (FakePlanet planet in planets)
@@ -327,7 +330,6 @@ namespace AhyangyiMaps
             var newSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
             var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
             var rotationGroupLookup = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
-            var locationIndex = MakeLocationIndex();
 
             var intersectorConnection = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
             var mergeRightToLeft = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
@@ -338,6 +340,7 @@ namespace AhyangyiMaps
             var reflectionCenter = Matrix2x2.RotationReflectCenter[n];
             FInt sectorSlope = SymmetryConstants.Rotational[n].sectorSlope;
             FInt distanceCoefficient = SymmetryConstants.Rotational[n].distanceCoefficient;
+            FInt mergeMargin = d * distanceCoefficient * FInt.Create(400, false);
             bool hasCenter = false;
 
             if (autoAdvance)
@@ -366,7 +369,7 @@ namespace AhyangyiMaps
                 }
 
                 var symPoint = ArcenPoint.Create(cx * 2 - planet.location.X, planet.location.Y);
-                if ((xdiff > -ydiff * sectorSlope - d * distanceCoefficient / 2 || xdiff < ydiff * sectorSlope + d * distanceCoefficient / 2) && locationIndex.ContainsKey(symPoint))
+                if ((xdiff > -ydiff * sectorSlope - mergeMargin || xdiff < ydiff * sectorSlope + mergeMargin) && locationIndex.ContainsKey(symPoint))
                 {
                     if (xdiff == 0)
                     {
@@ -593,6 +596,58 @@ namespace AhyangyiMaps
         }
     }
 
+    public class FakePattern : FakeGalaxy
+    {
+        public System.Collections.Generic.List<(ArcenPoint, ArcenPoint)> connectionsToBreak;
+        public System.Collections.Generic.Dictionary<(ArcenPoint, ArcenPoint), System.Collections.Generic.List<ArcenPoint>> breakpoints;
+
+        public void Imprint(FakeGalaxy galaxy, ArcenPoint offset)
+        {
+            foreach (FakePlanet planet in planets)
+            {
+                var offsettedLocation = planet.location + offset;
+                if (!galaxy.locationIndex.ContainsKey(offsettedLocation))
+                {
+                    galaxy.AddPlanetAt(offsettedLocation);
+                }
+            }
+
+            foreach (var (a, b) in connectionsToBreak)
+            {
+                if (galaxy.locationIndex.ContainsKey(a + offset) && galaxy.locationIndex.ContainsKey(b + offset))
+                {
+                    var planetA = galaxy.locationIndex[a + offset];
+                    var planetB = galaxy.locationIndex[b + offset];
+                    planetA.RemoveLinkTo(planetB);
+                }
+            }
+
+            foreach (FakePlanet a in planets)
+            {
+                foreach (FakePlanet b in a.links)
+                {
+                    var planetA = galaxy.locationIndex[a.location + offset];
+                    var planetB = galaxy.locationIndex[b.location + offset];
+                    bool ok = true;
+                    if (breakpoints.ContainsKey((a.location, b.location)))
+                    {
+                        foreach (ArcenPoint c in breakpoints[(a.location, b.location)])
+                        {
+                            if (galaxy.locationIndex.ContainsKey(c + offset))
+                            {
+                                ok = false;
+                            }
+                        }
+                    }
+                    if (ok)
+                    {
+                        planetA.AddLinkTo(planetB);
+                    }
+                }
+            }
+        }
+    }
+
     public class SymmetryConstants
     {
         // dx = dy * sectorSlope
@@ -601,7 +656,7 @@ namespace AhyangyiMaps
         public FInt distanceCoefficient;
 
         public SymmetryConstants(FInt sectorSlope, FInt distanceCoefficient)
-        { 
+        {
             this.sectorSlope = sectorSlope;
             this.distanceCoefficient = distanceCoefficient;
         }

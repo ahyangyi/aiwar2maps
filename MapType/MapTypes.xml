@@ -17,7 +17,7 @@
 		dll_name="AhyangyiMaps"
 		type_name="AhyangyiMaps.TessellationTypeGenerator"
 		min_planets="40"
-		max_planets="1000"
+		max_planets="300"
 		>
     <map_option name="Tessellation" display_name="Tessellation"
       description="What tessellation should we use?" default_id="0">
@@ -59,7 +59,6 @@
       <choice_value id="12" display_name="Y" description="." related_int_value="10200" />
       -->
     </map_option>
-    <!--
     <map_option name="Connectivity" display_name="Connectivity"
       description="How connected the planets should be?" default_id="2">
       <choice_value id="0" display_name="Lowest" description="There are almost always only one way between any two planets." related_int_value="0" />
@@ -70,6 +69,14 @@
       <choice_value id="5" display_name="Very High" description="A very crowded map." related_int_value="5" />
       <choice_value id="6" display_name="Highest" description="Add as many extra connections as possible." related_int_value="6" />
     </map_option>
+    <map_option name="Traversability" display_name="Traversability"
+      description="How easy it should be to traverse the galaxy?" default_id="2">
+      <choice_value id="0" display_name="Solar Snake" description="." related_int_value="0" />
+      <choice_value id="1" display_name="Winding" description="." related_int_value="1" />
+      <choice_value id="2" display_name="Normal" description="." related_int_value="2" />
+      <choice_value id="3" display_name="Clustered" description="." related_int_value="3" />
+    </map_option>
+    <!--
     <map_option name="Evenness" display_name="Evenness"
       description="How even should be the connections to be distributed?\n\nThis option has no effect with Highest connectivity and Lowest dissonance." default_id="3">
       <choice_value id="0" display_name="Homogeneous" description="." related_int_value="0" />

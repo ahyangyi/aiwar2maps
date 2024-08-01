@@ -29,7 +29,17 @@
     <Compile Include="FakeGalaxy.cs" />
     <Compile Include="FractalTypeGenerator.cs" />
     <Compile Include="TessellationTypeGenerator.cs" />
+    <Compile Include="Tessellation\SquareGrid.cs" />
+    <Compile Include="Tessellation\HexagonGrid.cs" />
+    <Compile Include="Tessellation\TriangleGrid.cs" />
+    <Compile Include="Tessellation\SquareYGrid.cs" />
+    <Compile Include="Tessellation\SquareYMirrorGrid.cs" />
+    <Compile Include="Tessellation\DiamondYGrid.cs" />
+    <Compile Include="Tessellation\DiamondYFlowerGrid.cs" />
     <ExtraContent Include="..\MapType\MapTypes.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="system" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(AIW2Root)\XmlMods\Base.props" />
