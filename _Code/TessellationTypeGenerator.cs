@@ -2,6 +2,7 @@ using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
 using System;
+using static UnityEngine.UI.CanvasScaler;
 
 namespace AhyangyiMaps
 {
@@ -117,6 +118,52 @@ namespace AhyangyiMaps
                     }
                 }
             }
+            var g = MakeSquareGrid(unit, rows, columns);
+            
+            if (symmetry == 150)
+            {
+                g.MakeBilateral();
+            }
+            else if (symmetry == 200)
+            {
+                g.MakeRotational2();
+            }
+            else if (symmetry == 250)
+            {
+                g.MakeRotational2Bilateral();
+            }
+            else if (symmetry >= 300 && symmetry < 10000)
+            {
+                FInt newBadness = (FInt)1000000;
+                FakeGalaxy fg = MakeSquareGrid(unit, 1, 1);
+                for (int c = 1; c <= 100; ++c)
+                {
+                    int r1 = (c / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false)).ToInt();
+                    for (int r = r1; r <= r1+1; ++r) 
+                    {
+                        var g2 = MakeSquareGrid(unit, r, c);
+                        g2.MakeRotationalGeneric((c - 1) * unit / 2, (r - 1) * unit, unit, symmetry / 100, symmetry % 100 == 50, c%2==0);
+                        int planets = g2.planets.Count;
+                        FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
+                        FInt current_badness = planetBadness;
+                        if (current_badness < newBadness)
+                        {
+                            newBadness = current_badness;
+                            fg = g2;
+                        }
+                    }
+                }
+                return fg;
+            }
+            else if (symmetry >= 300 && symmetry < 10000)
+            {
+                g.MakeRotationalGeneric((columns - 1) * unit / 2, (rows - 1) * unit + unit /* fixme */, unit, symmetry / 100, symmetry % 100 == 50);
+            }
+            return g;
+        }
+
+        protected FakeGalaxy MakeSquareGrid(int unit, int rows, int columns)
+        {
             FakeGalaxy g = new FakeGalaxy();
 
             FakePlanet[][] pointRows = new FakePlanet[rows][];
@@ -143,22 +190,7 @@ namespace AhyangyiMaps
                     }
                 }
             }
-            if (symmetry == 150)
-            {
-                g.MakeBilateral();
-            }
-            else if (symmetry == 200)
-            {
-                g.MakeRotational2();
-            }
-            else if (symmetry == 250)
-            {
-                g.MakeRotational2Bilateral();
-            }
-            else if (symmetry >= 300)
-            {
-                g.MakeRotationalGeneric((columns - 1) * unit / 2, (rows - 1) * unit + unit /* fixme */, unit, symmetry / 100, symmetry % 100 == 50);
-            }
+
             return g;
         }
 
@@ -245,9 +277,9 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry >= 300)
+            else if (symmetry >= 300 && symmetry < 10000)
             {
-                g.MakeRotationalGeneric((columns + 1) * xunit / 2, (rows * 3 + 1) * yunit + yunit /* fixme */, yunit * 2, symmetry / 100, symmetry % 100 == 50);
+                g.MakeRotationalGeneric((columns + 1) * xunit / 2, (rows * 3 + 1) * yunit, yunit * 2, symmetry / 100, symmetry % 100 == 50, true);
             }
             return g;
         }
@@ -321,9 +353,9 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry >= 300)
+            else if (symmetry >= 300 && symmetry < 10000)
             {
-                g.MakeRotationalGeneric((columns - 1) * xunit / 2, (rows - 1) * yunit + yunit /* fixme */, yunit * 2, symmetry / 100, symmetry % 100 == 50);
+                g.MakeRotationalGeneric((columns - 1) * xunit / 2, (rows - 1) * yunit, yunit * 2, symmetry / 100, symmetry % 100 == 50, true);
             }
             return g;
         }
@@ -404,7 +436,7 @@ namespace AhyangyiMaps
             {
                 g.MakeBilateral();
             }
-            else if (symmetry >= 300)
+            else if (symmetry >= 300 && symmetry < 10000)
             {
                 g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100, symmetry % 100 == 50);
             }
@@ -504,7 +536,7 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry >= 300)
+            else if (symmetry >= 300 && symmetry < 10000)
             {
                 g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100, symmetry % 100 == 50);
             }
@@ -598,7 +630,7 @@ namespace AhyangyiMaps
             {
                 g.MakeBilateral();
             }
-            else if (symmetry >= 300)
+            else if (symmetry >= 300 && symmetry < 10000)
             {
                 g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50);
             }
@@ -731,7 +763,7 @@ namespace AhyangyiMaps
             {
                 g.MakeRotational2Bilateral();
             }
-            else if (symmetry >= 300)
+            else if (symmetry >= 300 && symmetry < 10000)
             {
                 g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50);
             }

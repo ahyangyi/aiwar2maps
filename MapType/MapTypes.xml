@@ -52,6 +52,12 @@
       <choice_value id="6" display_name="4-way Rotational" description="." related_int_value="400" />
       <choice_value id="7" display_name="5-way Rotational" description="." related_int_value="500" />
       <choice_value id="8" display_name="6-way Rotational" description="." related_int_value="600" />
+      <!--
+      <choice_value id="9" display_name="Translational" description="." related_int_value="10000" />
+      <choice_value id="10" display_name="Duplex Barrier" description="." related_int_value="10100" />
+      <choice_value id="11" display_name="Double Spark" description="." related_int_value="10101" />
+      <choice_value id="12" display_name="Y" description="." related_int_value="10200" />
+      -->
     </map_option>
     <!--
     <map_option name="Connectivity" display_name="Connectivity"

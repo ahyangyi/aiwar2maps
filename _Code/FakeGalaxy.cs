@@ -169,12 +169,23 @@ namespace AhyangyiMaps
             planets.Remove(planet);
         }
 
+        protected void RemovePlanetsButDoesNotUpdateSymmetricGroups(HashSet<FakePlanet> planetsToRemove)
+        {
+            foreach (FakePlanet planet in planetsToRemove)
+                planet.RemoveAllLinksOnlyUsableForRemovingPlanetFromGalaxy();
+
+            var newPlanets = new System.Collections.Generic.List<FakePlanet>();
+            foreach (FakePlanet planet in planets)
+                if (!planetsToRemove.Contains(planet))
+                {
+                    newPlanets.Add(planet);
+                }
+            planets = newPlanets;
+        }
+
         public void RemoveSymmetricGroup(SymmetricGroup symmetricGroup)
         {
-            foreach (FakePlanet counterpart in symmetricGroup.planets)
-            {
-                RemovePlanetButDoesNotUpdateSymmetricGroups(counterpart);
-            }
+            RemovePlanetsButDoesNotUpdateSymmetricGroups(new HashSet<FakePlanet>(symmetricGroup.planets));
             symmetricGroups.Remove(symmetricGroup);
         }
 
@@ -310,9 +321,8 @@ namespace AhyangyiMaps
             }
         }
 
-        public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional)
+        public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional, bool autoAdvance = false)
         {
-            var center = ArcenPoint.Create(cx, cy);
             var planetsToRemove = new System.Collections.Generic.HashSet<FakePlanet>();
             var newSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
             var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
@@ -326,11 +336,15 @@ namespace AhyangyiMaps
             var rotations = Matrix2x2.Rotations[n];
             var reflectionLeft = Matrix2x2.RotationReflectLeft[n];
             var reflectionCenter = Matrix2x2.RotationReflectCenter[n];
-            FInt[] slopes = { FInt.Zero, FInt.Zero, FInt.Zero, FInt.Create(1732, false), FInt.Create(1000, false), FInt.Create(727, false), FInt.Create(577, false) };
-            FInt slope = slopes[n];
-            FInt[] distanceCoefficients = { FInt.Zero, FInt.Zero, FInt.Zero, FInt.Create(2000, false), FInt.Create(1414, false), FInt.Create(1236, false), FInt.Create(1155, false) };
-            FInt distanceCoefficient = distanceCoefficients[n];
+            FInt sectorSlope = SymmetryConstants.Rotational[n].sectorSlope;
+            FInt distanceCoefficient = SymmetryConstants.Rotational[n].distanceCoefficient;
             bool hasCenter = false;
+
+            if (autoAdvance)
+            {
+                cy += (d / sectorSlope / 2).ToInt() + 2;
+            }
+            var center = ArcenPoint.Create(cx, cy);
 
             foreach (FakePlanet planet in planetsBackup)
             {
@@ -343,7 +357,7 @@ namespace AhyangyiMaps
                     continue;
                 }
 
-                if (xdiff > -ydiff * slope || xdiff < ydiff * slope)
+                if (xdiff > -ydiff * sectorSlope || xdiff < ydiff * sectorSlope)
                 {
                     // planet way out of the sector, removing
 
@@ -352,7 +366,7 @@ namespace AhyangyiMaps
                 }
 
                 var symPoint = ArcenPoint.Create(cx * 2 - planet.location.X, planet.location.Y);
-                if ((xdiff > -ydiff * slope - d * distanceCoefficient / 2 || xdiff < ydiff * slope + d * distanceCoefficient / 2) && locationIndex.ContainsKey(symPoint))
+                if ((xdiff > -ydiff * sectorSlope - d * distanceCoefficient / 2 || xdiff < ydiff * sectorSlope + d * distanceCoefficient / 2) && locationIndex.ContainsKey(symPoint))
                 {
                     if (xdiff == 0)
                     {
@@ -373,7 +387,7 @@ namespace AhyangyiMaps
                             var other = locationIndex[symPoint];
                             mergeLeftToRight[planet] = other;
                             mergeRightToLeft[other] = planet;
-                            planet.location.X = (cx + ydiff * slope).GetNearestIntPreferringLower();
+                            planet.location.X = (cx + ydiff * sectorSlope).GetNearestIntPreferringLower();
                             xdiff = planet.location.X - cx;
                         }
                         else
@@ -455,10 +469,7 @@ namespace AhyangyiMaps
             }
 
             // Apply various lazy operations recorded above
-            foreach (FakePlanet planet in planetsToRemove)
-            {
-                RemovePlanetButDoesNotUpdateSymmetricGroups(planet);
-            }
+            RemovePlanetsButDoesNotUpdateSymmetricGroups(planetsToRemove);
             symmetricGroups = newSymmetricGroups;
 
             // Decide intersector connections
@@ -476,7 +487,7 @@ namespace AhyangyiMaps
                 int ydiff = planet.location.Y - cy;
                 var symPoint = ArcenPoint.Create(cx * 2 - planet.location.X, planet.location.Y);
 
-                if (xdiff <= ydiff * slope + d * distanceCoefficient && locationIndex.ContainsKey(symPoint))
+                if (xdiff <= ydiff * sectorSlope + d * distanceCoefficient && locationIndex.ContainsKey(symPoint))
                 {
                     bool hasAlternativeConnection = false;
                     foreach (FakePlanet neighbor in planet.links)
@@ -484,8 +495,8 @@ namespace AhyangyiMaps
                         int neighborXdiff = neighbor.location.X - cx;
                         int neighborYdiff = neighbor.location.Y - cy;
 
-                        if (mergeLeftToRight.ContainsKey(neighbor) &&
-                            neighbor.location.GetDistanceTo(planet.location, false) < (xdiff - ydiff * slope) * FInt.Create(1414, false) / distanceCoefficient)
+                        if ((mergeLeftToRight.ContainsKey(neighbor) || neighbor.location == center) &&
+                            neighbor.location.GetDistanceTo(planet.location, false) < (xdiff - ydiff * sectorSlope) * FInt.Create(1414, false) / distanceCoefficient)
                         {
                             hasAlternativeConnection = true;
                         }
@@ -580,5 +591,25 @@ namespace AhyangyiMaps
                 }
             }
         }
+    }
+
+    public class SymmetryConstants
+    {
+        // dx = dy * sectorSlope
+        public FInt sectorSlope;
+        // dx = d * distanceCoefficient
+        public FInt distanceCoefficient;
+
+        public SymmetryConstants(FInt sectorSlope, FInt distanceCoefficient)
+        { 
+            this.sectorSlope = sectorSlope;
+            this.distanceCoefficient = distanceCoefficient;
+        }
+
+        public static SymmetryConstants Rotational3 = new SymmetryConstants(FInt.Create(1732, false), FInt.Create(2000, false));
+        public static SymmetryConstants Rotational4 = new SymmetryConstants(FInt.Create(1000, false), FInt.Create(1414, false));
+        public static SymmetryConstants Rotational5 = new SymmetryConstants(FInt.Create(727, false), FInt.Create(1236, false));
+        public static SymmetryConstants Rotational6 = new SymmetryConstants(FInt.Create(577, false), FInt.Create(1155, false));
+        public static SymmetryConstants[] Rotational = { null, null, null, Rotational3, Rotational4, Rotational5, Rotational6 };
     }
 }
