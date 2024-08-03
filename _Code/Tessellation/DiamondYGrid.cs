@@ -6,7 +6,7 @@ namespace AhyangyiMaps.Tessellation
 {
     public class DiamondYGrid
     {
-        public static FakeGalaxy MakeDiamondYGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
+        public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
             int unit = planetType.GetData().InterStellarRadius * 7071 / 1000;
             int dunit = planetType.GetData().InterStellarRadius * 10;
@@ -35,6 +35,22 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
+            FakeGalaxy g = MakeGrid(unit, rows, columns);
+
+            if (symmetry == 150)
+            {
+                g.MakeBilateral();
+            }
+            else if (symmetry >= 300 && symmetry < 10000)
+            {
+                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50);
+            }
+
+            return g;
+        }
+
+        private static FakeGalaxy MakeGrid(int unit, int rows, int columns)
+        {
             FakeGalaxy g = new FakeGalaxy();
             System.Collections.Generic.Dictionary<(int, int), FakePlanet> corners = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
             System.Collections.Generic.Dictionary<(int, int), FakePlanet> centers = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
@@ -87,15 +103,6 @@ namespace AhyangyiMaps.Tessellation
                         centers[(i, j)].AddLinkTo(corners[(i - 1, j)]);
                     }
                 }
-            }
-
-            if (symmetry == 150)
-            {
-                g.MakeBilateral();
-            }
-            else if (symmetry >= 300 && symmetry < 10000)
-            {
-                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50);
             }
 
             return g;

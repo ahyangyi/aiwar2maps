@@ -52,27 +52,27 @@ namespace AhyangyiMaps
             }
             else if (tessellation == 1)
             {
-                g = HexagonGrid.MakeHexagonGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = HexagonGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 2)
             {
-                g = TriangleGrid.MakeTriangleGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = TriangleGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 100)
             {
-                g = SquareYGrid.MakeSquareYGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = SquareYGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 101)
             {
-                g = SquareYMirrorGrid.MakeSquareYMirrorGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = SquareYMirrorGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 102)
             {
-                g = DiamondYGrid.MakeDiamondYGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = DiamondYGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
             }
             else
             {
-                g = DiamondYFlowerGrid.MakeDiamondYFlowerGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = DiamondYFlowerGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
             }
 
             int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;

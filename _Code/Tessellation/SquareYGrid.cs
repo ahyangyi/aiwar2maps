@@ -6,7 +6,7 @@ namespace AhyangyiMaps.Tessellation
 {
     public class SquareYGrid
     {
-        public static FakeGalaxy MakeSquareYGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
+        public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
             int unit = planetType.GetData().InterStellarRadius * 10;
             int rows = 5;
@@ -31,7 +31,7 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
-            FakeGalaxy g = MakeSquareYGrid(unit, rows, columns);
+            FakeGalaxy g = MakeGrid(unit, rows, columns);
 
             if (symmetry == 150)
             {
@@ -40,13 +40,13 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry >= 300 && symmetry < 10000)
             {
                 FInt newBadness = (FInt)1000000;
-                FakeGalaxy fg = MakeSquareYGrid(unit, 1, 1);
+                FakeGalaxy fg = MakeGrid(unit, 1, 1);
                 for (int c = 4; c <= 60; ++c)
                 {
                     int r1 = (c / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false)).ToInt();
                     for (int r = r1; r <= r1 + 1; ++r)
                     {
-                        var g2 = MakeSquareYGrid(unit, r, c);
+                        var g2 = MakeGrid(unit, r, c);
                         g2.MakeRotationalGeneric((c - 1) * unit, (c % 2 == 0? ((r - 1) * 2 - 1) * unit : (r - 1) * 2 * unit), unit, symmetry / 100, symmetry % 100 == 50);
                         int planets = g2.planets.Count;
                         FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -64,7 +64,7 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        private static FakeGalaxy MakeSquareYGrid(int unit, int rows, int columns)
+        private static FakeGalaxy MakeGrid(int unit, int rows, int columns)
         {
             FakeGalaxy g = new FakeGalaxy();
 

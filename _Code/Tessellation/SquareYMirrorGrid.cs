@@ -6,7 +6,7 @@ namespace AhyangyiMaps.Tessellation
 {
     public class SquareYMirrorGrid
     {
-        public static FakeGalaxy MakeSquareYMirrorGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
+        public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
             int unit = planetType.GetData().InterStellarRadius * 10;
             int rows = 5;
@@ -31,6 +31,29 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
+            FakeGalaxy g = MakeGrid(unit, rows, columns);
+
+            if (symmetry == 150)
+            {
+                g.MakeBilateral();
+            }
+            else if (symmetry == 200)
+            {
+                g.MakeRotational2();
+            }
+            else if (symmetry == 250)
+            {
+                g.MakeRotational2Bilateral();
+            }
+            else if (symmetry >= 300 && symmetry < 10000)
+            {
+                g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100, symmetry % 100 == 50);
+            }
+
+            return g;
+        }
+        private static FakeGalaxy MakeGrid(int unit, int rows, int columns)
+        {
             FakeGalaxy g = new FakeGalaxy();
 
             FakePlanet[][] corners = new FakePlanet[rows][];
@@ -85,23 +108,6 @@ namespace AhyangyiMaps.Tessellation
                         corners[i][j + 1].AddLinkTo(bottoms[i / 2][j]);
                     }
                 }
-            }
-
-            if (symmetry == 150)
-            {
-                g.MakeBilateral();
-            }
-            else if (symmetry == 200)
-            {
-                g.MakeRotational2();
-            }
-            else if (symmetry == 250)
-            {
-                g.MakeRotational2Bilateral();
-            }
-            else if (symmetry >= 300 && symmetry < 10000)
-            {
-                g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100, symmetry % 100 == 50);
             }
 
             return g;

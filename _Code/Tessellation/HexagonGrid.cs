@@ -6,7 +6,7 @@ namespace AhyangyiMaps.Tessellation
 {
     public class HexagonGrid
     {
-        public static FakeGalaxy MakeHexagonGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
+        public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
             int xunit = planetType.GetData().InterStellarRadius * 8660 / 1000;
             int yunit = planetType.GetData().InterStellarRadius * 5;
@@ -37,6 +37,28 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
+            FakeGalaxy g = MakeGrid(xunit, yunit, rows, columns);
+            if (symmetry == 150)
+            {
+                g.MakeBilateral();
+            }
+            else if (symmetry == 200)
+            {
+                g.MakeRotational2();
+            }
+            else if (symmetry == 250)
+            {
+                g.MakeRotational2Bilateral();
+            }
+            else if (symmetry >= 300 && symmetry < 10000)
+            {
+                g.MakeRotationalGeneric((columns + 1) * xunit / 2, (rows * 3 + 1) * yunit, yunit * 2, symmetry / 100, symmetry % 100 == 50, true);
+            }
+            return g;
+        }
+
+        private static FakeGalaxy MakeGrid(int xunit, int yunit, int rows, int columns)
+        {
             FakeGalaxy g = new FakeGalaxy();
             System.Collections.Generic.Dictionary<(int, int), FakePlanet> uppy = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
             System.Collections.Generic.Dictionary<(int, int), FakePlanet> downy = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
@@ -77,22 +99,7 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
-            if (symmetry == 150)
-            {
-                g.MakeBilateral();
-            }
-            else if (symmetry == 200)
-            {
-                g.MakeRotational2();
-            }
-            else if (symmetry == 250)
-            {
-                g.MakeRotational2Bilateral();
-            }
-            else if (symmetry >= 300 && symmetry < 10000)
-            {
-                g.MakeRotationalGeneric((columns + 1) * xunit / 2, (rows * 3 + 1) * yunit, yunit * 2, symmetry / 100, symmetry % 100 == 50, true);
-            }
+
             return g;
         }
     }
