@@ -47,7 +47,26 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry >= 300 && symmetry < 10000)
             {
-                g.MakeRotationalGeneric((columns - 1) * unit, (rows - 1) * unit * 2, unit, symmetry / 100, symmetry % 100 == 50);
+                FInt newBadness = (FInt)1000000;
+                FakeGalaxy fg = MakeGrid(unit, 1, 1);
+                for (int c = 4; c <= 60; ++c)
+                {
+                    int r1 = (c / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false)).ToInt();
+                    for (int r = r1; r <= r1 + 1; ++r)
+                    {
+                        var g2 = MakeGrid(unit, r, c);
+                        g2.MakeRotationalGeneric((c - 1) * unit, (c % 2 == 0 ? ((r - 1) * 2 - 1) * unit : (r - 1) * 2 * unit), unit, symmetry / 100, symmetry % 100 == 50);
+                        int planets = g2.planets.Count;
+                        FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
+                        FInt current_badness = planetBadness;
+                        if (current_badness < newBadness)
+                        {
+                            newBadness = current_badness;
+                            fg = g2;
+                        }
+                    }
+                }
+                return fg;
             }
 
             return g;

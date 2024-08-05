@@ -47,7 +47,7 @@ namespace AhyangyiMaps.Tessellation
                     for (int r = r1; r <= r1 + 1; ++r)
                     {
                         var g2 = MakeGrid(unit, r, c);
-                        g2.MakeRotationalGeneric((c - 1) * unit, (c % 2 == 0? ((r - 1) * 2 - 1) * unit : (r - 1) * 2 * unit), unit, symmetry / 100, symmetry % 100 == 50);
+                        g2.MakeRotationalGeneric((c - 1) * unit, (c % 2 == 0 ? ((r - 1) * 2 - 1) * unit : (r - 1) * 2 * unit), unit, symmetry / 100, symmetry % 100 == 50);
                         int planets = g2.planets.Count;
                         FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
                         FInt current_badness = planetBadness;

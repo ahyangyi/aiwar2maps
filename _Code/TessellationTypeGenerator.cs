@@ -86,10 +86,8 @@ namespace AhyangyiMaps
                     g.RemoveSymmetricGroup(s);
                 }
             }
-
+            g.EnsureConnectivity();
             g.Populate(galaxy, planetType, Context.RandomToUse);
-
-            BadgerUtilityMethods.makeSureGalaxyIsFullyConnected(true, galaxy);
         }
     }
 }

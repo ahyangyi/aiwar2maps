@@ -6,8 +6,8 @@ namespace AhyangyiMaps.Tessellation
 {
     public class DiamondYFlowerGrid
     {
-        static int[] dr = { 1, 2, 1, 0, -1, -2, -1, 0 };
-        static int[] dc = { 1, 0, -1, -2, -1, 0, 1, 2 };
+        static readonly int[] dr = { 1, 2, 1, 0, -1, -2, -1, 0 };
+        static readonly int[] dc = { 1, 0, -1, -2, -1, 0, 1, 2 };
 
         public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {

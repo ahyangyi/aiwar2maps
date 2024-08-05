@@ -6,8 +6,8 @@ namespace AhyangyiMaps.Tessellation
 {
     public class TriangleGrid
     {
-        static int[] dr = { 1, 2, 1, -1, -2, -1 };
-        static int[] dc = { -1, 0, 1, 1, 0, -1 };
+        static readonly int[] dr = { 1, 2, 1, -1, -2, -1 };
+        static readonly int[] dc = { -1, 0, 1, 1, 0, -1 };
         public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
             int xunit = planetType.GetData().InterStellarRadius * 8660 / 1000;

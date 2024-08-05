@@ -202,6 +202,7 @@ namespace AhyangyiMaps
                 symmetricGroup.Wobble(planetType, wobble, rng);
             }
         }
+
         public bool IsConnected()
         {
             if (planets.Count == 0)
@@ -210,29 +211,119 @@ namespace AhyangyiMaps
             }
 
             var visited = new HashSet<FakePlanet>();
-            var queue = new System.Collections.Generic.List<FakePlanet>();
+            var queue = new System.Collections.Generic.Queue<FakePlanet>();
             visited.Add(planets[0]);
-            queue.Add(planets[0]);
+            queue.Enqueue(planets[0]);
 
-            for (int i = 0; i < queue.Count; ++i)
+            while (queue.Count > 0)
             {
-                FakePlanet cur = queue[i];
+                var cur = queue.Dequeue();
                 foreach (FakePlanet neighbor in cur.links)
                 {
                     if (!visited.Contains(neighbor))
                     {
                         visited.Add(neighbor);
-                        queue.Add(neighbor);
+                        queue.Enqueue(neighbor);
                     }
                 }
             }
 
-            return queue.Count == planets.Count;
+            return visited.Count == planets.Count;
         }
 
         public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet> MakeLocationIndex()
         {
             return planets.ToDictionary(planet => planet.location, planet => planet);
+        }
+
+        public void EnsureConnectivity()
+        {
+            if (planets.Count == 0)
+            {
+                return;
+            }
+
+            // FIXME quite ugly
+            var nextRotational = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+            var reflectional = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+            foreach (var group in symmetricGroups)
+            {
+                for (int i = 0; i < group.planets.Count; ++i)
+                {
+                    var planet = group.planets[i];
+                    nextRotational[planet] = group.planets[(i + group.reflectional) % (group.reflectional * group.rotational)];
+                    reflectional[planet] = group.planets[i ^ (group.reflectional - 1)];
+                }
+            }
+
+            var visited = new HashSet<FakePlanet>();
+            var queue = new System.Collections.Generic.Queue<FakePlanet>();
+            var shortestDistance = new System.Collections.Generic.Dictionary<FakePlanet, (int, FakePlanet)>();
+            foreach (FakePlanet planet in planets)
+            {
+                shortestDistance[planet] = (0x7fffffff, null);
+            }
+            shortestDistance[planets[0]] = (0, null);
+
+            while (visited.Count < planets.Count)
+            {
+                FakePlanet chosen = null, chosenNeighbor = null;
+                int chosenDistance = 0x7fffffff; // unnecessary but makes lint happy
+
+                foreach (var kv in shortestDistance)
+                {
+                    FakePlanet planet = kv.Key;
+                    if (visited.Contains(planet))
+                    {
+                        continue;
+                    }
+
+                    if (chosen == null || kv.Value.Item1 < chosenDistance)
+                    {
+                        chosen = kv.Key;
+                        chosenDistance = kv.Value.Item1;
+                        chosenNeighbor = kv.Value.Item2;
+                    }
+                }
+
+                if (chosenNeighbor != null)
+                {
+                    FakePlanet a = chosen, b = chosenNeighbor;
+                    for (int i = 0; i < 6; ++i)
+                    {
+                        a.AddLinkTo(b);
+                        reflectional[a].AddLinkTo(reflectional[b]);
+                        a = nextRotational[a];
+                        b = nextRotational[b];
+                    }
+                }
+                queue.Enqueue(chosen);
+                visited.Add(chosen);
+                shortestDistance.Remove(chosen);
+
+                while (queue.Count > 0)
+                {
+                    var cur = queue.Dequeue();
+                    foreach (FakePlanet neighbor in cur.links)
+                    {
+                        if (!visited.Contains(neighbor))
+                        {
+                            visited.Add(neighbor);
+                            shortestDistance.Remove(neighbor);
+                            queue.Enqueue(neighbor);
+                        }
+                    }
+
+                    foreach (FakePlanet planet in shortestDistance.Keys.ToList())
+                    {
+                        int distance = cur.location.GetDistanceTo(planet.location, false);
+                        if (distance < shortestDistance[planet].Item1 || shortestDistance[planet].Item2 == null)
+                        {
+                            shortestDistance[planet] = (distance, cur);
+                        }
+                    }
+                }
+            }
         }
 
         public void MakeBilateral()
