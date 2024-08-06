@@ -60,20 +60,36 @@ namespace AhyangyiMaps
         public static Matrix2x2 Rotation4_3 = Matrix2x2.Rotation(FInt.Zero, (FInt)(-1));
         public static Matrix2x2[] Rotation4 = { Identity, Rotation4_1, Rotation2, Rotation4_3 };
         public static Matrix2x2 Rotation5_1 = Matrix2x2.Rotation(FInt.Create(309, false), FInt.Create(951, false));
+        public static Matrix2x2 Rotation5_4 = Matrix2x2.Rotation(FInt.Create(309, false), FInt.Create(-951, false));
         public static Matrix2x2 Rotation5_2 = Matrix2x2.Rotation(FInt.Create(-809, false), FInt.Create(588, false));
         public static Matrix2x2 Rotation5_3 = Matrix2x2.Rotation(FInt.Create(-809, false), FInt.Create(-588, false));
-        public static Matrix2x2 Rotation5_4 = Matrix2x2.Rotation(FInt.Create(309, false), FInt.Create(-951, false));
         public static Matrix2x2[] Rotation5 = { Identity, Rotation5_1, Rotation5_2, Rotation5_3, Rotation5_4 };
         public static Matrix2x2 Rotation6_1 = Matrix2x2.Rotation(FInt.Create(500, false), FInt.Create(866, false));
         public static Matrix2x2 Rotation6_5 = Matrix2x2.Rotation(FInt.Create(500, false), FInt.Create(-866, false));
         public static Matrix2x2[] Rotation6 = { Identity, Rotation6_1, Rotation3_1, Rotation2, Rotation3_2, Rotation6_5 };
-        public static Matrix2x2[][] Rotations = { null, null, null, Rotation3, Rotation4, Rotation5, Rotation6 };
+        public static Matrix2x2 Rotation7_1 = Matrix2x2.Rotation(FInt.Create(623, false), FInt.Create(782, false));
+        public static Matrix2x2 Rotation7_6 = Matrix2x2.Rotation(FInt.Create(623, false), FInt.Create(-782, false));
+        public static Matrix2x2 Rotation7_2 = Matrix2x2.Rotation(FInt.Create(-223, false), FInt.Create(975, false));
+        public static Matrix2x2 Rotation7_5 = Matrix2x2.Rotation(FInt.Create(-223, false), FInt.Create(-975, false));
+        public static Matrix2x2 Rotation7_3 = Matrix2x2.Rotation(FInt.Create(-901, false), FInt.Create(434, false));
+        public static Matrix2x2 Rotation7_4 = Matrix2x2.Rotation(FInt.Create(-901, false), FInt.Create(-434, false));
+        public static Matrix2x2[] Rotation7 = { Identity, Rotation7_1, Rotation7_2, Rotation7_3, Rotation7_4, Rotation7_5, Rotation7_6 };
+        public static Matrix2x2 Rotation8_1 = Matrix2x2.Rotation(FInt.Create(707, false), FInt.Create(707, false));
+        public static Matrix2x2 Rotation8_7 = Matrix2x2.Rotation(FInt.Create(707, false), FInt.Create(-707, false));
+        public static Matrix2x2 Rotation8_3 = Matrix2x2.Rotation(FInt.Create(-707, false), FInt.Create(707, false));
+        public static Matrix2x2 Rotation8_5 = Matrix2x2.Rotation(FInt.Create(-707, false), FInt.Create(-707, false));
+        public static Matrix2x2[] Rotation8 = { Identity, Rotation8_1, Rotation4_1, Rotation8_3, Rotation2, Rotation8_5, Rotation4_3, Rotation8_7 };
+        public static Matrix2x2[][] Rotations = { null, null, null, Rotation3, Rotation4, Rotation5, Rotation6, Rotation7, Rotation8 };
 
         public static Matrix2x2[] Rotation3ReflectLeft = { ProjectToY * Rotation3_1, ProjectToY * Rotation3_2, ProjectToY };
         public static Matrix2x2[] Rotation3ReflectCenter = { ProjectToY, ProjectToY * Rotation3_1, ProjectToY * Rotation3_2 };
 
-        public static Matrix2x2[][] RotationReflectLeft = { null, null, null, Rotation3ReflectLeft, null, null, null };
-        public static Matrix2x2[][] RotationReflectCenter = { null, null, null, Rotation3ReflectCenter, null, null, null };
+        public static Matrix2x2 ProjectToXY = new Matrix2x2(FInt.Create(707, false), FInt.Create(707, false), FInt.Create(707, false), FInt.Create(707, false));
+        public static Matrix2x2[] Rotation4ReflectLeft = { ProjectToXY, ProjectToXY * Rotation4_1, ProjectToXY * Rotation2, ProjectToXY * Rotation4_3 };
+        public static Matrix2x2[] Rotation4ReflectCenter = { ProjectToY, ProjectToY * Rotation4_1, ProjectToY * Rotation2, ProjectToY * Rotation4_3 };
+
+        public static Matrix2x2[][] RotationReflectLeft = { null, null, null, Rotation3ReflectLeft, Rotation4ReflectLeft, null, null, null, null };
+        public static Matrix2x2[][] RotationReflectCenter = { null, null, null, Rotation3ReflectCenter, Rotation4ReflectCenter, null, null, null, null };
     }
     public class FakePlanet
     {
@@ -756,6 +772,8 @@ namespace AhyangyiMaps
         public static SymmetryConstants Rotational4 = new SymmetryConstants(FInt.Create(1000, false), FInt.Create(1414, false));
         public static SymmetryConstants Rotational5 = new SymmetryConstants(FInt.Create(727, false), FInt.Create(1236, false));
         public static SymmetryConstants Rotational6 = new SymmetryConstants(FInt.Create(577, false), FInt.Create(1155, false));
-        public static SymmetryConstants[] Rotational = { null, null, null, Rotational3, Rotational4, Rotational5, Rotational6 };
+        public static SymmetryConstants Rotational7 = new SymmetryConstants(FInt.Create(482, false), FInt.Create(1110, false));
+        public static SymmetryConstants Rotational8 = new SymmetryConstants(FInt.Create(414, false), FInt.Create(1082, false));
+        public static SymmetryConstants[] Rotational = { null, null, null, Rotational3, Rotational4, Rotational5, Rotational6, Rotational7, Rotational8 };
     }
 }

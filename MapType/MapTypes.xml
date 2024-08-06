@@ -37,27 +37,29 @@
     </map_option>
     <map_option name="GalaxyShape" display_name="Galaxy Shape"
       description="What is the overall map shape?" default_id="0">
-      <choice_value id="0" display_name="Rectangular" description="A rectangle galaxy." related_int_value="100" />
+      <choice_value id="0" display_name="Rectangular" description="For less fancy symmetry settings, this means a rectangular galaxy. For the more fancy symmetries, this provides a middle point between rounded and angular." related_int_value="100" />
       <choice_value id="1" display_name="Rounded" description="A circle, hexagonal or otherwise rounded galaxy." related_int_value="101" />
       <choice_value id="2" display_name="Angular" description="A triangluar, pyramid or otherwise angular galaxy." related_int_value="102" />
     </map_option>
     <map_option name="Symmetry" display_name="Symmetry"
       description="What symmetry should the map have?" default_id="0">
       <choice_value id="0" display_name="Asymmetric" description="No symmetry enforced." related_int_value="100" />
-      <choice_value id="1" display_name="Reflectional" description="." related_int_value="150" />
-      <choice_value id="2" display_name="2-way Rotational" description="." related_int_value="200" />
-      <choice_value id="3" display_name="2-way Rotational + Mirrored" description="." related_int_value="250" />
-      <choice_value id="4" display_name="3-way Rotational" description="." related_int_value="300" />
-      <choice_value id="5" display_name="3-way Rotational + Mirrored" description="." related_int_value="350" />
-      <choice_value id="6" display_name="4-way Rotational" description="." related_int_value="400" />
-      <choice_value id="7" display_name="5-way Rotational" description="." related_int_value="500" />
-      <choice_value id="8" display_name="6-way Rotational" description="." related_int_value="600" />
-      <!--
-      <choice_value id="9" display_name="Translational" description="." related_int_value="10000" />
-      <choice_value id="10" display_name="Duplex Barrier" description="." related_int_value="10100" />
-      <choice_value id="11" display_name="Double Spark" description="." related_int_value="10101" />
-      <choice_value id="12" display_name="Y" description="." related_int_value="10200" />
-      -->
+      <choice_value id="1" display_name="Bilateral" description="Two halves of the galaxy are mirror-images of each other." related_int_value="150" />
+      <choice_value id="2" display_name="2-fold Rotational" description="." related_int_value="200" />
+      <choice_value id="3" display_name="2-fold Rotational + Bilateral" description="." related_int_value="250" />
+      <choice_value id="4" display_name="3-fold Rotational" description="." related_int_value="300" />
+      <choice_value id="5" display_name="3-fold Rotational + Bilateral" description="." related_int_value="350" />
+      <choice_value id="6" display_name="4-fold Rotational" description="." related_int_value="400" />
+      <!--Should be hidden--> <choice_value id="7" display_name="4-fold Rotational + Bilateral" description="." related_int_value="450" />
+      <choice_value id="8" display_name="5-fold Rotational" description="." related_int_value="500" />
+      <choice_value id="9" display_name="6-fold Rotational" description="." related_int_value="600" />
+      <!--Should be hidden--> <choice_value id="10" display_name="7-fold Rotational" description="." related_int_value="700" />
+      <!--Should be hidden--> <choice_value id="11" display_name="8-fold Rotational" description="." related_int_value="800" />
+      <choice_value id="12" display_name="Translational" description="." related_int_value="10000" />
+      <choice_value id="13" display_name="Dual Galaxy" description="." related_int_value="10101" />
+      <choice_value id="14" display_name="Duplex Barrier" description="." related_int_value="10100" />
+      <choice_value id="15" display_name="Double Spark" description="." related_int_value="10101" />
+      <choice_value id="16" display_name="Y" description="." related_int_value="10200" />
     </map_option>
     <map_option name="Connectivity" display_name="Connectivity"
       description="How connected the planets should be?" default_id="2">
@@ -67,27 +69,24 @@
       <choice_value id="3" display_name="Normal" description="A normal and balanced map." related_int_value="3" />
       <choice_value id="4" display_name="High" description="More than normal connections." related_int_value="4" />
       <choice_value id="5" display_name="Very High" description="A very crowded map." related_int_value="5" />
-      <choice_value id="6" display_name="Highest" description="Add as many extra connections as possible." related_int_value="6" />
+      <choice_value id="6" display_name="Highest" description="Add as many connections as possible." related_int_value="6" />
+    </map_option>
+    <map_option name="Additional Connections" display_name="AdditionalConnections"
+      description="How many additional non-tiling connections are allowed?" default_id="1">
+      <choice_value id="0" display_name="None" description="Only use non-tiling connections when absolutely necessary (i.e., to keep the map connected)." related_int_value="0" />
+      <choice_value id="1" display_name="A Little" description="Use non-tiling connections sporadically." related_int_value="1" />
+      <choice_value id="2" display_name="Some" description="Use non-tiling connections regularly." related_int_value="2" />
+      <choice_value id="3" display_name="Many" description="Use lots of non-tiling connections." related_int_value="3" />
+      <choice_value id="4" display_name="Some Crosshatch" description="Use non-tiling connections regularly, and allow each additional link to intersect with another additional link once, mimicking the classical Crosshatch mode of Grid map type." related_int_value="102" />
+      <choice_value id="5" display_name="Many Crosshatch" description="Use lots of non-tiling connections, and allow each additional link to intersect with another additional link once, mimicking the classical Crosshatch mode of Grid map type." related_int_value="103" />
     </map_option>
     <map_option name="Traversability" display_name="Traversability"
       description="How easy it should be to traverse the galaxy?" default_id="2">
-      <choice_value id="0" display_name="Solar Snake" description="." related_int_value="0" />
-      <choice_value id="1" display_name="Winding" description="." related_int_value="1" />
-      <choice_value id="2" display_name="Normal" description="." related_int_value="2" />
-      <choice_value id="3" display_name="Clustered" description="." related_int_value="3" />
+      <choice_value id="0" display_name="Solar Snake" description="The planets are arranged on a long, winding path. To simulate the classical Solar Snake, set Connectivity to Loweest and avoid fancy symmetries." related_int_value="0" />
+      <choice_value id="1" display_name="Winding" description="Prefer longer paths, but not push it to an extreme." related_int_value="1" />
+      <choice_value id="2" display_name="Normal" description="No particular care is given to the traversability of the galaxy." related_int_value="2" />
+      <choice_value id="3" display_name="Clustered" description="Try as hard as possible to minimize the distance between any pair of planets." related_int_value="3" />
     </map_option>
-    <!--
-    <map_option name="Evenness" display_name="Evenness"
-      description="How even should be the connections to be distributed?\n\nThis option has no effect with Highest connectivity and Lowest dissonance." default_id="3">
-      <choice_value id="0" display_name="Homogeneous" description="." related_int_value="0" />
-      <choice_value id="1" display_name="Very Evem" description="." related_int_value="1" />
-      <choice_value id="2" display_name="Low" description="." related_int_value="2" />
-      <choice_value id="3" display_name="Normal" description="A normal amount of variance in the number of connections of each planet." related_int_value="3" />
-      <choice_value id="4" display_name="High" description="." related_int_value="4" />
-      <choice_value id="5" display_name="Very High" description="." related_int_value="5" />
-      <choice_value id="6" display_name="Highest" description="Add as many extra connections as possible." related_int_value="6" />
-    </map_option> 
-    -->
     <map_option name="Dissonance" display_name="Dissonance"
       description="How much should the tessellation be broken apart?" default_id="0">
       <choice_value id="0" display_name="None" description="Absolutely no breaking apart." related_int_value="0" />
@@ -106,5 +105,15 @@
 			default_value="10"
 			>
     </map_option>
+  </map_type>
+  <map_type
+		name="Galaxy"
+		display_name="Galaxy"
+		description="A map type that looks like a galaxy"
+		dll_name="AhyangyiMaps"
+		type_name="AhyangyiMaps.GalaxyTypeGenerator"
+		min_planets="40"
+		max_planets="300"
+		>
   </map_type>
 </root>

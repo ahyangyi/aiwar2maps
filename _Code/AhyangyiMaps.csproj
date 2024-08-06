@@ -36,6 +36,7 @@
     <Compile Include="Tessellation\SquareYMirrorGrid.cs" />
     <Compile Include="Tessellation\DiamondYGrid.cs" />
     <Compile Include="Tessellation\DiamondYFlowerGrid.cs" />
+    <Compile Include="GalaxyTypeGenerator.cs" />
     <ExtraContent Include="..\MapType\MapTypes.xml" />
   </ItemGroup>
   <ItemGroup>
