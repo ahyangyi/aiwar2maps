@@ -277,14 +277,14 @@ namespace AhyangyiMaps
             var shortestDistance = new System.Collections.Generic.Dictionary<FakePlanet, (int, FakePlanet)>();
             foreach (FakePlanet planet in planets)
             {
-                shortestDistance[planet] = (0x7fffffff, null);
+                shortestDistance[planet] = (int.MaxValue, null);
             }
             shortestDistance[planets[0]] = (0, null);
 
             while (visited.Count < planets.Count)
             {
                 FakePlanet chosen = null, chosenNeighbor = null;
-                int chosenDistance = 0x7fffffff; // unnecessary but makes lint happy
+                int chosenDistance = int.MaxValue; // unnecessary but makes lint happy
 
                 foreach (var kv in shortestDistance)
                 {

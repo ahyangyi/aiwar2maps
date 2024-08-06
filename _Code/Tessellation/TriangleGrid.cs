@@ -22,7 +22,6 @@ namespace AhyangyiMaps.Tessellation
                     if (symmetry == 150 && c % 2 == 0) continue;
                     if (symmetry == 200 && (r + c) % 2 == 1) continue;
                     if (symmetry == 250 && (r % 2 == 0 || c % 2 == 0)) continue;
-                    if (symmetry >= 300 && c % 2 == 0) continue;
                     // FIXME: rough estimation
                     int planets = (r * c) / 2;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -55,7 +54,26 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry >= 300 && symmetry < 10000)
             {
-                g.MakeRotationalGeneric((columns - 1) * xunit / 2, (rows - 1) * yunit, yunit * 2, symmetry / 100, symmetry % 100 == 50, true);
+                FInt newBadness = (FInt)1000000;
+                FakeGalaxy fg = MakeGrid(xunit, yunit, 1, 1);
+                for (int c = 1; c <= 100; c += 2)
+                {
+                    int r1 = ((c - 1) * xunit / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false) / yunit + 1).ToInt();
+                    for (int r = r1; r <= r1 + 1; ++r)
+                    {
+                        var g2 = MakeGrid(xunit, yunit, r, c);
+                        g2.MakeRotationalGeneric((c - 1) * xunit / 2, (r - 1) * yunit, yunit * 2, symmetry / 100, symmetry % 100 == 50, true);
+                        int planets = g2.planets.Count;
+                        FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
+                        FInt current_badness = planetBadness;
+                        if (current_badness < newBadness)
+                        {
+                            newBadness = current_badness;
+                            fg = g2;
+                        }
+                    }
+                }
+                return fg;
             }
             return g;
         }

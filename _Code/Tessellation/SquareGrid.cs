@@ -68,6 +68,7 @@ namespace AhyangyiMaps.Tessellation
                 }
                 return fg;
             }
+
             return g;
         }
 
