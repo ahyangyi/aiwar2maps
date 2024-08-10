@@ -44,7 +44,7 @@
     <map_option name="Symmetry" display_name="Symmetry"
       description="What symmetry should the map have?" default_id="0">
       <choice_value id="0" display_name="Asymmetric" description="No symmetry enforced." related_int_value="100" />
-      <choice_value id="1" display_name="Bilateral" description="Two halves of the galaxy are mirror-images of each other." related_int_value="150" />
+      <choice_value id="1" display_name="Bilateral" description="Two halves of the map are mirror-images of each other." related_int_value="150" />
       <choice_value id="2" display_name="2-fold Rotational" description="." related_int_value="200" />
       <choice_value id="3" display_name="2-fold Rotational + Bilateral" description="." related_int_value="250" />
       <choice_value id="4" display_name="3-fold Rotational" description="." related_int_value="300" />
@@ -55,8 +55,9 @@
       <choice_value id="9" display_name="6-fold Rotational" description="." related_int_value="600" />
       <!--Should be hidden--> <choice_value id="10" display_name="7-fold Rotational" description="." related_int_value="700" />
       <!--Should be hidden--> <choice_value id="11" display_name="8-fold Rotational" description="." related_int_value="800" />
-      <choice_value id="12" display_name="Translational" description="." related_int_value="10000" />
-      <choice_value id="13" display_name="Dual Galaxy" description="." related_int_value="10101" />
+      <choice_value id="12" display_name="Juxtaposition" description="Two halves of the map look exactly the same." related_int_value="10000" />
+      <choice_value id="13" display_name="Triptych" description="." related_int_value="10101" />
+      <choice_value id="13" display_name="Dual Galaxy" description="." related_int_value="10102" />
       <choice_value id="14" display_name="Duplex Barrier" description="." related_int_value="10100" />
       <choice_value id="15" display_name="Double Spark" description="." related_int_value="10101" />
       <choice_value id="16" display_name="Y" description="." related_int_value="10200" />
@@ -115,5 +116,35 @@
 		min_planets="40"
 		max_planets="300"
 		>
+    <map_option
+			name="Ellipticity"
+			display_name="Ellipticity"
+			description="How eccentric is the shape of the galaxy center?"
+			type="CustomSliderArbitraryOptions"
+			option_names="0%,1%,2%,3%,4%,5%,6%,7%,8%,9%,10%,11%,12%,13%,14%,15%,16%,17%,18%,19%,20%,21%,22%,23%,24%,25%,26%,27%,28%,29%,30%,31%,32%,33%,34%,35%,36%,37%,38%,39%,40%,41%,42%,43%,44%,45%,46%,47%,48%,49%,50%,51%,52%,53%,54%,55%,56%,57%,58%,59%,60%,61%,62%,63%,64%,65%,66%,67%,68%,69%,70%,71%,72%,73%,74%,75%,76%,77%,78%,79%,80%,81%,82%,83%,84%,85%,86%,87%,88%,89%,90%,91%,92%,93%,94%,95%,96%,97%,98%,99%,100%"
+			option_values="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100"
+			default_value="50"
+			>
+    </map_option>
+    <map_option
+			name="Bar"
+			display_name="Bar"
+			description="How long is the bar?"
+			type="CustomSliderArbitraryOptions"
+			option_names="0%,1%,2%,3%,4%,5%,6%,7%,8%,9%,10%,11%,12%,13%,14%,15%,16%,17%,18%,19%,20%,21%,22%,23%,24%,25%,26%,27%,28%,29%,30%,31%,32%,33%,34%,35%,36%,37%,38%,39%,40%,41%,42%,43%,44%,45%,46%,47%,48%,49%,50%,51%,52%,53%,54%,55%,56%,57%,58%,59%,60%,61%,62%,63%,64%,65%,66%,67%,68%,69%,70%,71%,72%,73%,74%,75%,76%,77%,78%,79%,80%,81%,82%,83%,84%,85%,86%,87%,88%,89%,90%,91%,92%,93%,94%,95%,96%,97%,98%,99%,100%"
+			option_values="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100"
+			default_value="50"
+			>
+    </map_option>
+    <map_option
+			name="SpiralArmsLength"
+			display_name="Spiral Arms Length"
+			description="How long are the spiral arms?"
+			type="CustomSliderArbitraryOptions"
+			option_names="0%,1%,2%,3%,4%,5%,6%,7%,8%,9%,10%,11%,12%,13%,14%,15%,16%,17%,18%,19%,20%,21%,22%,23%,24%,25%,26%,27%,28%,29%,30%,31%,32%,33%,34%,35%,36%,37%,38%,39%,40%,41%,42%,43%,44%,45%,46%,47%,48%,49%,50%,51%,52%,53%,54%,55%,56%,57%,58%,59%,60%,61%,62%,63%,64%,65%,66%,67%,68%,69%,70%,71%,72%,73%,74%,75%,76%,77%,78%,79%,80%,81%,82%,83%,84%,85%,86%,87%,88%,89%,90%,91%,92%,93%,94%,95%,96%,97%,98%,99%,100%"
+			option_values="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100"
+			default_value="50"
+			>
+    </map_option>
   </map_type>
 </root>
