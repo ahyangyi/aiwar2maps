@@ -104,6 +104,7 @@ namespace AhyangyiMaps
 
         public void AddLinkTo(FakePlanet other)
         {
+            if (this == other) return;
             links.Add(other);
             other.links.Add(this);
         }
@@ -117,7 +118,9 @@ namespace AhyangyiMaps
         public void RemoveAllLinksOnlyUsableForRemovingPlanetFromGalaxy()
         {
             foreach (FakePlanet other in links)
+            {
                 other.links.Remove(this);
+            }
         }
         public void Wobble(int wobble, FInt dx, FInt dy)
         {
@@ -254,6 +257,7 @@ namespace AhyangyiMaps
 
         public void EnsureConnectivity()
         {
+            const int maxRotationalSymmetry = 8;
             if (planets.Count == 0)
             {
                 return;
@@ -305,7 +309,7 @@ namespace AhyangyiMaps
                 if (chosenNeighbor != null)
                 {
                     FakePlanet a = chosen, b = chosenNeighbor;
-                    for (int i = 0; i < 6; ++i)
+                    for (int i = 0; i < maxRotationalSymmetry; ++i)
                     {
                         a.AddLinkTo(b);
                         reflectional[a].AddLinkTo(reflectional[b]);
@@ -708,6 +712,12 @@ namespace AhyangyiMaps
         public System.Collections.Generic.List<(ArcenPoint, ArcenPoint)> connectionsToBreak;
         public System.Collections.Generic.Dictionary<(ArcenPoint, ArcenPoint), System.Collections.Generic.List<ArcenPoint>> breakpoints;
 
+
+        public FakePattern() : base()
+        {
+            connectionsToBreak = new System.Collections.Generic.List<(ArcenPoint, ArcenPoint)>();
+            breakpoints = new System.Collections.Generic.Dictionary<(ArcenPoint, ArcenPoint), System.Collections.Generic.List<ArcenPoint>>();
+        }
         public void Imprint(FakeGalaxy galaxy, ArcenPoint offset)
         {
             foreach (FakePlanet planet in planets)
@@ -721,24 +731,38 @@ namespace AhyangyiMaps
 
             foreach (var (a, b) in connectionsToBreak)
             {
-                if (galaxy.locationIndex.ContainsKey(a + offset) && galaxy.locationIndex.ContainsKey(b + offset))
+                ArcenPoint locationA = a + offset;
+                ArcenPoint locationB = b + offset;
+                if (galaxy.locationIndex.ContainsKey(locationA) && galaxy.locationIndex.ContainsKey(locationB))
                 {
-                    var planetA = galaxy.locationIndex[a + offset];
-                    var planetB = galaxy.locationIndex[b + offset];
+                    var planetA = galaxy.locationIndex[locationA];
+                    var planetB = galaxy.locationIndex[locationB];
                     planetA.RemoveLinkTo(planetB);
                 }
             }
 
             foreach (FakePlanet a in planets)
             {
+                ArcenPoint locationA = a.location + offset;
                 foreach (FakePlanet b in a.links)
                 {
-                    var planetA = galaxy.locationIndex[a.location + offset];
-                    var planetB = galaxy.locationIndex[b.location + offset];
+                    ArcenPoint locationB = b.location + offset;
+                    var planetA = galaxy.locationIndex[locationA];
+                    var planetB = galaxy.locationIndex[locationB];
                     bool ok = true;
                     if (breakpoints.ContainsKey((a.location, b.location)))
                     {
                         foreach (ArcenPoint c in breakpoints[(a.location, b.location)])
+                        {
+                            if (galaxy.locationIndex.ContainsKey(c + offset))
+                            {
+                                ok = false;
+                            }
+                        }
+                    }
+                    if (breakpoints.ContainsKey((b.location, a.location)))
+                    {
+                        foreach (ArcenPoint c in breakpoints[(b.location, a.location)])
                         {
                             if (galaxy.locationIndex.ContainsKey(c + offset))
                             {

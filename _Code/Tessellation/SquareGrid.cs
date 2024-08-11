@@ -6,9 +6,23 @@ namespace AhyangyiMaps.Tessellation
 {
     public class SquareGrid
     {
+        static readonly int unit;
+        static readonly FakePattern square;
+        static SquareGrid()
+        {
+            unit = PlanetType.Normal.GetData().InterStellarRadius * 10;
+            square = new FakePattern();
+            var p0 = square.AddPlanetAt(ArcenPoint.Create(0, 0));
+            var p1 = square.AddPlanetAt(ArcenPoint.Create(unit, 0));
+            var p2 = square.AddPlanetAt(ArcenPoint.Create(unit, unit));
+            var p3 = square.AddPlanetAt(ArcenPoint.Create(0, unit));
+            p0.AddLinkTo(p1);
+            p1.AddLinkTo(p2);
+            p2.AddLinkTo(p3);
+            p3.AddLinkTo(p0);
+        }
         public static FakeGalaxy MakeSquareGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
-            int unit = planetType.GetData().InterStellarRadius * 10;
             int rows = 9;
             int columns = 16;
             FInt badness = (FInt)1000000;
@@ -31,7 +45,7 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
-            var g = MakeGrid(unit, rows, columns);
+            var g = MakeGrid(rows, columns);
 
             if (symmetry == 150)
             {
@@ -48,13 +62,13 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry >= 300 && symmetry < 10000)
             {
                 FInt newBadness = (FInt)1000000;
-                FakeGalaxy fg = MakeGrid(unit, 1, 1);
-                for (int c = 1; c <= 100; ++c)
+                FakeGalaxy fg = MakeGrid(1, 1);
+                for (int c = 1; c <= 30; ++c)
                 {
                     int r1 = (c / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false)).ToInt();
                     for (int r = r1; r <= r1 + 1; ++r)
                     {
-                        var g2 = MakeGrid(unit, r, c);
+                        var g2 = MakeGrid(r, c);
                         g2.MakeRotationalGeneric((c - 1) * unit / 2, (r - 1) * unit, unit, symmetry / 100, symmetry % 100 == 50, c % 2 == 0);
                         int planets = g2.planets.Count;
                         FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -72,34 +86,12 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        protected static FakeGalaxy MakeGrid(int unit, int rows, int columns)
+        protected static FakeGalaxy MakeGrid(int rows, int columns)
         {
             FakeGalaxy g = new FakeGalaxy();
-
-            FakePlanet[][] pointRows = new FakePlanet[rows][];
-            for (int i = 0; i < rows; ++i)
-            {
-                pointRows[i] = new FakePlanet[columns];
-                for (int j = 0; j < columns; ++j)
-                {
-                    pointRows[i][j] = g.AddPlanetAt(ArcenPoint.Create(j * unit, i * unit));
-                }
-            }
-
-            for (int i = 0; i < pointRows.Length; i++)
-            {
-                for (int j = 0; j < pointRows[i].Length; j++)
-                {
-                    if (i - 1 >= 0)
-                    {
-                        pointRows[i][j].AddLinkTo(pointRows[i - 1][j]);
-                    }
-                    if (j - 1 >= 0)
-                    {
-                        pointRows[i][j].AddLinkTo(pointRows[i][j - 1]);
-                    }
-                }
-            }
+            for (int i = 0; i < rows - 1; ++i)
+                for (int j = 0; j < columns - 1; ++j)
+                    square.Imprint(g, ArcenPoint.Create(j * unit, i * unit));
 
             return g;
         }

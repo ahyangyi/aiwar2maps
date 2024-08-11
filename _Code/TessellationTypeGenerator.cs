@@ -21,6 +21,8 @@ namespace AhyangyiMaps
             this.InnerGenerate(galaxy, context, mapConfig, PlanetType.Normal, mapType);
         }
 
+        private readonly FInt[] aspectRatios = { FInt.Create(625, false), FInt.Create(1000, false), FInt.Create(1778, false) };
+
         protected void InnerGenerate(Galaxy galaxy, ArcenHostOnlySimContext Context, MapConfiguration mapConfig, PlanetType planetType, MapTypeData mapType)
         {
             int numPlanets = mapConfig.GetClampedNumberOfPlanetsForMapType(mapType);
@@ -32,19 +34,7 @@ namespace AhyangyiMaps
 
             int numPlanetsToMake = numPlanets * 12 / (12 - dissonance);
 
-            FInt aspectRatio;
-            if (aspectRatioEnum == 0)
-            {
-                aspectRatio = FInt.FromParts(0, 625);
-            }
-            else if (aspectRatioEnum == 1)
-            {
-                aspectRatio = FInt.FromParts(1, 0);
-            }
-            else
-            {
-                aspectRatio = FInt.FromParts(1, 778);
-            }
+            FInt aspectRatio = aspectRatios[aspectRatioEnum];
             FakeGalaxy g;
             if (tessellation == 0)
             {

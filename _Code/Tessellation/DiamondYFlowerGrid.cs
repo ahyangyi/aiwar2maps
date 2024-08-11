@@ -6,13 +6,17 @@ namespace AhyangyiMaps.Tessellation
 {
     public class DiamondYFlowerGrid
     {
+        static readonly int unit, dunit;
+        static DiamondYFlowerGrid()
+        {
+            unit = PlanetType.Normal.GetData().InterStellarRadius * 7071 / 1000;
+            dunit = PlanetType.Normal.GetData().InterStellarRadius * 10;
+        }
         static readonly int[] dr = { 1, 2, 1, 0, -1, -2, -1, 0 };
         static readonly int[] dc = { 1, 0, -1, -2, -1, 0, 1, 2 };
 
         public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
-            int unit = planetType.GetData().InterStellarRadius * 7071 / 1000;
-            int dunit = planetType.GetData().InterStellarRadius * 10;
             int rows = 5;
             int columns = 8;
             FInt badness = (FInt)1000000;
@@ -39,7 +43,7 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
-            FakeGalaxy g = MakeGrid(unit, rows, columns);
+            FakeGalaxy g = MakeGrid( rows, columns);
 
             if (symmetry == 150)
             {
@@ -56,13 +60,13 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry >= 300 && symmetry < 10000)
             {
                 FInt newBadness = (FInt)1000000;
-                FakeGalaxy fg = MakeGrid(unit, 1, 1);
+                FakeGalaxy fg = MakeGrid(1, 1);
                 for (int c = 3; c <= 60; c += 4)
                 {
                     int r1 = (((c + 1) / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false) - 1) / 2).ToInt();
                     for (int r = Math.Max(r1 * 2 - 1, 1); r <= r1 * 2 + 1; r += 2)
                     {
-                        var g2 = MakeGrid(unit, r, c);
+                        var g2 = MakeGrid(r, c);
                         g2.MakeRotationalGeneric((c + 1) * unit, (r + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50, false);
                         int planets = g2.planets.Count;
                         FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -80,7 +84,7 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        private static FakeGalaxy MakeGrid(int unit, int rows, int columns)
+        private static FakeGalaxy MakeGrid(int rows, int columns)
         {
             FakeGalaxy g = new FakeGalaxy();
             System.Collections.Generic.Dictionary<(int, int), FakePlanet> points = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
