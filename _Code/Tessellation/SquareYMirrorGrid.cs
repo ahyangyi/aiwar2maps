@@ -6,9 +6,16 @@ namespace AhyangyiMaps.Tessellation
 {
     public class SquareYMirrorGrid
     {
+        static readonly int unit;
+        static readonly FakePattern squareY, squareYFlipped;
+        static SquareYMirrorGrid()
+        {
+            unit = PlanetType.Normal.GetData().InterStellarRadius * 10;
+            squareY = SquareYGrid.squareY;
+            squareYFlipped = SquareYGrid.squareYFlipped;
+        }
         public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
-            int unit = planetType.GetData().InterStellarRadius * 10;
             int rows = 5;
             int columns = 8;
             FInt badness = (FInt)1000000;
@@ -31,7 +38,7 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
-            FakeGalaxy g = MakeGrid(unit, rows, columns);
+            FakeGalaxy g = MakeGrid(rows, columns);
 
             if (symmetry == 150)
             {
@@ -48,13 +55,13 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry >= 300 && symmetry < 10000)
             {
                 FInt newBadness = (FInt)1000000;
-                FakeGalaxy fg = MakeGrid(unit, 1, 1);
+                FakeGalaxy fg = MakeGrid(1, 1);
                 for (int c = 4; c <= 60; ++c)
                 {
                     int r1 = (c / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false)).ToInt();
                     for (int r = r1; r <= r1 + 1; ++r)
                     {
-                        var g2 = MakeGrid(unit, r, c);
+                        var g2 = MakeGrid(r, c);
                         g2.MakeRotationalGeneric((c - 1) * unit, (c % 2 == 0 ? ((r - 1) * 2 - 1) * unit : (r - 1) * 2 * unit), unit, symmetry / 100, symmetry % 100 == 50);
                         int planets = g2.planets.Count;
                         FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -71,63 +78,13 @@ namespace AhyangyiMaps.Tessellation
 
             return g;
         }
-        private static FakeGalaxy MakeGrid(int unit, int rows, int columns)
+        private static FakeGalaxy MakeGrid(int rows, int columns)
         {
             FakeGalaxy g = new FakeGalaxy();
 
-            FakePlanet[][] corners = new FakePlanet[rows][];
-            FakePlanet[][] centers = new FakePlanet[rows - 1][];
-            FakePlanet[][] bottoms = new FakePlanet[rows / 2][];
-            for (int i = 0; i < rows; ++i)
-            {
-                corners[i] = new FakePlanet[columns];
-                if (i + 1 < rows)
-                {
-                    centers[i] = new FakePlanet[columns - 1];
-                }
-                for (int j = 0; j < columns; ++j)
-                {
-                    corners[i][j] = g.AddPlanetAt(ArcenPoint.Create(j * 2 * unit, (rows - i - 1) * 2 * unit));
-                    if (i + 1 < rows && j + 1 < columns)
-                    {
-                        centers[i][j] = g.AddPlanetAt(ArcenPoint.Create((j * 2 + 1) * unit, ((rows - i - 1) * 2 - 1) * unit));
-                    }
-                }
-            }
-            for (int i = 0; i < rows / 2; ++i)
-            {
-                bottoms[i] = new FakePlanet[columns - 1];
+            for (int i = 0; i < rows - 1; ++i)
                 for (int j = 0; j < columns - 1; ++j)
-                {
-                    bottoms[i][j] = g.AddPlanetAt(ArcenPoint.Create((j * 2 + 1) * unit, ((rows - i * 2 - 1) * 2 - 2) * unit));
-                }
-            }
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < columns; j++)
-                {
-                    if (i + 1 < rows)
-                    {
-                        corners[i][j].AddLinkTo(corners[i + 1][j]);
-                    }
-                    if (i % 2 == 0 && j + 1 < columns)
-                    {
-                        corners[i][j].AddLinkTo(corners[i][j + 1]);
-                    }
-                    if (i + 1 < rows && j + 1 < columns)
-                    {
-                        corners[i + i % 2][j].AddLinkTo(centers[i][j]);
-                        corners[i + i % 2][j + 1].AddLinkTo(centers[i][j]);
-                        centers[i][j].AddLinkTo(bottoms[i / 2][j]);
-                    }
-                    if (i % 2 == 1 && j + 1 < columns)
-                    {
-                        corners[i][j].AddLinkTo(bottoms[i / 2][j]);
-                        corners[i][j + 1].AddLinkTo(bottoms[i / 2][j]);
-                    }
-                }
-            }
+                    (i % 2 == 0 ? squareYFlipped : squareY).Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
 
             return g;
         }

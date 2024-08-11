@@ -26,13 +26,13 @@ namespace AhyangyiMaps.Tessellation
             int rows = 9;
             int columns = 16;
             FInt badness = (FInt)1000000;
-            for (int r = 2; r <= 100; ++r)
+            for (int r = 1; r <= 35; ++r)
             {
-                for (int c = 2; c <= 100; ++c)
+                for (int c = 1; c <= 35; ++c)
                 {
                     int planets = r * c;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
-                    FInt currentAspectRatio = (FInt)(r - 1) / (FInt)(c - 1);
+                    FInt currentAspectRatio = (FInt)r / (FInt)c;
                     FInt p1 = currentAspectRatio / aspectRatio;
                     FInt p2 = aspectRatio / currentAspectRatio;
                     FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
@@ -69,7 +69,7 @@ namespace AhyangyiMaps.Tessellation
                     for (int r = r1; r <= r1 + 1; ++r)
                     {
                         var g2 = MakeGrid(r, c);
-                        g2.MakeRotationalGeneric((c - 1) * unit / 2, (r - 1) * unit, unit, symmetry / 100, symmetry % 100 == 50, c % 2 == 0);
+                        g2.MakeRotationalGeneric(c * unit / 2, r * unit, unit, symmetry / 100, symmetry % 100 == 50, c % 2 == 1);
                         int planets = g2.planets.Count;
                         FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
                         FInt current_badness = planetBadness;
@@ -89,8 +89,8 @@ namespace AhyangyiMaps.Tessellation
         protected static FakeGalaxy MakeGrid(int rows, int columns)
         {
             FakeGalaxy g = new FakeGalaxy();
-            for (int i = 0; i < rows - 1; ++i)
-                for (int j = 0; j < columns - 1; ++j)
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
                     square.Imprint(g, ArcenPoint.Create(j * unit, i * unit));
 
             return g;

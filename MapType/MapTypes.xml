@@ -96,6 +96,12 @@
       <choice_value id="3" display_name="A Lot" description="Things are definitely unraveling in many areas." related_int_value="3" />
       <choice_value id="4" display_name="Tattered" description="Hardly recognizable.  Much of the map is in pieces." related_int_value="4" />
     </map_option>
+    <map_option name="OuterPath" display_name="Outer Path"
+      description="Should there be a predetermined outer path?" default_id="0">
+      <choice_value id="0" display_name="None" description="No predetermined path, everything is randomly determined." related_int_value="0" />
+      <choice_value id="1" display_name="Outline" description="Keep the outmost planets and their connections." related_int_value="1" />
+      <choice_value id="2" display_name="Beltway" description="Create an extra beltway outside the grid." related_int_value="2" />
+    </map_option>
     <map_option
 			name="Wobble"
 			display_name="Wobble"

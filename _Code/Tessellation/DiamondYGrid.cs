@@ -1,17 +1,42 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
 using System;
-using static UnityEngine.UI.CanvasScaler;
 
 namespace AhyangyiMaps.Tessellation
 {
     public class DiamondYGrid
     {
         static readonly int unit, dunit;
+        public static readonly FakePattern diamondY, diamondYFlipped;
         static DiamondYGrid()
         {
             unit = PlanetType.Normal.GetData().InterStellarRadius * 7071 / 1000;
             dunit = PlanetType.Normal.GetData().InterStellarRadius * 10;
+
+            diamondY = new FakePattern();
+            var bottom = diamondY.AddPlanetAt(ArcenPoint.Create(unit * 2, 0));
+            var right = diamondY.AddPlanetAt(ArcenPoint.Create(unit * 4, unit * 2));
+            var top = diamondY.AddPlanetAt(ArcenPoint.Create(unit * 2, unit * 4));
+            var left = diamondY.AddPlanetAt(ArcenPoint.Create(0, unit * 2));
+            var center = diamondY.AddPlanetAt(ArcenPoint.Create(unit * 2, unit * 2));
+            var topLeft = diamondY.AddPlanetAt(ArcenPoint.Create(unit, unit * 3));
+            var topRight = diamondY.AddPlanetAt(ArcenPoint.Create(unit * 3, unit * 3));
+            bottom.AddLinkTo(right);
+            right.AddLinkTo(topRight);
+            topRight.AddLinkTo(top);
+            top.AddLinkTo(topLeft);
+            topLeft.AddLinkTo(left);
+            left.AddLinkTo(bottom);
+            center.AddLinkTo(topLeft);
+            center.AddLinkTo(topRight);
+            center.AddLinkTo(bottom);
+
+            diamondY.breakpoints.Add((bottom.location, left.location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit, unit) });
+            diamondY.breakpoints.Add((bottom.location, right.location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit * 3, unit) });
+            diamondY.connectionsToBreak.Add((top.location, left.location));
+            diamondY.connectionsToBreak.Add((top.location, right.location));
+
+            diamondYFlipped = diamondY.FlipY();
         }
         public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
@@ -77,58 +102,10 @@ namespace AhyangyiMaps.Tessellation
         private static FakeGalaxy MakeGrid(int rows, int columns)
         {
             FakeGalaxy g = new FakeGalaxy();
-            System.Collections.Generic.Dictionary<(int, int), FakePlanet> corners = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
-            System.Collections.Generic.Dictionary<(int, int), FakePlanet> centers = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
-            System.Collections.Generic.Dictionary<(int, int), FakePlanet> lwings = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
-            System.Collections.Generic.Dictionary<(int, int), FakePlanet> rwings = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
-            for (int i = 0; i < rows + 2; ++i)
-            {
-                for (int j = 0; j < columns + 2; ++j)
-                {
-                    if ((i + j) % 2 == 1 && (i > 0 && i <= rows || j > 0 && j <= columns))
-                        corners[(i, j)] = g.AddPlanetAt(ArcenPoint.Create(j * 2 * unit, i * 2 * unit));
-                    if ((i + j) % 2 == 0 && i > 0 && i <= rows && j > 0 && j <= columns)
-                    {
-                        centers[(i, j)] = g.AddPlanetAt(ArcenPoint.Create(j * 2 * unit, i * 2 * unit));
-                        lwings[(i, j)] = g.AddPlanetAt(ArcenPoint.Create((j * 2 - 1) * unit, (i * 2 + 1) * unit));
-                        rwings[(i, j)] = g.AddPlanetAt(ArcenPoint.Create((j * 2 + 1) * unit, (i * 2 + 1) * unit));
-                    }
-                }
-            }
-
-            for (int i = 0; i < rows + 2; ++i)
-            {
-                for (int j = 0; j < columns + 2; ++j)
-                {
-                    if (corners.ContainsKey((i, j)))
-                    {
-                        if (rwings.ContainsKey((i, j - 1)))
-                        {
-                            corners[(i, j)].AddLinkTo(rwings[(i, j - 1)]);
-                            corners[(i + 1, j - 1)].AddLinkTo(rwings[(i, j - 1)]);
-                        }
-                        else if (corners.ContainsKey((i + 1, j - 1)))
-                        {
-                            corners[(i, j)].AddLinkTo(corners[(i + 1, j - 1)]);
-                        }
-                        if (lwings.ContainsKey((i, j + 1)))
-                        {
-                            corners[(i, j)].AddLinkTo(lwings[(i, j + 1)]);
-                            corners[(i + 1, j + 1)].AddLinkTo(lwings[(i, j + 1)]);
-                        }
-                        else if (corners.ContainsKey((i + 1, j + 1)))
-                        {
-                            corners[(i, j)].AddLinkTo(corners[(i + 1, j + 1)]);
-                        }
-                    }
-                    if (centers.ContainsKey((i, j)))
-                    {
-                        centers[(i, j)].AddLinkTo(lwings[(i, j)]);
-                        centers[(i, j)].AddLinkTo(rwings[(i, j)]);
-                        centers[(i, j)].AddLinkTo(corners[(i - 1, j)]);
-                    }
-                }
-            }
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
+                    if ((i + j) % 2 == 0)
+                        diamondY.Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
 
             return g;
         }

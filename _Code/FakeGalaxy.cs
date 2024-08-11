@@ -362,7 +362,7 @@ namespace AhyangyiMaps
                 else if (planet.location.X * 2 == maxX)
                 {
                     planet.wobbleMatrix = Matrix2x2.ProjectToY;
-                    new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, 1, 1);
+                    symmetricGroups.Add(new SymmetricGroup(new System.Collections.Generic.List<FakePlanet> { planet }, 1, 1));
                 }
             }
         }
@@ -718,6 +718,38 @@ namespace AhyangyiMaps
             connectionsToBreak = new System.Collections.Generic.List<(ArcenPoint, ArcenPoint)>();
             breakpoints = new System.Collections.Generic.Dictionary<(ArcenPoint, ArcenPoint), System.Collections.Generic.List<ArcenPoint>>();
         }
+
+        public delegate ArcenPoint CoordinateTransformation(ArcenPoint point);
+
+        public FakePattern Transform(CoordinateTransformation trans)
+        {
+            FakePattern ret = new FakePattern();
+            var planetMap = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+            int maxY = planets.Max(planet => planet.location.Y);
+
+            foreach (FakePlanet planet in planets)
+                planetMap[planet] = ret.AddPlanetAt(trans(planet.location));
+
+            foreach (FakePlanet planet in planets)
+                foreach (var neighbor in planet.links)
+                    planetMap[planet].AddLinkTo(planetMap[neighbor]);
+
+            ret.connectionsToBreak = connectionsToBreak.Select(p => (trans(p.Item1), trans(p.Item2))).ToList();
+
+            foreach (var (a, b) in breakpoints.Keys)
+                ret.breakpoints[(trans(a), trans(b))] = (from p in breakpoints[(a, b)]
+                                                         select trans(p)).ToList();
+
+            return ret;
+        }
+
+
+        public FakePattern FlipY()
+        {
+            int maxY = planets.Max(planet => planet.location.Y);
+            return Transform(p => ArcenPoint.Create(p.X, maxY - p.Y));
+        }
+
         public void Imprint(FakeGalaxy galaxy, ArcenPoint offset)
         {
             foreach (FakePlanet planet in planets)

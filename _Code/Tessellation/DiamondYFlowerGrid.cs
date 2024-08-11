@@ -43,7 +43,7 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
-            FakeGalaxy g = MakeGrid( rows, columns);
+            FakeGalaxy g = MakeGrid(rows, columns);
 
             if (symmetry == 150)
             {
