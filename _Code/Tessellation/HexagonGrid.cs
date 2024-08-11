@@ -7,10 +7,26 @@ namespace AhyangyiMaps.Tessellation
     public class HexagonGrid
     {
         static readonly int xunit, yunit;
+        static readonly FakePattern hexagon;
         static HexagonGrid()
         {
             xunit = PlanetType.Normal.GetData().InterStellarRadius * 866 / 100;
             yunit = PlanetType.Normal.GetData().InterStellarRadius * 5;
+
+            hexagon = new FakePattern();
+            var p0 = hexagon.AddPlanetAt(ArcenPoint.Create(xunit, 0));
+            var p1 = hexagon.AddPlanetAt(ArcenPoint.Create(xunit * 2, yunit));
+            var p2 = hexagon.AddPlanetAt(ArcenPoint.Create(xunit * 2, yunit * 3));
+            var p3 = hexagon.AddPlanetAt(ArcenPoint.Create(xunit, yunit * 4));
+            var p4 = hexagon.AddPlanetAt(ArcenPoint.Create(0, yunit * 3));
+            var p5 = hexagon.AddPlanetAt(ArcenPoint.Create(0, yunit));
+
+            p0.AddLinkTo(p1);
+            p1.AddLinkTo(p2);
+            p2.AddLinkTo(p3);
+            p3.AddLinkTo(p4);
+            p4.AddLinkTo(p5);
+            p5.AddLinkTo(p0);
         }
         public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
@@ -82,45 +98,10 @@ namespace AhyangyiMaps.Tessellation
         private static FakeGalaxy MakeGrid(int rows, int columns)
         {
             FakeGalaxy g = new FakeGalaxy();
-            System.Collections.Generic.Dictionary<(int, int), FakePlanet> uppy = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
-            System.Collections.Generic.Dictionary<(int, int), FakePlanet> downy = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
-
-            for (int i = 0; i <= rows; ++i)
-            {
-                for (int j = -i % 2; j <= columns + 1; j += 2)
-                {
-                    if (i >= 0 && i < rows && j >= 0 && j < columns ||
-                        i >= 0 && i < rows && j - 2 >= 0 && j - 2 < columns ||
-                        i - 1 >= 0 && i - 1 < rows && j - 1 >= 0 && j - 1 < columns)
-                        uppy[(i, j)] = g.AddPlanetAt(ArcenPoint.Create(j * xunit, (i * 3 + 1) * yunit));
-                    if (i >= 0 && i < rows && j >= 0 && j < columns ||
-                        i - 1 >= 0 && i - 1 < rows && j - 1 >= 0 && j - 1 < columns ||
-                        i - 1 >= 0 && i - 1 < rows && j + 1 >= 0 && j + 1 < columns)
-                        downy[(i, j)] = g.AddPlanetAt(ArcenPoint.Create((j + 1) * xunit, (i * 3) * yunit));
-                }
-            }
-
-            for (int i = 0; i <= rows; ++i)
-            {
-                for (int j = -i % 2; j <= columns + 1; j += 2)
-                {
-                    if (uppy.ContainsKey((i, j)))
-                    {
-                        if (downy.ContainsKey((i, j)))
-                        {
-                            uppy[(i, j)].AddLinkTo(downy[(i, j)]);
-                        }
-                        if (downy.ContainsKey((i, j - 2)))
-                        {
-                            uppy[(i, j)].AddLinkTo(downy[(i, j - 2)]);
-                        }
-                        if (downy.ContainsKey((i + 1, j - 1)))
-                        {
-                            uppy[(i, j)].AddLinkTo(downy[(i + 1, j - 1)]);
-                        }
-                    }
-                }
-            }
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
+                    if ((i + j) % 2 == 0)
+                        hexagon.Imprint(g, ArcenPoint.Create(j * xunit, i * yunit * 3));
 
             return g;
         }

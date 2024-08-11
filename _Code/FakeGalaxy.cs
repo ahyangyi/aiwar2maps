@@ -742,12 +742,21 @@ namespace AhyangyiMaps
 
             return ret;
         }
-
+        public FakePattern FlipX()
+        {
+            int maxX = planets.Max(planet => planet.location.X);
+            return Transform(p => ArcenPoint.Create(maxX - p.X, p.Y));
+        }
 
         public FakePattern FlipY()
         {
             int maxY = planets.Max(planet => planet.location.Y);
             return Transform(p => ArcenPoint.Create(p.X, maxY - p.Y));
+        }
+        public FakePattern RotateLeft()
+        {
+            int maxY = planets.Max(planet => planet.location.Y);
+            return Transform(p => ArcenPoint.Create(maxY - p.Y, p.X));
         }
 
         public void Imprint(FakeGalaxy galaxy, ArcenPoint offset)
