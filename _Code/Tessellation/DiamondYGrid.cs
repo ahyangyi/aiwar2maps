@@ -64,7 +64,7 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
-            FakeGalaxy g = MakeGrid(rows, columns);
+            FakeGalaxy g = MakeGrid(rows, columns, false);
 
             if (symmetry == 150)
             {
@@ -73,7 +73,7 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry >= 300 && symmetry < 10000)
             {
                 FInt newBadness = (FInt)1000000;
-                FakeGalaxy fg = MakeGrid(1, 1);
+                FakeGalaxy fg = MakeGrid(1, 1, true);
                 for (int c = 1; c <= 60; ++c)
                 {
                     int r1 = ((c + 1) / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false) - 1).ToInt();
@@ -81,7 +81,7 @@ namespace AhyangyiMaps.Tessellation
                     {
                         if ((r * 2 + c) % 4 != 3)
                             continue;
-                        var g2 = MakeGrid(r, c);
+                        var g2 = MakeGrid(r, c, true);
                         g2.MakeRotationalGeneric((c + 1) * unit, (r + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50, false);
                         int planets = g2.planets.Count;
                         FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -99,13 +99,13 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        private static FakeGalaxy MakeGrid(int rows, int columns)
+        private static FakeGalaxy MakeGrid(int rows, int columns, bool flip)
         {
             FakeGalaxy g = new FakeGalaxy();
             for (int i = 0; i < rows; ++i)
                 for (int j = 0; j < columns; ++j)
                     if ((i + j) % 2 == 0)
-                        diamondY.Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
+                        (flip ? diamondYFlipped : diamondY).Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
 
             return g;
         }

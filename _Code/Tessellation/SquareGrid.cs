@@ -98,7 +98,7 @@ namespace AhyangyiMaps.Tessellation
 
         public static void TableGen()
         {
-            var planetNumbers = new System.Collections.Generic.List<int>{ 40, 42, 44, 46, 48};
+            var planetNumbers = new System.Collections.Generic.List<int> { 40, 42, 44, 46, 48 };
             for (int i = 50; i <= 300; i += 5) planetNumbers.Add(i);
             foreach (int desiredPlanets in planetNumbers)
             {

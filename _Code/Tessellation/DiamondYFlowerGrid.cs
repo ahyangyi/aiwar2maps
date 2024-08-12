@@ -7,13 +7,17 @@ namespace AhyangyiMaps.Tessellation
     public class DiamondYFlowerGrid
     {
         static readonly int unit, dunit;
+        public static readonly FakePattern diamondY, diamondYFlipped, diamondYLeft, diamondYRight;
         static DiamondYFlowerGrid()
         {
             unit = PlanetType.Normal.GetData().InterStellarRadius * 7071 / 1000;
             dunit = PlanetType.Normal.GetData().InterStellarRadius * 10;
+
+            diamondY = DiamondYGrid.diamondY;
+            diamondYFlipped = DiamondYGrid.diamondYFlipped;
+            diamondYLeft = diamondY.RotateLeft();
+            diamondYRight = diamondYFlipped.RotateLeft();
         }
-        static readonly int[] dr = { 1, 2, 1, 0, -1, -2, -1, 0 };
-        static readonly int[] dc = { 1, 0, -1, -2, -1, 0, 1, 2 };
 
         public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
         {
@@ -87,83 +91,10 @@ namespace AhyangyiMaps.Tessellation
         private static FakeGalaxy MakeGrid(int rows, int columns)
         {
             FakeGalaxy g = new FakeGalaxy();
-            System.Collections.Generic.Dictionary<(int, int), FakePlanet> points = new System.Collections.Generic.Dictionary<(int, int), FakePlanet>();
-            for (int i = 0; i < rows + 2; ++i)
-            {
-                for (int j = 0; j < columns + 2; ++j)
-                {
-                    if ((i + j) % 2 == 0 && (i > 0 && i <= rows || j > 0 && j <= columns))
-                    {
-                        points[(i * 2, j * 2)] = g.AddPlanetAt(ArcenPoint.Create(j * 2 * unit, i * 2 * unit));
-                    }
-                }
-            }
-            for (int i = 0; i < rows + 2; ++i)
-            {
-                for (int j = 0; j < columns + 2; ++j)
-                {
-                    if (i % 2 == 0 && j % 2 == 0 && points.ContainsKey((i * 2, j * 2)) && (i + j) % 4 == 0)
-                    {
-                        for (int d = 0; d < 8; ++d)
-                        {
-                            if (points.ContainsKey((i * 2 + dr[d] * 2, j * 2 + dc[d] * 2))
-                                && (points.ContainsKey((i * 2 + dr[(d + 1) % 8] * 2, j * 2 + dc[(d + 1) % 8] * 2))
-                                && points.ContainsKey((i * 2 + dr[(d + 7) % 8] * 2, j * 2 + dc[(d + 7) % 8] * 2)) || d % 2 == 0))
-                            {
-                                points[(i * 2 + dr[d], j * 2 + dc[d])] = g.AddPlanetAt(ArcenPoint.Create((j * 2 + dc[d]) * unit, (i * 2 + dr[d]) * unit));
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (int i = 0; i < rows + 2; ++i)
-            {
-                for (int j = 0; j < columns + 2; ++j)
-                {
-                    if ((i + j) % 2 == 0 && points.ContainsKey((i * 2, j * 2)))
-                    {
-                        if (points.ContainsKey((i * 2 + 1, j * 2 - 1)))
-                        {
-                            points[(i * 2, j * 2)].AddLinkTo(points[(i * 2 + 1, j * 2 - 1)]);
-                            if (points.ContainsKey((i * 2 + 2, j * 2 - 2)))
-                                points[(i * 2 + 1, j * 2 - 1)].AddLinkTo(points[(i * 2 + 2, j * 2 - 2)]);
-                        }
-                        else if (points.ContainsKey((i * 2 + 2, j * 2 - 2)))
-                        {
-                            points[(i * 2, j * 2)].AddLinkTo(points[(i * 2 + 2, j * 2 - 2)]);
-                        }
-                        if (points.ContainsKey((i * 2 + 1, j * 2 + 1)))
-                        {
-                            points[(i * 2, j * 2)].AddLinkTo(points[(i * 2 + 1, j * 2 + 1)]);
-                            if (points.ContainsKey((i * 2 + 2, j * 2 + 2)))
-                                points[(i * 2 + 1, j * 2 + 1)].AddLinkTo(points[(i * 2 + 2, j * 2 + 2)]);
-                        }
-                        else if (points.ContainsKey((i * 2 + 2, j * 2 + 2)))
-                        {
-                            points[(i * 2, j * 2)].AddLinkTo(points[(i * 2 + 2, j * 2 + 2)]);
-                        }
-
-                        if (i % 2 == 0 && j % 2 == 0 && (i + j) % 4 == 0)
-                        {
-                            for (int d = 0; d < 8; ++d)
-                            {
-                                if (points.ContainsKey((i * 2 + dr[d], j * 2 + dc[d])))
-                                {
-                                    if (d % 2 == 1)
-                                    {
-                                        points[(i * 2 + dr[d], j * 2 + dc[d])].AddLinkTo(points[(i * 2 + dr[d] * 2, j * 2 + dc[d] * 2)]);
-                                    }
-                                    if (points.ContainsKey((i * 2 + dr[(d + 1) % 8], j * 2 + dc[(d + 1) % 8])))
-                                    {
-                                        points[(i * 2 + dr[d], j * 2 + dc[d])].AddLinkTo(points[(i * 2 + dr[(d + 1) % 8], j * 2 + dc[(d + 1) % 8])]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
+                    if ((i + j) % 2 == 1)
+                        (i % 2 == 0 ? ((i + j) % 4 == 1 ? diamondY : diamondYFlipped) : ((i + j) % 4 == 1 ? diamondYRight : diamondYLeft)).Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
 
             return g;
         }
