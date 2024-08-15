@@ -30,6 +30,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 for (int c = 1; c <= 35; ++c)
                 {
+                    if (galaxyShape == 2 && (r + c) % 2 == 1 && symmetry < 300) continue;
                     int planets = r * c;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
                     FInt currentAspectRatio = (FInt)r / (FInt)c;
@@ -45,7 +46,19 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
-            var g = MakeGrid(rows, columns);
+            FakeGalaxy g;
+            if (galaxyShape == 0)
+            {
+                g = MakeGrid(rows, columns);
+            }
+            else if (galaxyShape == 1)
+            {
+                g = MakeGridOctagonal(rows, columns, (Math.Min(rows, columns) / FInt.Create(3414, false)).GetNearestIntPreferringLower());
+            }
+            else
+            {
+                g = MakeGridCross(rows, columns, (Math.Min(rows, columns) / 3 + 1) & -1 | rows % 2);
+            }
 
             if (symmetry == 150)
             {
@@ -92,6 +105,35 @@ namespace AhyangyiMaps.Tessellation
             for (int i = 0; i < rows; ++i)
                 for (int j = 0; j < columns; ++j)
                     square.Imprint(g, ArcenPoint.Create(j * unit, i * unit));
+
+            return g;
+        }
+
+        protected static FakeGalaxy MakeGridOctagonal(int rows, int columns, int octagonalSideLength)
+        {
+            FakeGalaxy g = new FakeGalaxy();
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
+                {
+                    if ((i + j) < octagonalSideLength) continue;
+                    if ((i + columns - 1 - j) < octagonalSideLength) continue;
+                    if ((rows - 1 - i + j) < octagonalSideLength) continue;
+                    if ((rows - 1 - i + columns - 1 - j) < octagonalSideLength) continue;
+                    square.Imprint(g, ArcenPoint.Create(j * unit, i * unit));
+                }
+
+            return g;
+        }
+
+        protected static FakeGalaxy MakeGridCross(int rows, int columns, int crossWidth)
+        {
+            FakeGalaxy g = new FakeGalaxy();
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
+                {
+                    if ((i * 2 < rows - crossWidth || i * 2 > rows + crossWidth - 2) && (j * 2 < columns - crossWidth || j * 2 > columns + crossWidth - 2)) continue;
+                    square.Imprint(g, ArcenPoint.Create(j * unit, i * unit));
+                }
 
             return g;
         }

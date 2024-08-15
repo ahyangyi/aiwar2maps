@@ -27,8 +27,8 @@ namespace AhyangyiMaps.Tessellation
             center.AddLinkTo(p3);
             center.AddLinkTo(root);
 
-            squareY.breakpoints.Add((p2.location, p3.location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit, unit * 2) });
-            squareY.connectionsToBreak.Add((p0.location, p1.location));
+            squareY.breakpoints.Add((p2.Location, p3.Location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit, unit * 2) });
+            squareY.connectionsToBreak.Add((p0.Location, p1.Location));
 
             squareYFlipped = squareY.FlipY();
         }

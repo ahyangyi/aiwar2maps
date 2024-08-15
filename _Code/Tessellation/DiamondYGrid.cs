@@ -31,10 +31,10 @@ namespace AhyangyiMaps.Tessellation
             center.AddLinkTo(topRight);
             center.AddLinkTo(bottom);
 
-            diamondY.breakpoints.Add((bottom.location, left.location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit, unit) });
-            diamondY.breakpoints.Add((bottom.location, right.location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit * 3, unit) });
-            diamondY.connectionsToBreak.Add((top.location, left.location));
-            diamondY.connectionsToBreak.Add((top.location, right.location));
+            diamondY.breakpoints.Add((bottom.Location, left.Location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit, unit) });
+            diamondY.breakpoints.Add((bottom.Location, right.Location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit * 3, unit) });
+            diamondY.connectionsToBreak.Add((top.Location, left.Location));
+            diamondY.connectionsToBreak.Add((top.Location, right.Location));
 
             diamondYFlipped = diamondY.FlipY();
         }
