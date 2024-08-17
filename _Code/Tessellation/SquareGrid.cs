@@ -31,6 +31,7 @@ namespace AhyangyiMaps.Tessellation
                 for (int c = 1; c <= 35; ++c)
                 {
                     if (galaxyShape == 2 && (r + c) % 2 == 1 && symmetry < 300) continue;
+                    if (symmetry == 10001 && c % 3 != 0) continue;
                     int planets = r * c;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
                     FInt currentAspectRatio = (FInt)r / (FInt)c;
@@ -60,6 +61,10 @@ namespace AhyangyiMaps.Tessellation
                 g = MakeGridCross(rows, columns, (Math.Min(rows, columns) / 3 + 1) & -1 | rows % 2);
             }
 
+            if (symmetry == 100)
+            {
+                g.MakeAsymmetric();
+            }
             if (symmetry == 150)
             {
                 g.MakeBilateral();
@@ -98,6 +103,10 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry == 10000)
             {
                 g.MakeTranslational2(unit * ((columns + 1) / 2));
+            }
+            else if (symmetry == 10001)
+            {
+                g.MakeTriptych(unit * (columns / 3));
             }
 
             return g;

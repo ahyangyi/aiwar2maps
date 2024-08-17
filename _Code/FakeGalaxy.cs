@@ -134,6 +134,11 @@ namespace AhyangyiMaps
             Location.X += (dx * wobble).GetNearestIntPreferringLower();
             Location.Y += (dy * wobble).GetNearestIntPreferringLower();
         }
+        public void FakeReflect(FakePlanet other)
+        {
+            Rotate = other;
+            other.Rotate = this;
+        }
 
         public void SetReflect(FakePlanet other)
         {
@@ -485,6 +490,38 @@ namespace AhyangyiMaps
                 {
                     planet.WobbleMatrix = Matrix2x2.Zero;
                     ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet });
+                }
+            }
+            MakeSymmetricGroups();
+        }
+
+        public void MakeTriptych(int xDiff)
+        {
+            foreach (FakePlanet planet in planets)
+            {
+                {
+                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 2 - planet.Location.X, planet.Location.Y);
+                    if (locationIndex.ContainsKey(newPoint))
+                    {
+                        FakePlanet other = locationIndex[newPoint];
+                        planet.SetReflect(other);
+                    }
+                }
+                {
+                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 4 - planet.Location.X, planet.Location.Y);
+                    if (locationIndex.ContainsKey(newPoint))
+                    {
+                        FakePlanet other = locationIndex[newPoint];
+                        planet.FakeReflect(other);
+                    }
+                }
+                if (planet.Location.X % xDiff == 0)
+                {
+                    planet.WobbleMatrix = Matrix2x2.ProjectToY;
+                }
+                else if (planet.Location.X > xDiff && planet.Location.X < xDiff * 2)
+                {
+                    planet.WobbleMatrix = Matrix2x2.FlipX;
                 }
             }
             MakeSymmetricGroups();
