@@ -41,6 +41,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 for (int c = 1; c <= 60; ++c)
                 {
+                    if (symmetry == 10000 && c % 2 == 1) continue;
                     int planets = (r + 1) * (c + 1) + r * c * 2;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
                     FInt currentAspectRatio = (FInt)r / (FInt)c;
@@ -84,6 +85,10 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
                 return fg;
+            }
+            else if (symmetry == 10000)
+            {
+                g.MakeTranslational2(unit * 2 * (columns / 2));
             }
 
             return g;

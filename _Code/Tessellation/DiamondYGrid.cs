@@ -48,6 +48,7 @@ namespace AhyangyiMaps.Tessellation
                 for (int c = 2; c <= 60; c++)
                 {
                     if (symmetry == 150 && c % 2 == 0) continue;
+                    if (symmetry == 10000 && c % 4 != 3) continue;
                     // FIXME: only works when both are odd
                     int planets = 2 * r * c + r + c + 3;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -94,6 +95,10 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
                 return fg;
+            }
+            else if (symmetry == 10000)
+            {
+                g.MakeTranslational2((columns + 1) * unit);
             }
 
             return g;

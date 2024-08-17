@@ -256,6 +256,16 @@ namespace AhyangyiMaps
                         planetsInGroup.Add(cur.Reflect);
                         visited.Add(cur.Reflect);
                     }
+                    if (cur.TranslatePrevious != null && !visited.Contains(cur.TranslatePrevious))
+                    {
+                        planetsInGroup.Add(cur.TranslatePrevious);
+                        visited.Add(cur.TranslatePrevious);
+                    }
+                    if (cur.TranslateNext != null && !visited.Contains(cur.TranslateNext))
+                    {
+                        planetsInGroup.Add(cur.TranslateNext);
+                        visited.Add(cur.TranslateNext);
+                    }
                 }
 
                 symmetricGroups.Add(new SymmetricGroup(planetsInGroup));
@@ -418,14 +428,16 @@ namespace AhyangyiMaps
 
         public void MakeTranslational2(int xDiff)
         {
-            var visited = new HashSet<FakePlanet>();
             foreach (FakePlanet planet in planets)
             {
-                if (visited.Contains(planet))
-                    continue;
-
-
+                ArcenPoint newPoint = ArcenPoint.Create(planet.Location.X + xDiff, planet.Location.Y);
+                if (locationIndex.ContainsKey(newPoint))
+                {
+                    FakePlanet other = locationIndex[newPoint];
+                    planet.SetNextTranslation(other);
+                }
             }
+            MakeSymmetricGroups();
         }
 
         public void MakeRotational2()

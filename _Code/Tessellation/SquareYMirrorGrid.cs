@@ -75,6 +75,10 @@ namespace AhyangyiMaps.Tessellation
                 }
                 return fg;
             }
+            else if (symmetry == 10000)
+            {
+                g.MakeTranslational2(unit * 2 * (columns / 2));
+            }
 
             return g;
         }
