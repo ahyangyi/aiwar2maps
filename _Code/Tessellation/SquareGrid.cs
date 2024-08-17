@@ -61,10 +61,6 @@ namespace AhyangyiMaps.Tessellation
                 g = MakeGridCross(rows, columns, (Math.Min(rows, columns) / 3 + 1) & -1 | rows % 2);
             }
 
-            if (symmetry == 100)
-            {
-                g.MakeAsymmetric();
-            }
             if (symmetry == 150)
             {
                 g.MakeBilateral();

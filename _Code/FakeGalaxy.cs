@@ -235,7 +235,7 @@ namespace AhyangyiMaps
             }
         }
 
-        protected void MakeSymmetricGroups()
+        public void MakeSymmetricGroups()
         {
             var visited = new HashSet<FakePlanet>();
             symmetricGroups.Clear();
@@ -433,11 +433,6 @@ namespace AhyangyiMaps
             }
         }
 
-        public void MakeAsymmetric()
-        {
-            MakeSymmetricGroups();
-        }
-
         public void MakeBilateral()
         {
             int maxX = planets.Max(planet => planet.Location.X);
@@ -456,7 +451,7 @@ namespace AhyangyiMaps
                     planet.SetReflect(planet);
                 }
             }
-            MakeSymmetricGroups();
+
         }
 
         public void MakeTranslational2(int xDiff)
@@ -470,7 +465,7 @@ namespace AhyangyiMaps
                     planet.SetNextTranslation(other);
                 }
             }
-            MakeSymmetricGroups();
+
         }
 
         public void MakeRotational2()
@@ -492,7 +487,7 @@ namespace AhyangyiMaps
                     ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet });
                 }
             }
-            MakeSymmetricGroups();
+
         }
 
         public void MakeTriptych(int xDiff)
@@ -524,7 +519,7 @@ namespace AhyangyiMaps
                     planet.WobbleMatrix = Matrix2x2.FlipX;
                 }
             }
-            MakeSymmetricGroups();
+
         }
 
         public void MakeRotational2Bilateral()
@@ -578,7 +573,7 @@ namespace AhyangyiMaps
                     }
                 }
             }
-            MakeSymmetricGroups();
+
         }
 
         public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional, bool autoAdvance = false)
@@ -841,7 +836,7 @@ namespace AhyangyiMaps
                     }
                 }
             }
-            MakeSymmetricGroups();
+
         }
 
         public void Populate(Galaxy galaxy, PlanetType planetType, RandomGenerator rng)

@@ -65,6 +65,8 @@ namespace AhyangyiMaps
                 g = DiamondYFlowerGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
             }
 
+            g.MakeSymmetricGroups();
+
             int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
             g.Wobble(planetType, wobble, Context.RandomToUse);
 
