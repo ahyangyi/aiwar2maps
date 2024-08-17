@@ -272,6 +272,41 @@ namespace AhyangyiMaps
             }
         }
 
+        protected System.Collections.Generic.List<(FakePlanet, FakePlanet)> ListSymmetricEdges(FakePlanet a, FakePlanet b)
+        {
+            var visited = new HashSet<(FakePlanet, FakePlanet)>();
+            var queue = new System.Collections.Generic.Queue<(FakePlanet, FakePlanet)>();
+
+            visited.Add((a, b));
+            queue.Enqueue((a, b));
+            while (queue.Count > 0)
+            {
+                var (c, d) = queue.Dequeue();
+
+                if (c.Rotate != null && d.Rotate != null && !visited.Contains((c.Rotate, d.Rotate)))
+                {
+                    visited.Add((c.Rotate, d.Rotate));
+                    queue.Enqueue((c.Rotate, d.Rotate));
+                }
+                if (c.Reflect != null && d.Reflect != null && !visited.Contains((c.Reflect, d.Reflect)))
+                {
+                    visited.Add((c.Reflect, d.Reflect));
+                    queue.Enqueue((c.Reflect, d.Reflect));
+                }
+                if (c.TranslatePrevious != null && d.TranslatePrevious != null && !visited.Contains((c.TranslatePrevious, d.TranslatePrevious)))
+                {
+                    visited.Add((c.TranslatePrevious, d.TranslatePrevious));
+                    queue.Enqueue((c.TranslatePrevious, d.TranslatePrevious));
+                }
+                if (c.TranslateNext != null && d.TranslateNext != null && !visited.Contains((c.TranslateNext, d.TranslateNext)))
+                {
+                    visited.Add((c.TranslateNext, d.TranslateNext));
+                    queue.Enqueue((c.TranslateNext, d.TranslateNext));
+                }
+            }
+            return visited.ToList();
+        }
+
         public void RemoveSymmetricGroup(SymmetricGroup symmetricGroup)
         {
             RemovePlanetsButDoesNotUpdateSymmetricGroups(new HashSet<FakePlanet>(symmetricGroup.planets));
@@ -321,7 +356,6 @@ namespace AhyangyiMaps
 
         public void EnsureConnectivity()
         {
-            const int maxRotationalSymmetry = 8;
             if (planets.Count == 0)
             {
                 return;
@@ -359,18 +393,12 @@ namespace AhyangyiMaps
 
                 if (chosenNeighbor != null)
                 {
-                    FakePlanet a = chosen, b = chosenNeighbor;
-                    for (int i = 0; i < maxRotationalSymmetry; ++i)
+                    foreach (var (a, b) in ListSymmetricEdges(chosen, chosenNeighbor))
                     {
-                        if (a == null || b == null)
-                            break;
                         a.AddLinkTo(b);
-                        if (a.Reflect != null && b.Reflect != null)
-                            a.Reflect.AddLinkTo(b.Reflect);
-                        a = a.Rotate;
-                        b = b.Rotate;
                     }
                 }
+
                 queue.Enqueue(chosen);
                 visited.Add(chosen);
                 shortestDistance.Remove(chosen);
