@@ -451,21 +451,6 @@ namespace AhyangyiMaps
                     planet.SetReflect(planet);
                 }
             }
-
-        }
-
-        public void MakeTranslational2(int xDiff)
-        {
-            foreach (FakePlanet planet in planets)
-            {
-                ArcenPoint newPoint = ArcenPoint.Create(planet.Location.X + xDiff, planet.Location.Y);
-                if (locationIndex.ContainsKey(newPoint))
-                {
-                    FakePlanet other = locationIndex[newPoint];
-                    planet.SetNextTranslation(other);
-                }
-            }
-
         }
 
         public void MakeRotational2()
@@ -487,39 +472,6 @@ namespace AhyangyiMaps
                     ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet });
                 }
             }
-
-        }
-
-        public void MakeTriptych(int xDiff)
-        {
-            foreach (FakePlanet planet in planets)
-            {
-                {
-                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 2 - planet.Location.X, planet.Location.Y);
-                    if (locationIndex.ContainsKey(newPoint))
-                    {
-                        FakePlanet other = locationIndex[newPoint];
-                        planet.SetReflect(other);
-                    }
-                }
-                {
-                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 4 - planet.Location.X, planet.Location.Y);
-                    if (locationIndex.ContainsKey(newPoint))
-                    {
-                        FakePlanet other = locationIndex[newPoint];
-                        planet.FakeReflect(other);
-                    }
-                }
-                if (planet.Location.X % xDiff == 0)
-                {
-                    planet.WobbleMatrix = Matrix2x2.ProjectToY;
-                }
-                else if (planet.Location.X > xDiff && planet.Location.X < xDiff * 2)
-                {
-                    planet.WobbleMatrix = Matrix2x2.FlipX;
-                }
-            }
-
         }
 
         public void MakeRotational2Bilateral()
@@ -573,9 +525,7 @@ namespace AhyangyiMaps
                     }
                 }
             }
-
         }
-
         public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional, bool autoAdvance = false)
         {
             var planetsToRemove = new HashSet<FakePlanet>();
@@ -836,7 +786,84 @@ namespace AhyangyiMaps
                     }
                 }
             }
+        }
+        public void MakeTranslational2(int xDiff)
+        {
+            foreach (FakePlanet planet in planets)
+            {
+                ArcenPoint newPoint = ArcenPoint.Create(planet.Location.X + xDiff, planet.Location.Y);
+                if (locationIndex.ContainsKey(newPoint))
+                {
+                    FakePlanet other = locationIndex[newPoint];
+                    planet.SetNextTranslation(other);
+                }
+            }
+        }
+        public void MakeTriptych(int xDiff)
+        {
+            foreach (FakePlanet planet in planets)
+            {
+                {
+                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 2 - planet.Location.X, planet.Location.Y);
+                    if (locationIndex.ContainsKey(newPoint))
+                    {
+                        FakePlanet other = locationIndex[newPoint];
+                        planet.SetReflect(other);
+                    }
+                }
+                {
+                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 4 - planet.Location.X, planet.Location.Y);
+                    if (locationIndex.ContainsKey(newPoint))
+                    {
+                        FakePlanet other = locationIndex[newPoint];
+                        planet.FakeReflect(other);
+                    }
+                }
+                if (planet.Location.X % xDiff == 0)
+                {
+                    planet.WobbleMatrix = Matrix2x2.ProjectToY;
+                }
+                else if (planet.Location.X > xDiff && planet.Location.X < xDiff * 2)
+                {
+                    planet.WobbleMatrix = Matrix2x2.FlipX;
+                }
+            }
+        }
+        public void MakeDualGalaxy(int xDiff)
+        {
+            int maxY = planets.Max(planet => planet.Location.Y);
 
+            foreach (FakePlanet planet in planets)
+            {
+                {
+                    ArcenPoint newPoint = ArcenPoint.Create(planet.Location.X + xDiff, planet.Location.Y);
+                    if (locationIndex.ContainsKey(newPoint))
+                    {
+                        FakePlanet other = locationIndex[newPoint];
+                        planet.SetNextTranslation(other);
+                    }
+                }
+                {
+                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 2 - planet.Location.X, maxY - planet.Location.Y);
+                    if (locationIndex.ContainsKey(newPoint))
+                    {
+                        FakePlanet other = locationIndex[newPoint];
+                        ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet, other });
+                    }
+                }
+                if (planet.Location.X % xDiff == 0)
+                {
+                    planet.WobbleMatrix = Matrix2x2.Zero;
+                }
+                else if (planet.Location.X * 2 % xDiff == 0 || planet.Location.Y * 2 == maxY)
+                {
+                    planet.WobbleMatrix = Matrix2x2.Zero;
+                }
+                else if ((planet.Location.X % xDiff * 2) > xDiff || planet.Location.X * 2 == xDiff && planet.Location.Y * 2 > maxY)
+                {
+                    planet.WobbleMatrix = Matrix2x2.Rotation2;
+                }
+            }
         }
 
         public void Populate(Galaxy galaxy, PlanetType planetType, RandomGenerator rng)

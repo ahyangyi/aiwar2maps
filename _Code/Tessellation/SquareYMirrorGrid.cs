@@ -23,6 +23,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 for (int c = 2; c <= 70; ++c)
                 {
+                    if (symmetry == 10001 && c % 3 != 0) continue;
                     int planets = r * c + (r - 1) * (c - 1) + (r / 2) * (c - 1);
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
                     FInt currentAspectRatio = (FInt)(r - 1) / (FInt)(c - 1);
@@ -78,6 +79,10 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry == 10000)
             {
                 g.MakeTranslational2(unit * 2 * (columns / 2));
+            }
+            else if (symmetry == 10001)
+            {
+                g.MakeTriptych(unit * 2 * (columns / 3));
             }
 
             return g;
