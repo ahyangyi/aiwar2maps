@@ -66,10 +66,6 @@ namespace AhyangyiMaps
             }
 
             g.MakeSymmetricGroups();
-
-            int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
-            g.Wobble(planetType, wobble, Context.RandomToUse);
-
             if (dissonance > 0)
             {
                 while (g.planets.Count > numPlanets)
@@ -79,6 +75,10 @@ namespace AhyangyiMaps
                 }
             }
             g.EnsureConnectivity();
+
+            int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
+            g.Wobble(planetType, wobble, Context.RandomToUse);
+
             g.Populate(galaxy, planetType, Context.RandomToUse);
         }
     }

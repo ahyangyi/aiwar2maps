@@ -831,6 +831,8 @@ namespace AhyangyiMaps
         }
         public void MakeDualGalaxy(int xDiff)
         {
+            int maxX = planets.Max(planet => planet.Location.X);
+            int xRotate = maxX - xDiff;
             int maxY = planets.Max(planet => planet.Location.Y);
 
             foreach (FakePlanet planet in planets)
@@ -844,24 +846,36 @@ namespace AhyangyiMaps
                     }
                 }
                 {
-                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 2 - planet.Location.X, maxY - planet.Location.Y);
+                    ArcenPoint newPoint = ArcenPoint.Create(maxX - planet.Location.X, maxY - planet.Location.Y);
                     if (locationIndex.ContainsKey(newPoint))
                     {
                         FakePlanet other = locationIndex[newPoint];
                         ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet, other });
                     }
                 }
-                if (planet.Location.X % xDiff == 0)
+                int x = planet.Location.X % xDiff;
+                if (x <= maxX - xDiff)
                 {
-                    planet.WobbleMatrix = Matrix2x2.Zero;
+                    if (x * 2 == maxX - xDiff && planet.Location.Y * 2 == maxY)
+                    {
+                        planet.WobbleMatrix = Matrix2x2.Zero;
+                    }
+                    else if (x * 2 > maxX - xDiff || x * 2 == maxX - xDiff && planet.Location.Y * 2 > maxY)
+                    {
+                        planet.WobbleMatrix = Matrix2x2.Rotation2;
+                    }
                 }
-                else if (planet.Location.X * 2 % xDiff == 0 || planet.Location.Y * 2 == maxY)
+                else
                 {
-                    planet.WobbleMatrix = Matrix2x2.Zero;
-                }
-                else if ((planet.Location.X % xDiff * 2) > xDiff || planet.Location.X * 2 == xDiff && planet.Location.Y * 2 > maxY)
-                {
-                    planet.WobbleMatrix = Matrix2x2.Rotation2;
+                    x -= maxX - xDiff;
+                    if (x * 2 == xDiff * 2 - maxX && planet.Location.Y * 2 == maxY)
+                    {
+                        planet.WobbleMatrix = Matrix2x2.Zero;
+                    }
+                    else if (x * 2 > xDiff * 2 - maxX || x * 2 == xDiff * 2 - maxX && planet.Location.Y * 2 > maxY)
+                    {
+                        planet.WobbleMatrix = Matrix2x2.Rotation2;
+                    }
                 }
             }
         }
