@@ -36,7 +36,9 @@ namespace AhyangyiMaps.Tessellation
                     if (symmetry == 150 && c % 2 == 1) continue;
                     if (symmetry == 200 && (r + c) % 2 == 0) continue;
                     if (symmetry == 250 && (r % 2 == 0 || c % 2 == 1)) continue;
-                    if (symmetry == 10000 && c % 2 == 1) continue;
+                    if (symmetry == 10000 && (c % 4 == 1 || c % 4 == 2)) continue;
+                    if (symmetry == 10001 && c % 3 != 0) continue;
+                    if (symmetry == 10002 && ((r + c) % 2 == 0 || c % 4 == 1 || c % 4 == 2)) continue;
                     // FIXME: rough estimation
                     int planets = (r * c) / 2;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
@@ -92,7 +94,15 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry == 10000)
             {
-                g.MakeTranslational2(columns / 2 * xunit);
+                g.MakeTranslational2((columns + 3) / 4 * 2 * xunit);
+            }
+            else if (symmetry == 10001)
+            {
+                g.MakeTriptych(columns / 3 * xunit);
+            }
+            else if (symmetry == 10002)
+            {
+                g.MakeDualGalaxy((columns + 3) / 4 * 2 * xunit);
             }
 
             return g;

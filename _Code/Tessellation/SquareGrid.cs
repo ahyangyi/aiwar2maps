@@ -32,7 +32,6 @@ namespace AhyangyiMaps.Tessellation
                 {
                     if (galaxyShape == 2 && (r + c) % 2 == 1 && symmetry < 300) continue;
                     if (symmetry == 10001 && c % 3 != 0) continue;
-                    if (symmetry == 10002 && c % 2 == 0) continue;
                     int planets = r * c;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
                     FInt currentAspectRatio = (FInt)r / (FInt)c;

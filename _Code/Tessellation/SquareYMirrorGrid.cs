@@ -19,14 +19,15 @@ namespace AhyangyiMaps.Tessellation
             int rows = 5;
             int columns = 8;
             FInt badness = (FInt)1000000;
-            for (int r = 3; r <= 70; r += 2)
+            for (int r = 2; r <= 70; r += 2)
             {
                 for (int c = 2; c <= 70; ++c)
                 {
                     if (symmetry == 10001 && c % 3 != 0) continue;
-                    int planets = r * c + (r - 1) * (c - 1) + (r / 2) * (c - 1);
+                    if (symmetry == 10002 && c % 2 == 1) continue;
+                    int planets = (r + 1) * (c + 1) + r * c + ((r + 1) / 2) * c;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
-                    FInt currentAspectRatio = (FInt)(r - 1) / (FInt)(c - 1);
+                    FInt currentAspectRatio = (FInt)r / (FInt)c;
                     FInt p1 = currentAspectRatio / aspectRatio;
                     FInt p2 = aspectRatio / currentAspectRatio;
                     FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
@@ -78,11 +79,15 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry == 10000)
             {
-                g.MakeTranslational2(unit * 2 * (columns / 2));
+                g.MakeTranslational2(unit * 2 * ((columns + 1) / 2));
             }
             else if (symmetry == 10001)
             {
                 g.MakeTriptych(unit * 2 * (columns / 3));
+            }
+            else if (symmetry == 10002)
+            {
+                g.MakeDualGalaxy(unit * 2 * ((columns + 1) / 2));
             }
 
             return g;
@@ -91,8 +96,8 @@ namespace AhyangyiMaps.Tessellation
         {
             FakeGalaxy g = new FakeGalaxy();
 
-            for (int i = 0; i < rows - 1; ++i)
-                for (int j = 0; j < columns - 1; ++j)
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
                     (i % 2 == 0 ? squareYFlipped : squareY).Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
 
             return g;
