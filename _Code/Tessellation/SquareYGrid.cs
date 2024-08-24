@@ -48,10 +48,10 @@ namespace AhyangyiMaps.Tessellation
                     FInt p1 = currentAspectRatio / aspectRatio;
                     FInt p2 = aspectRatio / currentAspectRatio;
                     FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
-                    FInt current_badness = planetBadness + aspectRatioBadness;
-                    if (current_badness < badness)
+                    FInt currentBadness = planetBadness + aspectRatioBadness;
+                    if (currentBadness < badness)
                     {
-                        badness = current_badness;
+                        badness = currentBadness;
                         rows = r;
                         columns = c;
                     }
@@ -76,10 +76,10 @@ namespace AhyangyiMaps.Tessellation
                         g2.MakeRotationalGeneric(c * unit, r * 2 * unit, unit, symmetry / 100, symmetry % 100 == 50, c % 2 == 0);
                         int planets = g2.planets.Count;
                         FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
-                        FInt current_badness = planetBadness;
-                        if (current_badness < newBadness)
+                        FInt currentBadness = planetBadness;
+                        if (currentBadness < newBadness)
                         {
-                            newBadness = current_badness;
+                            newBadness = currentBadness;
                             fg = g2;
                         }
                     }

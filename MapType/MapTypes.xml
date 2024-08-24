@@ -19,7 +19,7 @@
 		min_planets="40"
 		max_planets="300"
 		>
-    <map_option name="Tessellation" display_name="Tessellation"
+    <map_option name="Tessellation" display_name="Tessellation Type"
       description="What tessellation should we use?" default_id="0">
       <choice_value id="0" display_name="Square" description="A square grid" related_int_value="0" />
       <choice_value id="1" display_name="Hexagon" description="Homeycomb-like grid." related_int_value="1" />
@@ -35,7 +35,7 @@
       <choice_value id="1" display_name="1:1" description="A square galaxy." related_int_value="1" />
       <choice_value id="2" display_name="9:16" description="A tall galaxy." related_int_value="2" />
     </map_option>
-    <map_option name="GalaxyShape" display_name="Galaxy Shape"
+    <map_option name="GalaxyShape" display_name="Map Shape"
       description="What is the overall map shape?" default_id="0">
       <choice_value id="0" display_name="Rectangular" description="For less fancy symmetry settings, this means a rectangular galaxy. For the more fancy symmetries, this provides a middle point between rounded and angular." related_int_value="0" />
       <choice_value id="1" display_name="Rounded" description="A circle, hexagonal or otherwise rounded galaxy." related_int_value="1" />

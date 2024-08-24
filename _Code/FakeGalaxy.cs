@@ -9,6 +9,7 @@ namespace AhyangyiMaps
     {
         public FInt xx, xy, yx, yy;
 
+
         public Matrix2x2(FInt xx, FInt xy, FInt yx, FInt yy)
         {
             this.xx = xx;
@@ -98,6 +99,9 @@ namespace AhyangyiMaps
         public Matrix2x2 WobbleMatrix = Matrix2x2.Identity;
         public FakePlanet Rotate, Reflect, TranslatePrevious, TranslateNext;
 
+        public int X { get => Location.X; set => Location.X = value; }
+        public int Y { get => Location.Y; set => Location.Y = value; }
+
         public FakePlanet(ArcenPoint location)
         {
             this.Location = location;
@@ -131,8 +135,8 @@ namespace AhyangyiMaps
         public void Wobble(int wobble, FInt dx, FInt dy)
         {
             (dx, dy) = WobbleMatrix.Apply(dx, dy);
-            Location.X += (dx * wobble).GetNearestIntPreferringLower();
-            Location.Y += (dy * wobble).GetNearestIntPreferringLower();
+            X += (dx * wobble).GetNearestIntPreferringLower();
+            Y += (dy * wobble).GetNearestIntPreferringLower();
         }
         public void FakeReflect(FakePlanet other)
         {
@@ -435,17 +439,17 @@ namespace AhyangyiMaps
 
         public void MakeBilateral()
         {
-            int maxX = planets.Max(planet => planet.Location.X);
+            int maxX = planets.Max(planet => planet.X);
 
             foreach (FakePlanet planet in planets)
             {
-                if (planet.Location.X * 2 < maxX)
+                if (planet.X * 2 < maxX)
                 {
-                    FakePlanet other = locationIndex[ArcenPoint.Create(maxX - planet.Location.X, planet.Location.Y)];
+                    FakePlanet other = locationIndex[ArcenPoint.Create(maxX - planet.X, planet.Y)];
                     other.WobbleMatrix = Matrix2x2.FlipX;
                     planet.SetReflect(other);
                 }
-                else if (planet.Location.X * 2 == maxX)
+                else if (planet.X * 2 == maxX)
                 {
                     planet.WobbleMatrix = Matrix2x2.ProjectToY;
                     planet.SetReflect(planet);
@@ -455,18 +459,18 @@ namespace AhyangyiMaps
 
         public void MakeRotational2()
         {
-            int maxX = planets.Max(planet => planet.Location.X);
-            int maxY = planets.Max(planet => planet.Location.Y);
+            int maxX = planets.Max(planet => planet.X);
+            int maxY = planets.Max(planet => planet.Y);
 
             foreach (FakePlanet planet in planets)
             {
-                if (planet.Location.X * 2 < maxX || planet.Location.X * 2 == maxX && planet.Location.Y * 2 < maxY)
+                if (planet.X * 2 < maxX || planet.X * 2 == maxX && planet.Y * 2 < maxY)
                 {
-                    FakePlanet other = locationIndex[ArcenPoint.Create(maxX - planet.Location.X, maxY - planet.Location.Y)];
+                    FakePlanet other = locationIndex[ArcenPoint.Create(maxX - planet.X, maxY - planet.Y)];
                     other.WobbleMatrix = Matrix2x2.Rotation2;
                     ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet, other });
                 }
-                else if (planet.Location.X * 2 == maxX && planet.Location.Y * 2 == maxY)
+                else if (planet.X * 2 == maxX && planet.Y * 2 == maxY)
                 {
                     planet.WobbleMatrix = Matrix2x2.Zero;
                     ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet });
@@ -476,19 +480,19 @@ namespace AhyangyiMaps
 
         public void MakeRotational2Bilateral()
         {
-            int maxX = planets.Max(planet => planet.Location.X);
-            int maxY = planets.Max(planet => planet.Location.Y);
+            int maxX = planets.Max(planet => planet.X);
+            int maxY = planets.Max(planet => planet.Y);
 
             symmetricGroups.Clear();
             foreach (FakePlanet planet in planets)
             {
-                if (planet.Location.X * 2 < maxX)
+                if (planet.X * 2 < maxX)
                 {
-                    if (planet.Location.Y * 2 < maxY)
+                    if (planet.Y * 2 < maxY)
                     {
-                        FakePlanet rot = locationIndex[ArcenPoint.Create(maxX - planet.Location.X, maxY - planet.Location.Y)];
-                        FakePlanet flipX = locationIndex[ArcenPoint.Create(maxX - planet.Location.X, planet.Location.Y)];
-                        FakePlanet flipY = locationIndex[ArcenPoint.Create(planet.Location.X, maxY - planet.Location.Y)];
+                        FakePlanet rot = locationIndex[ArcenPoint.Create(maxX - planet.X, maxY - planet.Y)];
+                        FakePlanet flipX = locationIndex[ArcenPoint.Create(maxX - planet.X, planet.Y)];
+                        FakePlanet flipY = locationIndex[ArcenPoint.Create(planet.X, maxY - planet.Y)];
                         rot.WobbleMatrix = Matrix2x2.Rotation2;
                         flipX.WobbleMatrix = Matrix2x2.FlipX;
                         flipY.WobbleMatrix = Matrix2x2.FlipY;
@@ -497,27 +501,27 @@ namespace AhyangyiMaps
                         planet.SetReflect(flipX);
                         rot.SetReflect(flipY);
                     }
-                    else if (planet.Location.Y * 2 == maxY)
+                    else if (planet.Y * 2 == maxY)
                     {
-                        FakePlanet flipX = locationIndex[ArcenPoint.Create(maxX - planet.Location.X, planet.Location.Y)];
+                        FakePlanet flipX = locationIndex[ArcenPoint.Create(maxX - planet.X, planet.Y)];
                         planet.WobbleMatrix = Matrix2x2.ProjectToX;
                         flipX.WobbleMatrix = Matrix2x2.ProjectToNegX;
                         ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet, flipX });
                         planet.SetReflect(flipX);
                     }
                 }
-                else if (planet.Location.X * 2 == maxX)
+                else if (planet.X * 2 == maxX)
                 {
-                    if (planet.Location.Y * 2 < maxY)
+                    if (planet.Y * 2 < maxY)
                     {
-                        FakePlanet flipY = locationIndex[ArcenPoint.Create(planet.Location.X, maxY - planet.Location.Y)];
+                        FakePlanet flipY = locationIndex[ArcenPoint.Create(planet.X, maxY - planet.Y)];
                         planet.WobbleMatrix = Matrix2x2.ProjectToY;
                         flipY.WobbleMatrix = Matrix2x2.ProjectToNegY;
                         ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet, flipY });
                         planet.SetReflect(planet);
                         flipY.SetReflect(flipY);
                     }
-                    else if (planet.Location.Y * 2 == maxY)
+                    else if (planet.Y * 2 == maxY)
                     {
                         planet.WobbleMatrix = Matrix2x2.Zero;
                         ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet });
@@ -552,8 +556,8 @@ namespace AhyangyiMaps
 
             foreach (FakePlanet planet in planetsBackup)
             {
-                int xdiff = planet.Location.X - cx;
-                int ydiff = planet.Location.Y - cy;
+                int xdiff = planet.X - cx;
+                int ydiff = planet.Y - cy;
 
                 if (ydiff > 0)
                 {
@@ -569,7 +573,7 @@ namespace AhyangyiMaps
                     continue;
                 }
 
-                var symPoint = ArcenPoint.Create(cx * 2 - planet.Location.X, planet.Location.Y);
+                var symPoint = ArcenPoint.Create(cx * 2 - planet.X, planet.Y);
                 if ((xdiff > -ydiff * sectorSlope - mergeMargin || xdiff < ydiff * sectorSlope + mergeMargin) && locationIndex.ContainsKey(symPoint))
                 {
                     if (xdiff == 0)
@@ -591,8 +595,8 @@ namespace AhyangyiMaps
                             var other = locationIndex[symPoint];
                             mergeLeftToRight[planet] = other;
                             mergeRightToLeft[other] = planet;
-                            planet.Location.X = (cx + ydiff * sectorSlope).GetNearestIntPreferringLower();
-                            xdiff = planet.Location.X - cx;
+                            planet.X = (cx + ydiff * sectorSlope).GetNearestIntPreferringLower();
+                            xdiff = planet.X - cx;
                         }
                         else
                         {
@@ -696,17 +700,17 @@ namespace AhyangyiMaps
                 {
                     continue;
                 }
-                int xdiff = planet.Location.X - cx;
-                int ydiff = planet.Location.Y - cy;
-                var symPoint = ArcenPoint.Create(cx * 2 - planet.Location.X, planet.Location.Y);
+                int xdiff = planet.X - cx;
+                int ydiff = planet.Y - cy;
+                var symPoint = ArcenPoint.Create(cx * 2 - planet.X, planet.Y);
 
                 if (xdiff <= ydiff * sectorSlope + d * distanceCoefficient && locationIndex.ContainsKey(symPoint))
                 {
                     bool hasAlternativeConnection = false;
                     foreach (FakePlanet neighbor in planet.Links)
                     {
-                        int neighborXdiff = neighbor.Location.X - cx;
-                        int neighborYdiff = neighbor.Location.Y - cy;
+                        int neighborXdiff = neighbor.X - cx;
+                        int neighborYdiff = neighbor.Y - cy;
 
                         if ((mergeLeftToRight.ContainsKey(neighbor) || neighbor.Location == center) &&
                             neighbor.Location.GetDistanceTo(planet.Location, false) < (xdiff - ydiff * sectorSlope) * FInt.Create(1414, false) / distanceCoefficient)
@@ -791,7 +795,7 @@ namespace AhyangyiMaps
         {
             foreach (FakePlanet planet in planets)
             {
-                ArcenPoint newPoint = ArcenPoint.Create(planet.Location.X + xDiff, planet.Location.Y);
+                ArcenPoint newPoint = ArcenPoint.Create(planet.X + xDiff, planet.Y);
                 if (locationIndex.ContainsKey(newPoint))
                 {
                     FakePlanet other = locationIndex[newPoint];
@@ -804,7 +808,7 @@ namespace AhyangyiMaps
             foreach (FakePlanet planet in planets)
             {
                 {
-                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 2 - planet.Location.X, planet.Location.Y);
+                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 2 - planet.X, planet.Y);
                     if (locationIndex.ContainsKey(newPoint))
                     {
                         FakePlanet other = locationIndex[newPoint];
@@ -812,18 +816,18 @@ namespace AhyangyiMaps
                     }
                 }
                 {
-                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 4 - planet.Location.X, planet.Location.Y);
+                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 4 - planet.X, planet.Y);
                     if (locationIndex.ContainsKey(newPoint))
                     {
                         FakePlanet other = locationIndex[newPoint];
                         planet.FakeReflect(other);
                     }
                 }
-                if (planet.Location.X % xDiff == 0)
+                if (planet.X % xDiff == 0)
                 {
                     planet.WobbleMatrix = Matrix2x2.ProjectToY;
                 }
-                else if (planet.Location.X > xDiff && planet.Location.X < xDiff * 2)
+                else if (planet.X > xDiff && planet.X < xDiff * 2)
                 {
                     planet.WobbleMatrix = Matrix2x2.FlipX;
                 }
@@ -831,14 +835,14 @@ namespace AhyangyiMaps
         }
         public void MakeDualGalaxy(int xDiff)
         {
-            int maxX = planets.Max(planet => planet.Location.X);
+            int maxX = planets.Max(planet => planet.X);
             int xRotate = maxX - xDiff;
-            int maxY = planets.Max(planet => planet.Location.Y);
+            int maxY = planets.Max(planet => planet.Y);
 
             foreach (FakePlanet planet in planets)
             {
                 {
-                    ArcenPoint newPoint = ArcenPoint.Create(planet.Location.X + xDiff, planet.Location.Y);
+                    ArcenPoint newPoint = ArcenPoint.Create(planet.X + xDiff, planet.Y);
                     if (locationIndex.ContainsKey(newPoint))
                     {
                         FakePlanet other = locationIndex[newPoint];
@@ -846,21 +850,21 @@ namespace AhyangyiMaps
                     }
                 }
                 {
-                    ArcenPoint newPoint = ArcenPoint.Create(maxX - planet.Location.X, maxY - planet.Location.Y);
+                    ArcenPoint newPoint = ArcenPoint.Create(maxX - planet.X, maxY - planet.Y);
                     if (locationIndex.ContainsKey(newPoint))
                     {
                         FakePlanet other = locationIndex[newPoint];
                         ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { planet, other });
                     }
                 }
-                int x = planet.Location.X % xDiff;
+                int x = planet.X % xDiff;
                 if (x <= maxX - xDiff)
                 {
-                    if (x * 2 == maxX - xDiff && planet.Location.Y * 2 == maxY)
+                    if (x * 2 == maxX - xDiff && planet.Y * 2 == maxY)
                     {
                         planet.WobbleMatrix = Matrix2x2.Zero;
                     }
-                    else if (x * 2 > maxX - xDiff || x * 2 == maxX - xDiff && planet.Location.Y * 2 > maxY)
+                    else if (x * 2 > maxX - xDiff || x * 2 == maxX - xDiff && planet.Y * 2 > maxY)
                     {
                         planet.WobbleMatrix = Matrix2x2.Rotation2;
                     }
@@ -868,16 +872,65 @@ namespace AhyangyiMaps
                 else
                 {
                     x -= maxX - xDiff;
-                    if (x * 2 == xDiff * 2 - maxX && planet.Location.Y * 2 == maxY)
+                    if (x * 2 == xDiff * 2 - maxX && planet.Y * 2 == maxY)
                     {
                         planet.WobbleMatrix = Matrix2x2.Zero;
                     }
-                    else if (x * 2 > xDiff * 2 - maxX || x * 2 == xDiff * 2 - maxX && planet.Location.Y * 2 > maxY)
+                    else if (x * 2 > xDiff * 2 - maxX || x * 2 == xDiff * 2 - maxX && planet.Y * 2 > maxY)
                     {
                         planet.WobbleMatrix = Matrix2x2.Rotation2;
                     }
                 }
             }
+        }
+        public void MakeDuplexBarrier()
+        {
+            int maxX = planets.Max(planet => planet.X);
+            int maxY = planets.Max(planet => planet.Y);
+            var smallToLarge = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+            var planetsBackup = planets.ToList();
+
+            foreach (FakePlanet planet in planetsBackup)
+            {
+
+            }
+        }
+        public void MakeDoubleSpark()
+        {
+
+        }
+        public void MakeY()
+        {
+            int maxX = planets.Max(planet => planet.X);
+            int maxY = planets.Max(planet => planet.Y);
+            var planetsBackup = planets.ToList();
+            var planetsToRemove = new HashSet<FakePlanet>();
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                if (maxX - planet.X > maxY - planet.Y)
+                {
+                    planetsToRemove.Add(planet);
+                    continue;
+                }
+                if (planet.X < maxX)
+                {
+                    var mirror = AddPlanetAt(ArcenPoint.Create(maxX * 2 - planet.X, planet.Y));
+                    planet.SetReflect(mirror);
+                }
+                else
+                {
+                    planet.SetReflect(planet);
+                }
+                {
+                    var translated = AddPlanetAt(Matrix2x2.Rotation8_7.Apply(ArcenPoint.Create(maxX * 2, maxY - maxX + (int)(320 * 1.414)), planet.X - maxX, planet.Y));
+                    planet.SetNextTranslation(translated);
+
+                    var translatedMirror = AddPlanetAt(ArcenPoint.Create(maxX * 2 - translated.X, translated.Y));
+                    translated.SetReflect(translatedMirror);
+                }
+            }
+
+            RemovePlanetsButDoesNotUpdateSymmetricGroups(planetsToRemove);
         }
 
         public void Populate(Galaxy galaxy, PlanetType planetType, RandomGenerator rng)
@@ -916,7 +969,7 @@ namespace AhyangyiMaps
         {
             FakePattern ret = new FakePattern();
             var planetMap = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
-            int maxY = planets.Max(planet => planet.Location.Y);
+            int maxY = planets.Max(planet => planet.Y);
 
             foreach (FakePlanet planet in planets)
                 planetMap[planet] = ret.AddPlanetAt(trans(planet.Location));
@@ -935,18 +988,18 @@ namespace AhyangyiMaps
         }
         public FakePattern FlipX()
         {
-            int maxX = planets.Max(planet => planet.Location.X);
+            int maxX = planets.Max(planet => planet.X);
             return Transform(p => ArcenPoint.Create(maxX - p.X, p.Y));
         }
 
         public FakePattern FlipY()
         {
-            int maxY = planets.Max(planet => planet.Location.Y);
+            int maxY = planets.Max(planet => planet.Y);
             return Transform(p => ArcenPoint.Create(p.X, maxY - p.Y));
         }
         public FakePattern RotateLeft()
         {
-            int maxY = planets.Max(planet => planet.Location.Y);
+            int maxY = planets.Max(planet => planet.Y);
             return Transform(p => ArcenPoint.Create(maxY - p.Y, p.X));
         }
 
