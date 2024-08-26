@@ -110,8 +110,9 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry == 10200)
             {
-                g = MakeGrid(rows, (columns + 3) / 4);
-                g.MakeY();
+                columns = (columns + 3) / 4;
+                g = MakeGrid(rows, columns);
+                g.MakeY(Matrix2x2.Rotation8_1, unit, columns * unit);
             }
 
             return g;

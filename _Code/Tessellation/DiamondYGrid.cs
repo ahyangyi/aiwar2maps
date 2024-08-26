@@ -105,6 +105,13 @@ namespace AhyangyiMaps.Tessellation
             {
                 g.MakeTriptych((columns + 1) / 3 * unit);
             }
+            else if (symmetry == 10200)
+            {
+                columns = (columns + 4) / 5;
+                rows = (rows * 5 / 4) / 2 * 2 + columns % 2;
+                g = MakeGrid(rows, columns, false);
+                g.MakeY(Matrix2x2.Rotation8_1, dunit, columns * 2 * unit);
+            }
 
             return g;
         }

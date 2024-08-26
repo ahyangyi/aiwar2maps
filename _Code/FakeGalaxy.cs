@@ -899,38 +899,93 @@ namespace AhyangyiMaps
         {
 
         }
-        public void MakeY()
+        public void MakeY(Matrix2x2 rotation, int d, int xSpan)
         {
-            int maxX = planets.Max(planet => planet.X);
+            var transformation = Matrix2x2.FlipY * rotation * Matrix2x2.FlipY * Matrix2x2.FlipX;
             int maxY = planets.Max(planet => planet.Y);
             var planetsBackup = planets.ToList();
             var planetsToRemove = new HashSet<FakePlanet>();
+
+            // Step 1: remove excess points & create translated counterparts
             foreach (FakePlanet planet in planetsBackup)
             {
-                if (maxX - planet.X > maxY - planet.Y)
+                if (xSpan - planet.X > maxY - planet.Y)
                 {
                     planetsToRemove.Add(planet);
                     continue;
                 }
-                if (planet.X < maxX)
-                {
-                    var mirror = AddPlanetAt(ArcenPoint.Create(maxX * 2 - planet.X, planet.Y));
-                    planet.SetReflect(mirror);
-                }
-                else
-                {
-                    planet.SetReflect(planet);
-                }
-                {
-                    var translated = AddPlanetAt(Matrix2x2.Rotation8_7.Apply(ArcenPoint.Create(maxX * 2, maxY - maxX + (int)(320 * 1.414)), planet.X - maxX, planet.Y));
-                    planet.SetNextTranslation(translated);
 
-                    var translatedMirror = AddPlanetAt(ArcenPoint.Create(maxX * 2 - translated.X, translated.Y));
-                    translated.SetReflect(translatedMirror);
+                if (planet.X == xSpan)
+                {
+                    planet.WobbleMatrix = Matrix2x2.ProjectToY;
                 }
+                else if (planet.X > xSpan)
+                {
+                    planet.WobbleMatrix = Matrix2x2.FlipX;
+                }
+
+                var translated = AddPlanetAt(transformation.Apply(ArcenPoint.Create(-(int)(d * 1.414 / 2), maxY - xSpan + (int)(d * 1.414 / 2)), planet.X - xSpan, planet.Y));
+                planet.SetNextTranslation(translated);
+                translated.WobbleMatrix = planet.WobbleMatrix * transformation;
             }
 
             RemovePlanetsButDoesNotUpdateSymmetricGroups(planetsToRemove);
+
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                if (planetsToRemove.Contains(planet))
+                    continue;
+
+                foreach (FakePlanet neighbor in planet.Links)
+                {
+                    if (planet.TranslateNext != null && neighbor.TranslateNext != null)
+                    {
+                        planet.TranslateNext.AddLinkTo(neighbor.TranslateNext);
+                    }
+                }
+            }
+
+            // Step 2: create mirror planets
+            planetsBackup = planets.ToList();
+
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                var otherLocation = ArcenPoint.Create(xSpan * 2 - planet.X, planet.Y);
+                FakePlanet other = null;
+                if (locationIndex.ContainsKey(otherLocation))
+                {
+                    other = locationIndex[otherLocation];
+                }
+                else
+                {
+                    other = AddPlanetAt(otherLocation);
+                    other.WobbleMatrix = planet.WobbleMatrix * Matrix2x2.FlipX;
+                }
+
+                planet.SetReflect(other);
+            }
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                if (planet.X >= xSpan) continue;
+                foreach (FakePlanet neighbor in planet.Links.ToList())
+                {
+                    if (planet.Reflect != null && neighbor.Reflect != null)
+                    {
+                        planet.Reflect.AddLinkTo(neighbor.Reflect);
+                    }
+                }
+            }
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                if (planet.X < xSpan) continue;
+                foreach (FakePlanet neighbor in planet.Links.ToList())
+                {
+                    if (neighbor.X >= xSpan && planet.Reflect != null && neighbor.Reflect != null && !planet.Reflect.Links.Contains(neighbor.Reflect))
+                    {
+                        planet.RemoveLinkTo(neighbor);
+                    }
+                }
+            }
         }
 
         public void Populate(Galaxy galaxy, PlanetType planetType, RandomGenerator rng)
