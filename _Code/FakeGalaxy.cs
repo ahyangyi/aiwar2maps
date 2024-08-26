@@ -80,6 +80,8 @@ namespace AhyangyiMaps
         public static Matrix2x2 Rotation8_3 = Matrix2x2.Rotation(FInt.Create(-707, false), FInt.Create(707, false));
         public static Matrix2x2 Rotation8_5 = Matrix2x2.Rotation(FInt.Create(-707, false), FInt.Create(-707, false));
         public static Matrix2x2[] Rotation8 = { Identity, Rotation8_1, Rotation4_1, Rotation8_3, Rotation2, Rotation8_5, Rotation4_3, Rotation8_7 };
+        public static Matrix2x2 Rotation10_1 = Matrix2x2.Rotation(FInt.Create(809, false), FInt.Create(588, false));
+        public static Matrix2x2 Rotation12_1 = Matrix2x2.Rotation(FInt.Create(866, false), FInt.Create(500, false));
         public static Matrix2x2[][] Rotations = { null, null, null, Rotation3, Rotation4, Rotation5, Rotation6, Rotation7, Rotation8 };
 
         public static Matrix2x2[] Rotation3ReflectLeft = { ProjectToY * Rotation3_1, ProjectToY * Rotation3_2, ProjectToY };
@@ -902,19 +904,27 @@ namespace AhyangyiMaps
         public void MakeY(Matrix2x2 rotation, int d, int xSpan)
         {
             var transformation = Matrix2x2.FlipY * rotation * Matrix2x2.FlipY * Matrix2x2.FlipX;
+            int maxX = planets.Max(planet => planet.X);
             int maxY = planets.Max(planet => planet.Y);
             var planetsBackup = planets.ToList();
             var planetsToRemove = new HashSet<FakePlanet>();
+            var invSlope = rotation.xx / rotation.xy;
+            var translationBase = ArcenPoint.Create((-d * rotation.xy).GetNearestIntPreferringLower(), (maxY - xSpan / invSlope + d * rotation.xx).GetNearestIntPreferringLower());
 
             // Step 1: remove excess points & create translated counterparts
             foreach (FakePlanet planet in planetsBackup)
             {
-                if (xSpan - planet.X > maxY - planet.Y)
+                if (System.Math.Abs(xSpan - planet.X) > invSlope * (maxY - planet.Y))
                 {
                     planetsToRemove.Add(planet);
                     continue;
                 }
+            }
+            RemovePlanetsButDoesNotUpdateSymmetricGroups(planetsToRemove);
 
+            planetsBackup = planets.ToList();
+            foreach (FakePlanet planet in planetsBackup)
+            {
                 if (planet.X == xSpan)
                 {
                     planet.WobbleMatrix = Matrix2x2.ProjectToY;
@@ -924,18 +934,13 @@ namespace AhyangyiMaps
                     planet.WobbleMatrix = Matrix2x2.FlipX;
                 }
 
-                var translated = AddPlanetAt(transformation.Apply(ArcenPoint.Create(-(int)(d * 1.414 / 2), maxY - xSpan + (int)(d * 1.414 / 2)), planet.X - xSpan, planet.Y));
+                var translated = AddPlanetAt(transformation.Apply(translationBase, planet.X - maxX, planet.Y));
                 planet.SetNextTranslation(translated);
                 translated.WobbleMatrix = planet.WobbleMatrix * transformation;
             }
 
-            RemovePlanetsButDoesNotUpdateSymmetricGroups(planetsToRemove);
-
             foreach (FakePlanet planet in planetsBackup)
             {
-                if (planetsToRemove.Contains(planet))
-                    continue;
-
                 foreach (FakePlanet neighbor in planet.Links)
                 {
                     if (planet.TranslateNext != null && neighbor.TranslateNext != null)
@@ -945,7 +950,26 @@ namespace AhyangyiMaps
                 }
             }
 
-            // Step 2: create mirror planets
+            // Step 2: connect the two parts
+            //     we probably need better implementations, but this should do in a pinch
+            {
+                var distanceThreshold = FInt.Create(1731, false) * d;
+                var planetsBackupSet = new HashSet<FakePlanet>(planetsBackup);
+                var partA = (from FakePlanet planet in planetsBackup
+                             where planet.Y >= maxY - xSpan / invSlope - distanceThreshold * 2
+                             select planet).ToList();
+                var partB = (from FakePlanet planet in planets
+                             where !planetsBackupSet.Contains(planet) && planet.Y <= maxY + distanceThreshold * 2
+                             select planet).ToList();
+                foreach (FakePlanet a in partA)
+                    foreach (FakePlanet b in partB)
+                        if (a.Location.GetDistanceTo(b.Location, false) <= distanceThreshold)
+                        {
+                            a.AddLinkTo(b);
+                        }
+            }
+
+            // Step 3: create mirror planets
             planetsBackup = planets.ToList();
 
             foreach (FakePlanet planet in planetsBackup)
@@ -1121,9 +1145,9 @@ namespace AhyangyiMaps
 
     public class SymmetryConstants
     {
-        // dx = dy * sectorSlope
+        // dx = dy * sectorSlope; tan(180 / n)
         public FInt sectorSlope;
-        // dx = d * distanceCoefficient
+        // dx = d * distanceCoefficient; sec(180 / n)
         public FInt distanceCoefficient;
 
         public SymmetryConstants(FInt sectorSlope, FInt distanceCoefficient)

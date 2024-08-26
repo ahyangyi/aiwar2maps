@@ -112,7 +112,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 columns = (columns + 3) / 4;
                 g = MakeGrid(rows, columns);
-                g.MakeY(Matrix2x2.Rotation8_1, unit, columns * unit);
+                g.MakeY(Matrix2x2.Rotation12_1, unit, ((columns * 4 + 3) / 5) * unit);
             }
 
             return g;
