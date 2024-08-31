@@ -21,11 +21,12 @@ namespace AhyangyiMaps.Tessellation
             p2.AddLinkTo(p3);
             p3.AddLinkTo(p0);
         }
-        public static FakeGalaxy MakeSquareGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
+        public static FakeGalaxy MakeSquareGalaxy(PlanetType planetType, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets)
         {
             int rows = 9;
             int columns = 16;
             FInt badness = (FInt)1000000;
+            FInt aspectRatio = aspectRatioEnum.Value();
             for (int r = 1; r <= 35; ++r)
             {
                 for (int c = 1; c <= 35; ++c)
@@ -108,11 +109,16 @@ namespace AhyangyiMaps.Tessellation
             {
                 g.MakeDualGalaxy(unit * ((columns + 1) / 2));
             }
+            else if (symmetry == 10100)
+            {
+                g = MakeGridBordered(rows, columns, (Math.Min(rows, columns) + 3) / 4);
+                g.MakeDuplexBarrier((FInt)2);
+            }
             else if (symmetry == 10200)
             {
                 columns = (columns + 3) / 4;
                 g = MakeGrid(rows, columns);
-                g.MakeY(Matrix2x2.Rotation12_1, unit, ((columns * 4 + 3) / 5) * unit);
+                g.MakeY(aspectRatioEnum, unit, ((columns * 4 + 3) / 5) * unit);
             }
 
             return g;
@@ -151,6 +157,19 @@ namespace AhyangyiMaps.Tessellation
                 for (int j = 0; j < columns; ++j)
                 {
                     if ((i * 2 < rows - crossWidth || i * 2 > rows + crossWidth - 2) && (j * 2 < columns - crossWidth || j * 2 > columns + crossWidth - 2)) continue;
+                    square.Imprint(g, ArcenPoint.Create(j * unit, i * unit));
+                }
+
+            return g;
+        }
+
+        protected static FakeGalaxy MakeGridBordered(int rows, int columns, int borderWidth)
+        {
+            FakeGalaxy g = new FakeGalaxy();
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
+                {
+                    if (i >= borderWidth && i < rows - borderWidth && j >= borderWidth && j < columns - borderWidth) continue;
                     square.Imprint(g, ArcenPoint.Create(j * unit, i * unit));
                 }
 

@@ -5,6 +5,21 @@ using Arcen.Universal;
 
 namespace AhyangyiMaps
 {
+    public enum AspectRatio
+    {
+        SIXTEEN_TO_NINE = 0,
+        SQUARE = 1,
+        NINE_TO_SIXTEEN = 2,
+    }
+    public static class AspectRatioExtensions
+    {
+        private static FInt[] values = { FInt.Create(625, false), FInt.Create(1000, false), FInt.Create(1778, false) };
+        public static FInt Value(this AspectRatio aspectRatio)
+        {
+            return values[(int)aspectRatio];
+        }
+    }
+
     public class TessellationTypeGenerator : IMapGenerator
     {
         public TessellationTypeGenerator()
@@ -21,48 +36,46 @@ namespace AhyangyiMaps
             this.InnerGenerate(galaxy, context, mapConfig, PlanetType.Normal, mapType);
         }
 
-        private readonly FInt[] aspectRatios = { FInt.Create(625, false), FInt.Create(1000, false), FInt.Create(1778, false) };
 
         protected void InnerGenerate(Galaxy galaxy, ArcenHostOnlySimContext Context, MapConfiguration mapConfig, PlanetType planetType, MapTypeData mapType)
         {
             int numPlanets = mapConfig.GetClampedNumberOfPlanetsForMapType(mapType);
             int tessellation = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Tessellation").RelatedIntValue;
-            int aspectRatioEnum = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "AspectRatio").RelatedIntValue;
+            AspectRatio aspectRatioEnum = (AspectRatio)BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "AspectRatio").RelatedIntValue;
             int galaxyShape = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "GalaxyShape").RelatedIntValue;
             int dissonance = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Dissonance").RelatedIntValue;
             int symmetry = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Symmetry").RelatedIntValue;
 
             int numPlanetsToMake = numPlanets * 12 / (12 - dissonance);
 
-            FInt aspectRatio = aspectRatios[aspectRatioEnum];
             FakeGalaxy g;
             if (tessellation == 0)
             {
-                g = SquareGrid.MakeSquareGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = SquareGrid.MakeSquareGalaxy(planetType, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 1)
             {
-                g = HexagonGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = HexagonGrid.MakeGalaxy(planetType, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 2)
             {
-                g = TriangleGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = TriangleGrid.MakeGalaxy(planetType, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 100)
             {
-                g = SquareYGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = SquareYGrid.MakeGalaxy(planetType, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 101)
             {
-                g = SquareYMirrorGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = SquareYMirrorGrid.MakeGalaxy(planetType, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 102)
             {
-                g = DiamondYGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = DiamondYGrid.MakeGalaxy(planetType, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
             }
             else
             {
-                g = DiamondYFlowerGrid.MakeGalaxy(planetType, aspectRatio, galaxyShape, symmetry, numPlanetsToMake);
+                g = DiamondYFlowerGrid.MakeGalaxy(planetType, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
             }
 
             g.MakeSymmetricGroups();

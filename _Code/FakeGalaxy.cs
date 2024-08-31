@@ -1,5 +1,6 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -26,6 +27,11 @@ namespace AhyangyiMaps
         public static Matrix2x2 operator *(Matrix2x2 a, Matrix2x2 b)
         {
             return new Matrix2x2(a.xx * b.xx + a.xy * b.yx, a.xx * b.xy + a.xy * b.yy, a.yx * b.xx + a.yy * b.yx, a.yx * b.xy + a.yy * b.yy);
+        }
+
+        public static Matrix2x2 operator *(Matrix2x2 a, FInt b)
+        {
+            return new Matrix2x2(a.xx * b, a.xy * b, a.yx * b, a.yy * b);
         }
 
         public (FInt, FInt) Apply(FInt x, FInt y)
@@ -360,11 +366,6 @@ namespace AhyangyiMaps
             return visited.Count == planets.Count;
         }
 
-        public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet> MakeLocationIndex()
-        {
-            return planets.ToDictionary(planet => planet.Location, planet => planet);
-        }
-
         public void EnsureConnectivity()
         {
             if (planets.Count == 0)
@@ -437,6 +438,53 @@ namespace AhyangyiMaps
                     }
                 }
             }
+        }
+
+        protected static FakePlanet LeftMostNeighbor(FakePlanet cur, ArcenPoint prev)
+        {
+            if (cur.Links.Count == 0)
+                return cur;
+            var links = cur.Links.ToList();
+            FakePlanet ret = links[0];
+            double retAngle = 0;
+            double baseAngle = Math.Atan2(prev.Y - cur.Y, prev.X - cur.X);
+
+            foreach (FakePlanet neighbor in links)
+            {
+                double curAngle = Math.Atan2(neighbor.Y - cur.Y, neighbor.X - cur.X) + Math.PI * 2 - baseAngle;
+                while (curAngle >= Math.PI * 2)
+                    curAngle -= Math.PI * 2;
+                if (curAngle > retAngle)
+                {
+                    retAngle = curAngle;
+                    ret = neighbor;
+                }
+            }
+
+            return ret;
+        }
+
+        public System.Collections.Generic.List<FakePlanet> FindOutline()
+        {
+            var ret = new System.Collections.Generic.List<FakePlanet>();
+            FakePlanet startingPoint = planets.Min(p => (p.X, p.Y, p)).p;
+            ret.Add(startingPoint);
+
+            FakePlanet cur = startingPoint;
+            ArcenPoint prev = startingPoint.Location - ArcenPoint.Create(0, 1);
+
+            while (true)
+            {
+                FakePlanet backup = cur;
+                cur = LeftMostNeighbor(cur, prev);
+                prev = backup.Location;
+
+                if (cur == startingPoint)
+                    break;
+                ret.Add(cur);
+            }
+
+            return ret;
         }
 
         public void MakeBilateral()
@@ -885,24 +933,53 @@ namespace AhyangyiMaps
                 }
             }
         }
-        public void MakeDuplexBarrier()
+        public void MakeDuplexBarrier(FInt scale)
         {
             int maxX = planets.Max(planet => planet.X);
             int maxY = planets.Max(planet => planet.Y);
-            var smallToLarge = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
             var planetsBackup = planets.ToList();
 
+            // Recognize rotation symmetry
+            MakeRotational2();
+
+            // Create "reflections"
             foreach (FakePlanet planet in planetsBackup)
             {
+                var newLocation = ArcenPoint.Create(((planet.X - maxX / 2) * scale + maxX / 2).GetNearestIntPreferringLower(), ((planet.Y - maxY / 2) * scale + maxY / 2).GetNearestIntPreferringLower());
 
+                FakePlanet other = AddPlanetAt(newLocation);
+                other.WobbleMatrix = planet.WobbleMatrix * scale;
+                planet.SetReflect(other);
+            }
+
+            // Add edges
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                foreach (FakePlanet neighbor in planet.Links.ToList())
+                {
+                    planet.Reflect.AddLinkTo(neighbor.Reflect);
+                }
             }
         }
         public void MakeDoubleSpark()
         {
 
         }
-        public void MakeY(Matrix2x2 rotation, int d, int xSpan)
+        public void MakeY(AspectRatio e, int d, int xSpan)
         {
+            Matrix2x2 rotation = Matrix2x2.Identity;
+            if ((int)e == 0)
+            {
+                rotation = Matrix2x2.Rotation8_1;
+            }
+            else if ((int)e == 1)
+            {
+                rotation = Matrix2x2.Rotation10_1;
+            }
+            else if ((int)e == 2)
+            {
+                rotation = Matrix2x2.Rotation12_1;
+            }
             var transformation = Matrix2x2.FlipY * rotation * Matrix2x2.FlipY * Matrix2x2.FlipX;
             int maxX = planets.Max(planet => planet.X);
             int maxY = planets.Max(planet => planet.Y);

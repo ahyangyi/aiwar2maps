@@ -6,12 +6,13 @@ namespace AhyangyiMaps.Tessellation
 {
     public class HexagonGrid
     {
-        static readonly int xunit, yunit;
+        static readonly int xunit, yunit, dunit;
         static readonly FakePattern hexagon;
         static HexagonGrid()
         {
             xunit = PlanetType.Normal.GetData().InterStellarRadius * 866 / 100;
             yunit = PlanetType.Normal.GetData().InterStellarRadius * 5;
+            dunit = PlanetType.Normal.GetData().InterStellarRadius * 10;
 
             hexagon = new FakePattern();
             var p0 = hexagon.AddPlanetAt(ArcenPoint.Create(xunit, 0));
@@ -28,8 +29,9 @@ namespace AhyangyiMaps.Tessellation
             p4.AddLinkTo(p5);
             p5.AddLinkTo(p0);
         }
-        public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
+        public static FakeGalaxy MakeGalaxy(PlanetType planetType, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets)
         {
+            FInt aspectRatio = aspectRatioEnum.Value();
             int rows = 9;
             int columns = 16;
             FInt badness = (FInt)1000000;
@@ -82,7 +84,7 @@ namespace AhyangyiMaps.Tessellation
                     for (int r = r1; r <= r1 + 1; ++r)
                     {
                         var g2 = MakeGrid(r, c);
-                        g2.MakeRotationalGeneric((c + 1) * xunit / 2, (r * 3 + 1) * yunit, yunit * 2, symmetry / 100, symmetry % 100 == 50, true);
+                        g2.MakeRotationalGeneric((c + 1) * xunit / 2, (r * 3 + 1) * yunit, dunit, symmetry / 100, symmetry % 100 == 50, true);
                         int planets = g2.planets.Count;
                         FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
                         FInt currentBadness = planetBadness;
@@ -106,6 +108,13 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry == 10002)
             {
                 g.MakeDualGalaxy((columns + 3) / 4 * 2 * xunit);
+            }
+            else if (symmetry == 10200)
+            {
+                columns = (columns + 3) / 4;
+                rows = (rows * 4 / 3) / 2 * 2 + columns % 2;
+                g = MakeGrid(rows, columns);
+                g.MakeY(aspectRatioEnum, dunit, (columns + 1) * xunit);
             }
 
             return g;

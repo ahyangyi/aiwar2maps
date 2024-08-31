@@ -38,10 +38,12 @@ namespace AhyangyiMaps.Tessellation
 
             diamondYFlipped = diamondY.FlipY();
         }
-        public static FakeGalaxy MakeGalaxy(PlanetType planetType, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
+        public static FakeGalaxy MakeGalaxy(PlanetType planetType, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets)
         {
+            FInt aspectRatio = aspectRatioEnum.Value();
             int rows = 5;
             int columns = 8;
+
             FInt badness = (FInt)1000000;
             for (int r = 2; r <= 60; r++)
             {
@@ -110,7 +112,7 @@ namespace AhyangyiMaps.Tessellation
                 columns = (columns + 3) / 4;
                 rows = (rows * 4 / 3) / 2 * 2 + columns % 2;
                 g = MakeGrid(rows, columns, false);
-                g.MakeY(Matrix2x2.Rotation8_1, dunit, columns * 2 * unit);
+                g.MakeY(aspectRatioEnum, dunit, columns * 2 * unit);
             }
 
             return g;
