@@ -200,6 +200,9 @@ namespace AhyangyiMaps
         public System.Collections.Generic.List<SymmetricGroup> symmetricGroups;
         public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet> locationIndex;
 
+        public System.Collections.Generic.List<FakePlanet> fixedPlanets;
+        public System.Collections.Generic.List<SymmetricGroup> fixedSymmetricGroups;
+
         public FakeGalaxy()
         {
             planets = new System.Collections.Generic.List<FakePlanet>();

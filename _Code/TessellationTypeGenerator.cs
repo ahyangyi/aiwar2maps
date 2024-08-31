@@ -45,6 +45,7 @@ namespace AhyangyiMaps
             int galaxyShape = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "GalaxyShape").RelatedIntValue;
             int dissonance = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Dissonance").RelatedIntValue;
             int symmetry = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Symmetry").RelatedIntValue;
+            int outerPath = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "OuterPath").RelatedIntValue;
 
             int numPlanetsToMake = numPlanets * 12 / (12 - dissonance);
 
@@ -79,11 +80,43 @@ namespace AhyangyiMaps
             }
 
             g.MakeSymmetricGroups();
+
+            if (outerPath == 0)
+            {
+                g.fixedPlanets = new System.Collections.Generic.List<FakePlanet>();
+                g.fixedSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
+            }
+            else if (outerPath == 1)
+            {
+                g.fixedPlanets = g.FindOutline();
+                g.fixedSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
+                foreach (var sg in g.symmetricGroups)
+                {
+                    bool x = false;
+                    foreach (var planet in sg.planets)
+                        if (g.fixedPlanets.Contains(planet))
+                            x = true;
+                    if (x)
+                        g.fixedSymmetricGroups.Add(sg);
+                }
+            }
+            else if (outerPath == 2)
+            {
+                // Beltway
+                // Not implemented lol
+                g.fixedPlanets = new System.Collections.Generic.List<FakePlanet>();
+                g.fixedSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
+            }
+
             if (dissonance > 0)
             {
                 while (g.planets.Count > numPlanets)
                 {
                     SymmetricGroup s = g.symmetricGroups[Context.RandomToUse.Next(0, g.symmetricGroups.Count - 1)];
+                    if (g.fixedSymmetricGroups.Contains(s))
+                    {
+                        continue;
+                    }
                     g.RemoveSymmetricGroup(s);
                 }
             }
