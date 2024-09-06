@@ -1,11 +1,21 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace AhyangyiMaps
 {
+    public static class ArcenPointExtensions
+    {
+        public static int DotProduct(this ArcenPoint a, ArcenPoint b)
+        {
+            return a.X * b.X + a.Y * b.Y;
+        }
+        public static int CrossProduct(this ArcenPoint a, ArcenPoint b)
+        {
+            return a.X * b.Y - a.Y * b.X;
+        }
+    }
     public struct Matrix2x2
     {
         public FInt xx, xy, yx, yy;
@@ -443,24 +453,39 @@ namespace AhyangyiMaps
             }
         }
 
+        protected static int RegionNumber(ArcenPoint cur, ArcenPoint prev, ArcenPoint next)
+        {
+            int cross = (next - cur).CrossProduct(prev - cur);
+            if (cross == 0)
+            {
+                int dot = (next - cur).DotProduct(prev - cur);
+
+                if (dot >= 0)
+                    return 0;
+                return 2;
+            }
+            if (cross > 0)
+            {
+                return 1;
+            }
+            return 3;
+        }
+
         protected static FakePlanet LeftMostNeighbor(FakePlanet cur, ArcenPoint prev)
         {
             if (cur.Links.Count == 0)
                 return cur;
             var links = cur.Links.ToList();
             FakePlanet ret = links[0];
-            double retAngle = 0;
-            double baseAngle = Math.Atan2(prev.Y - cur.Y, prev.X - cur.X);
+            int retRegion = 0;
 
             foreach (FakePlanet neighbor in links)
             {
-                double curAngle = Math.Atan2(neighbor.Y - cur.Y, neighbor.X - cur.X) + Math.PI * 2 - baseAngle;
-                while (curAngle >= Math.PI * 2)
-                    curAngle -= Math.PI * 2;
-                if (curAngle > retAngle)
+                int curRegion = RegionNumber(cur.Location, prev, neighbor.Location);
+                if (curRegion > retRegion || curRegion == retRegion && (neighbor.Location - cur.Location).CrossProduct(ret.Location - cur.Location) > 0)
                 {
-                    retAngle = curAngle;
                     ret = neighbor;
+                    retRegion = curRegion;
                 }
             }
 
@@ -966,7 +991,6 @@ namespace AhyangyiMaps
         }
         public void MakeDoubleSpark()
         {
-
         }
         public void MakeY(AspectRatio e, int d, int xSpan)
         {
