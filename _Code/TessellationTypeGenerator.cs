@@ -110,14 +110,17 @@ namespace AhyangyiMaps
 
             if (dissonance > 0)
             {
+                int retry = 0;
                 while (g.planets.Count > numPlanets)
                 {
                     SymmetricGroup s = g.symmetricGroups[Context.RandomToUse.Next(0, g.symmetricGroups.Count - 1)];
                     if (g.fixedSymmetricGroups.Contains(s))
                     {
+                        if (++retry == 1000) break;
                         continue;
                     }
                     g.RemoveSymmetricGroup(s);
+                    retry = 0;
                 }
             }
             g.EnsureConnectivity();

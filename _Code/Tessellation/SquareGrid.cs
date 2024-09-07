@@ -114,6 +114,10 @@ namespace AhyangyiMaps.Tessellation
                 g = MakeGridBordered(rows, columns, (Math.Min(rows, columns) + 3) / 4);
                 g.MakeDuplexBarrier((FInt)2);
             }
+            else if (symmetry == 10101)
+            {
+                g.MakeDoubleSpark();
+            }
             else if (symmetry == 10200)
             {
                 columns = (columns + 3) / 4;

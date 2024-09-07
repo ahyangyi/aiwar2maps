@@ -59,6 +59,11 @@ namespace AhyangyiMaps
             (x, y) = Apply(x, y);
             return ArcenPoint.Create(reference.X + x, reference.Y + y);
         }
+        public ArcenPoint AbsoluteApply(ArcenPoint reference, ArcenPoint point)
+        {
+            var (x, y) = Apply(point.X - reference.X, point.Y - reference.Y);
+            return ArcenPoint.Create(reference.X + x, reference.Y + y);
+        }
 
         public static Matrix2x2 Identity = Matrix2x2.Rotation(FInt.One, FInt.Zero);
         public static Matrix2x2 Zero = Matrix2x2.Rotation(FInt.Zero, FInt.Zero);
@@ -967,6 +972,9 @@ namespace AhyangyiMaps
             int maxY = planets.Max(planet => planet.Y);
             var planetsBackup = planets.ToList();
 
+            // Find (and save) the outline
+            var outline = new HashSet<FakePlanet>(FindOutline());
+
             // Recognize rotation symmetry
             MakeRotational2();
 
@@ -988,9 +996,51 @@ namespace AhyangyiMaps
                     planet.Reflect.AddLinkTo(neighbor.Reflect);
                 }
             }
+
+            // Connect each "outline" planet to its counterpart
+            foreach (FakePlanet planet in outline)
+            {
+                planet.AddLinkTo(planet.Reflect);
+            }
         }
         public void MakeDoubleSpark()
         {
+            int maxX = planets.Max(planet => planet.X);
+            int maxY = planets.Max(planet => planet.Y);
+            ArcenPoint center = ArcenPoint.Create(maxX / 2, 0);
+            var rotationA = Matrix2x2.Rotation12_1;
+            var rotationB = Matrix2x2.FlipX * rotationA * Matrix2x2.FlipX;
+
+            var reflection = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+            var mapA = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+            var mapB = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+            var planetsBackup = planets.ToList();
+
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                reflection[planet] = locationIndex[ArcenPoint.Create(maxX - planet.X, planet.Y)];
+            }
+
+            planets.Clear();
+            locationIndex.Clear();
+
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                mapA[planet] = AddPlanetAt(rotationA.AbsoluteApply(center, planet.Location));
+                mapB[planet] = AddPlanetAt(rotationB.AbsoluteApply(center, planet.Location));
+            }
+
+            foreach (FakePlanet planet in planetsBackup)
+            {
+                ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { mapA[planet], mapB[planet] });
+                mapA[planet].SetReflect(mapA[reflection[planet]]);
+                mapB[planet].SetReflect(mapB[reflection[planet]]);
+                foreach (FakePlanet neighbor in planet.Links)
+                {
+                    mapA[planet].AddLinkTo(mapA[neighbor]);
+                    mapB[planet].AddLinkTo(mapB[neighbor]);
+                }
+            }
         }
         public void MakeY(AspectRatio e, int d, int xSpan)
         {
