@@ -1014,6 +1014,22 @@ namespace AhyangyiMaps
             var reflection = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
             var mapA = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
             var mapB = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+
+            // Step 1: Remove excess planets
+            {
+                var planetsToRemove = new System.Collections.Generic.HashSet<FakePlanet>();
+
+                foreach (FakePlanet planet in planets)
+                {
+                    if (planet.Y < System.Math.Abs(planet.X - maxX / 2))
+                    {
+                        planetsToRemove.Add(planet);
+                    }
+                }
+                RemovePlanetsButDoesNotUpdateSymmetricGroups(planetsToRemove);
+            }
+
+            // Step 2: Create rotated planets and add links
             var planetsBackup = planets.ToList();
 
             foreach (FakePlanet planet in planetsBackup)
@@ -1032,6 +1048,19 @@ namespace AhyangyiMaps
 
             foreach (FakePlanet planet in planetsBackup)
             {
+                Matrix2x2 myMatrix = Matrix2x2.Identity;
+                if (planet.X * 2 == maxX)
+                {
+                    myMatrix = Matrix2x2.ProjectToY;
+                }
+                else if (planet.X * 2 > maxX)
+                {
+                    myMatrix = Matrix2x2.FlipX;
+                }
+
+                mapA[planet].WobbleMatrix = myMatrix * rotationA;
+                mapB[planet].WobbleMatrix = myMatrix * rotationB;
+
                 ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { mapA[planet], mapB[planet] });
                 mapA[planet].SetReflect(mapA[reflection[planet]]);
                 mapB[planet].SetReflect(mapB[reflection[planet]]);
