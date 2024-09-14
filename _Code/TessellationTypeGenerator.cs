@@ -2,6 +2,7 @@ using AhyangyiMaps.Tessellation;
 using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
+using System.Collections.Generic;
 
 namespace AhyangyiMaps
 {
@@ -84,38 +85,22 @@ namespace AhyangyiMaps
 
             g.MakeSymmetricGroups();
 
-            if (outerPath == 0)
+            if (outerPath == 1)
             {
-                g.fixedPlanets = new System.Collections.Generic.List<FakePlanet>();
-                g.fixedSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
-            }
-            else if (outerPath == 1)
-            {
-                g.fixedPlanets = g.FindOutline();
-                g.fixedSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
+                var outline = new HashSet<FakePlanet>(g.FindOutline());
                 foreach (var sg in g.symmetricGroups)
                 {
                     bool x = false;
                     foreach (var planet in sg.planets)
-                        if (g.fixedPlanets.Contains(planet))
+                        if (outline.Contains(planet))
                             x = true;
                     if (x)
-                        g.fixedSymmetricGroups.Add(sg);
+                        sg.stick = true;
                 }
             }
             else if (outerPath == 2)
             {
-                g.fixedPlanets = g.MakeBeltWay();
-                g.fixedSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
-                foreach (var sg in g.symmetricGroups)
-                {
-                    bool x = false;
-                    foreach (var planet in sg.planets)
-                        if (g.fixedPlanets.Contains(planet))
-                            x = true;
-                    if (x)
-                        g.fixedSymmetricGroups.Add(sg);
-                }
+                g.MakeBeltWay();
             }
 
             // STEP 2 - DISSONANCE
@@ -126,7 +111,7 @@ namespace AhyangyiMaps
                 while (g.planets.Count > numPlanets)
                 {
                     SymmetricGroup s = g.symmetricGroups[Context.RandomToUse.Next(0, g.symmetricGroups.Count - 1)];
-                    if (g.fixedSymmetricGroups.Contains(s))
+                    if (s.stick)
                     {
                         if (++retry == 1000) break;
                         continue;

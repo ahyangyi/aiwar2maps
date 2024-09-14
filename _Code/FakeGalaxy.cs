@@ -11,7 +11,6 @@ namespace AhyangyiMaps
         public HashSet<FakePlanet> Links;
         public Matrix2x2 WobbleMatrix = Matrix2x2.Identity;
         public FakePlanet Rotate, Reflect, TranslatePrevious, TranslateNext;
-        public bool stick;
 
         public int X { get => Location.X; set => Location.X = value; }
         public int Y { get => Location.Y; set => Location.Y = value; }
@@ -24,7 +23,6 @@ namespace AhyangyiMaps
             Reflect = null;
             TranslatePrevious = null;
             TranslateNext = null;
-            stick = false;
         }
 
         public void AddLinkTo(FakePlanet other)
@@ -75,7 +73,7 @@ namespace AhyangyiMaps
     public class SymmetricGroup
     {
         public System.Collections.Generic.List<FakePlanet> planets;
-        bool stick;
+        public bool stick;
 
         public SymmetricGroup(System.Collections.Generic.List<FakePlanet> planets)
         {
@@ -108,9 +106,6 @@ namespace AhyangyiMaps
         public System.Collections.Generic.List<FakePlanet> planets;
         public System.Collections.Generic.List<SymmetricGroup> symmetricGroups;
         public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet> locationIndex;
-
-        public System.Collections.Generic.List<FakePlanet> fixedPlanets;
-        public System.Collections.Generic.List<SymmetricGroup> fixedSymmetricGroups;
 
         public FakeGalaxy()
         {
@@ -414,7 +409,7 @@ namespace AhyangyiMaps
             return ret;
         }
 
-        public System.Collections.Generic.List<FakePlanet> MakeBeltWay()
+        public void MakeBeltWay()
         {
             int minX = planets.Min(planet => planet.X);
             int maxX = planets.Max(planet => planet.X);
@@ -431,7 +426,7 @@ namespace AhyangyiMaps
             p2.AddLinkTo(p3);
             p3.AddLinkTo(p0);
 
-            return new System.Collections.Generic.List<FakePlanet> { p0, p1, p2, p3 };
+            // XXX: not adding these to symmetry groups seems good enough for now?
         }
 
         public void MakeBilateral()
