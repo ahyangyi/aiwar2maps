@@ -13,7 +13,7 @@ namespace AhyangyiMaps
     }
     public static class AspectRatioExtensions
     {
-        private static FInt[] values = { FInt.Create(625, false), FInt.Create(1000, false), FInt.Create(1778, false) };
+        private static readonly FInt[] values = { FInt.Create(625, false), FInt.Create(1000, false), FInt.Create(1778, false) };
         public static FInt Value(this AspectRatio aspectRatio)
         {
             return values[(int)aspectRatio];
@@ -46,9 +46,12 @@ namespace AhyangyiMaps
             int dissonance = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Dissonance").RelatedIntValue;
             int symmetry = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Symmetry").RelatedIntValue;
             int outerPath = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "OuterPath").RelatedIntValue;
+            int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
 
             int numPlanetsToMake = numPlanets * 12 / (12 - dissonance);
 
+            // STEP 1 - TESSELLATION
+            // Generate a base grid
             FakeGalaxy g;
             if (tessellation == 0)
             {
@@ -102,12 +105,21 @@ namespace AhyangyiMaps
             }
             else if (outerPath == 2)
             {
-                // Beltway
-                // Not implemented lol
-                g.fixedPlanets = new System.Collections.Generic.List<FakePlanet>();
+                g.fixedPlanets = g.MakeBeltWay();
                 g.fixedSymmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
+                foreach (var sg in g.symmetricGroups)
+                {
+                    bool x = false;
+                    foreach (var planet in sg.planets)
+                        if (g.fixedPlanets.Contains(planet))
+                            x = true;
+                    if (x)
+                        g.fixedSymmetricGroups.Add(sg);
+                }
             }
 
+            // STEP 2 - DISSONANCE
+            // Remove planets randomly, respecting symmetry and stick bits.
             if (dissonance > 0)
             {
                 int retry = 0;
@@ -123,11 +135,29 @@ namespace AhyangyiMaps
                     retry = 0;
                 }
             }
+
+            // STEP 3 - CONNNECT
+            // In case we cut off the graph, connect it back
             g.EnsureConnectivity();
 
-            int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
+            // STEP 4 - EXTRA LINKS
+            // TODO
+            // Make extra links available
+
+            // STEP 5 - SKELETON
+            // TODO
+            // Select a subset of edges that'll be in the game
+
+            // STEP 6 - FILL
+            // TODO
+            // Add edges until the desired density is reached
+
+            // STEP 7 - WOBBLE
+            // Add random offsets to each planet, respecting symmetry
             g.Wobble(planetType, wobble, Context.RandomToUse);
 
+            // STEP 8 - POPULATE
+            // Translate our information into Arcenverse
             g.Populate(galaxy, planetType, Context.RandomToUse);
         }
     }

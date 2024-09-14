@@ -5,122 +5,13 @@ using System.Linq;
 
 namespace AhyangyiMaps
 {
-    public static class ArcenPointExtensions
-    {
-        public static int DotProduct(this ArcenPoint a, ArcenPoint b)
-        {
-            return a.X * b.X + a.Y * b.Y;
-        }
-        public static int CrossProduct(this ArcenPoint a, ArcenPoint b)
-        {
-            return a.X * b.Y - a.Y * b.X;
-        }
-    }
-    public struct Matrix2x2
-    {
-        public FInt xx, xy, yx, yy;
-
-
-        public Matrix2x2(FInt xx, FInt xy, FInt yx, FInt yy)
-        {
-            this.xx = xx;
-            this.xy = xy;
-            this.yx = yx;
-            this.yy = yy;
-        }
-
-        public static Matrix2x2 Rotation(FInt xx, FInt xy)
-        {
-            return new Matrix2x2(xx, xy, -xy, xx);
-        }
-
-        public static Matrix2x2 operator *(Matrix2x2 a, Matrix2x2 b)
-        {
-            return new Matrix2x2(a.xx * b.xx + a.xy * b.yx, a.xx * b.xy + a.xy * b.yy, a.yx * b.xx + a.yy * b.yx, a.yx * b.xy + a.yy * b.yy);
-        }
-
-        public static Matrix2x2 operator *(Matrix2x2 a, FInt b)
-        {
-            return new Matrix2x2(a.xx * b, a.xy * b, a.yx * b, a.yy * b);
-        }
-
-        public (FInt, FInt) Apply(FInt x, FInt y)
-        {
-            return (this.xx * x + this.yx * y, this.xy * x + this.yy * y);
-        }
-
-        public (int, int) Apply(int x, int y)
-        {
-            return ((this.xx * x + this.yx * y).GetNearestIntPreferringLower(), (this.xy * x + this.yy * y).GetNearestIntPreferringLower());
-        }
-
-        public ArcenPoint Apply(ArcenPoint reference, int x, int y)
-        {
-            (x, y) = Apply(x, y);
-            return ArcenPoint.Create(reference.X + x, reference.Y + y);
-        }
-        public ArcenPoint AbsoluteApply(ArcenPoint reference, ArcenPoint point)
-        {
-            var (x, y) = Apply(point.X - reference.X, point.Y - reference.Y);
-            return ArcenPoint.Create(reference.X + x, reference.Y + y);
-        }
-
-        public static Matrix2x2 Identity = Matrix2x2.Rotation(FInt.One, FInt.Zero);
-        public static Matrix2x2 Zero = Matrix2x2.Rotation(FInt.Zero, FInt.Zero);
-        public static Matrix2x2 FlipX = new Matrix2x2((FInt)(-1), FInt.Zero, FInt.Zero, FInt.One);
-        public static Matrix2x2 FlipY = new Matrix2x2(FInt.One, FInt.Zero, FInt.Zero, (FInt)(-1));
-        public static Matrix2x2 ProjectToX = new Matrix2x2(FInt.One, FInt.Zero, FInt.Zero, FInt.Zero);
-        public static Matrix2x2 ProjectToNegX = new Matrix2x2((FInt)(-1), FInt.Zero, FInt.Zero, FInt.Zero);
-        public static Matrix2x2 ProjectToY = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, FInt.One);
-        public static Matrix2x2 ProjectToNegY = new Matrix2x2(FInt.Zero, FInt.Zero, FInt.Zero, (FInt)(-1));
-
-        public static Matrix2x2 Rotation2 = Matrix2x2.Rotation((FInt)(-1), FInt.Zero);
-        public static Matrix2x2 Rotation3_1 = Matrix2x2.Rotation(FInt.Create(-500, false), FInt.Create(866, false));
-        public static Matrix2x2 Rotation3_2 = Matrix2x2.Rotation(FInt.Create(-500, false), FInt.Create(-866, false));
-        public static Matrix2x2[] Rotation3 = { Identity, Rotation3_1, Rotation3_2 };
-        public static Matrix2x2 Rotation4_1 = Matrix2x2.Rotation(FInt.Zero, FInt.One);
-        public static Matrix2x2 Rotation4_3 = Matrix2x2.Rotation(FInt.Zero, (FInt)(-1));
-        public static Matrix2x2[] Rotation4 = { Identity, Rotation4_1, Rotation2, Rotation4_3 };
-        public static Matrix2x2 Rotation5_1 = Matrix2x2.Rotation(FInt.Create(309, false), FInt.Create(951, false));
-        public static Matrix2x2 Rotation5_4 = Matrix2x2.Rotation(FInt.Create(309, false), FInt.Create(-951, false));
-        public static Matrix2x2 Rotation5_2 = Matrix2x2.Rotation(FInt.Create(-809, false), FInt.Create(588, false));
-        public static Matrix2x2 Rotation5_3 = Matrix2x2.Rotation(FInt.Create(-809, false), FInt.Create(-588, false));
-        public static Matrix2x2[] Rotation5 = { Identity, Rotation5_1, Rotation5_2, Rotation5_3, Rotation5_4 };
-        public static Matrix2x2 Rotation6_1 = Matrix2x2.Rotation(FInt.Create(500, false), FInt.Create(866, false));
-        public static Matrix2x2 Rotation6_5 = Matrix2x2.Rotation(FInt.Create(500, false), FInt.Create(-866, false));
-        public static Matrix2x2[] Rotation6 = { Identity, Rotation6_1, Rotation3_1, Rotation2, Rotation3_2, Rotation6_5 };
-        public static Matrix2x2 Rotation7_1 = Matrix2x2.Rotation(FInt.Create(623, false), FInt.Create(782, false));
-        public static Matrix2x2 Rotation7_6 = Matrix2x2.Rotation(FInt.Create(623, false), FInt.Create(-782, false));
-        public static Matrix2x2 Rotation7_2 = Matrix2x2.Rotation(FInt.Create(-223, false), FInt.Create(975, false));
-        public static Matrix2x2 Rotation7_5 = Matrix2x2.Rotation(FInt.Create(-223, false), FInt.Create(-975, false));
-        public static Matrix2x2 Rotation7_3 = Matrix2x2.Rotation(FInt.Create(-901, false), FInt.Create(434, false));
-        public static Matrix2x2 Rotation7_4 = Matrix2x2.Rotation(FInt.Create(-901, false), FInt.Create(-434, false));
-        public static Matrix2x2[] Rotation7 = { Identity, Rotation7_1, Rotation7_2, Rotation7_3, Rotation7_4, Rotation7_5, Rotation7_6 };
-        public static Matrix2x2 Rotation8_1 = Matrix2x2.Rotation(FInt.Create(707, false), FInt.Create(707, false));
-        public static Matrix2x2 Rotation8_7 = Matrix2x2.Rotation(FInt.Create(707, false), FInt.Create(-707, false));
-        public static Matrix2x2 Rotation8_3 = Matrix2x2.Rotation(FInt.Create(-707, false), FInt.Create(707, false));
-        public static Matrix2x2 Rotation8_5 = Matrix2x2.Rotation(FInt.Create(-707, false), FInt.Create(-707, false));
-        public static Matrix2x2[] Rotation8 = { Identity, Rotation8_1, Rotation4_1, Rotation8_3, Rotation2, Rotation8_5, Rotation4_3, Rotation8_7 };
-        public static Matrix2x2 Rotation10_1 = Matrix2x2.Rotation(FInt.Create(809, false), FInt.Create(588, false));
-        public static Matrix2x2 Rotation12_1 = Matrix2x2.Rotation(FInt.Create(866, false), FInt.Create(500, false));
-        public static Matrix2x2[][] Rotations = { null, null, null, Rotation3, Rotation4, Rotation5, Rotation6, Rotation7, Rotation8 };
-
-        public static Matrix2x2[] Rotation3ReflectLeft = { ProjectToY * Rotation3_1, ProjectToY * Rotation3_2, ProjectToY };
-        public static Matrix2x2[] Rotation3ReflectCenter = { ProjectToY, ProjectToY * Rotation3_1, ProjectToY * Rotation3_2 };
-
-        public static Matrix2x2 ProjectToXY = new Matrix2x2(FInt.Create(707, false), FInt.Create(707, false), FInt.Create(707, false), FInt.Create(707, false));
-        public static Matrix2x2[] Rotation4ReflectLeft = { ProjectToXY, ProjectToXY * Rotation4_1, ProjectToXY * Rotation2, ProjectToXY * Rotation4_3 };
-        public static Matrix2x2[] Rotation4ReflectCenter = { ProjectToY, ProjectToY * Rotation4_1, ProjectToY * Rotation2, ProjectToY * Rotation4_3 };
-
-        public static Matrix2x2[][] RotationReflectLeft = { null, null, null, Rotation3ReflectLeft, Rotation4ReflectLeft, null, null, null, null };
-        public static Matrix2x2[][] RotationReflectCenter = { null, null, null, Rotation3ReflectCenter, Rotation4ReflectCenter, null, null, null, null };
-    }
     public class FakePlanet
     {
         public ArcenPoint Location;
         public HashSet<FakePlanet> Links;
         public Matrix2x2 WobbleMatrix = Matrix2x2.Identity;
         public FakePlanet Rotate, Reflect, TranslatePrevious, TranslateNext;
+        public bool stick;
 
         public int X { get => Location.X; set => Location.X = value; }
         public int Y { get => Location.Y; set => Location.Y = value; }
@@ -133,6 +24,7 @@ namespace AhyangyiMaps
             Reflect = null;
             TranslatePrevious = null;
             TranslateNext = null;
+            stick = false;
         }
 
         public void AddLinkTo(FakePlanet other)
@@ -183,10 +75,12 @@ namespace AhyangyiMaps
     public class SymmetricGroup
     {
         public System.Collections.Generic.List<FakePlanet> planets;
+        bool stick;
 
         public SymmetricGroup(System.Collections.Generic.List<FakePlanet> planets)
         {
             this.planets = planets;
+            stick = false;
         }
 
         public void Wobble(PlanetType planetType, int wobble, RandomGenerator rng)
@@ -518,6 +412,26 @@ namespace AhyangyiMaps
             }
 
             return ret;
+        }
+
+        public System.Collections.Generic.List<FakePlanet> MakeBeltWay()
+        {
+            int minX = planets.Min(planet => planet.X);
+            int maxX = planets.Max(planet => planet.X);
+            int minY = planets.Min(planet => planet.Y);
+            int maxY = planets.Max(planet => planet.Y);
+
+            var p0 = AddPlanetAt(ArcenPoint.Create(minX - 320, minY - 320));
+            var p1 = AddPlanetAt(ArcenPoint.Create(maxX + 320, minY - 320));
+            var p2 = AddPlanetAt(ArcenPoint.Create(maxX + 320, maxY + 320));
+            var p3 = AddPlanetAt(ArcenPoint.Create(minX - 320, maxY + 320));
+
+            p0.AddLinkTo(p1);
+            p1.AddLinkTo(p2);
+            p2.AddLinkTo(p3);
+            p3.AddLinkTo(p0);
+
+            return new System.Collections.Generic.List<FakePlanet> { p0, p1, p2, p3 };
         }
 
         public void MakeBilateral()
@@ -1324,27 +1238,5 @@ namespace AhyangyiMaps
                 }
             }
         }
-    }
-
-    public class SymmetryConstants
-    {
-        // dx = dy * sectorSlope; tan(180 / n)
-        public FInt sectorSlope;
-        // dx = d * distanceCoefficient; sec(180 / n)
-        public FInt distanceCoefficient;
-
-        public SymmetryConstants(FInt sectorSlope, FInt distanceCoefficient)
-        {
-            this.sectorSlope = sectorSlope;
-            this.distanceCoefficient = distanceCoefficient;
-        }
-
-        public static SymmetryConstants Rotational3 = new SymmetryConstants(FInt.Create(1732, false), FInt.Create(2000, false));
-        public static SymmetryConstants Rotational4 = new SymmetryConstants(FInt.Create(1000, false), FInt.Create(1414, false));
-        public static SymmetryConstants Rotational5 = new SymmetryConstants(FInt.Create(727, false), FInt.Create(1236, false));
-        public static SymmetryConstants Rotational6 = new SymmetryConstants(FInt.Create(577, false), FInt.Create(1155, false));
-        public static SymmetryConstants Rotational7 = new SymmetryConstants(FInt.Create(482, false), FInt.Create(1110, false));
-        public static SymmetryConstants Rotational8 = new SymmetryConstants(FInt.Create(414, false), FInt.Create(1082, false));
-        public static SymmetryConstants[] Rotational = { null, null, null, Rotational3, Rotational4, Rotational5, Rotational6, Rotational7, Rotational8 };
     }
 }

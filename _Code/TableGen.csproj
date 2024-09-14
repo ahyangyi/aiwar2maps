@@ -29,6 +29,7 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Geometry.cs" />
     <Compile Include="FakeGalaxy.cs" />
     <Compile Include="FractalTypeGenerator.cs" />
     <Compile Include="TessellationTypeGenerator.cs" />
