@@ -8,7 +8,18 @@ namespace AhyangyiMaps
     public class FakePlanet
     {
         public ArcenPoint Location;
+
+        // Adjacency data structures
+        //
+        // Links is the general purpose one.
+        // StickyLinks stores links that are "sticky" for some reason,
+        //   usually because they are marked to be always included.
+        // ExtraLinks stores links that are not part of the graph yet,
+        //   usually during a process to add edges to the graph.
         public HashSet<FakePlanet> Links;
+        public HashSet<FakePlanet> StickyLinks;
+        public HashSet<FakePlanet> ExtraLinks;
+
         public Matrix2x2 WobbleMatrix = Matrix2x2.Identity;
         public FakePlanet Rotate, Reflect, TranslatePrevious, TranslateNext;
 
@@ -19,6 +30,8 @@ namespace AhyangyiMaps
         {
             this.Location = location;
             Links = new HashSet<FakePlanet>();
+            StickyLinks = new HashSet<FakePlanet>();
+            ExtraLinks = new HashSet<FakePlanet>();
             Rotate = null;
             Reflect = null;
             TranslatePrevious = null;
@@ -916,7 +929,9 @@ namespace AhyangyiMaps
         {
             int maxX = planets.Max(planet => planet.X);
             int maxY = planets.Max(planet => planet.Y);
-            ArcenPoint center = ArcenPoint.Create(maxX / 2, 0);
+            int centerY = planets.Where(planet => planet.X * 2 == maxX).Min(planet => planet.Y);
+
+            ArcenPoint center = ArcenPoint.Create(maxX / 2, centerY);
             var rotationA = Matrix2x2.Rotation12_1;
             var rotationB = Matrix2x2.FlipX * rotationA * Matrix2x2.FlipX;
 
@@ -952,7 +967,10 @@ namespace AhyangyiMaps
             foreach (FakePlanet planet in planetsBackup)
             {
                 mapA[planet] = AddPlanetAt(rotationA.AbsoluteApply(center, planet.Location));
-                mapB[planet] = AddPlanetAt(rotationB.AbsoluteApply(center, planet.Location));
+                if (planet.Location == center)
+                    mapB[planet] = mapA[planet];
+                else
+                    mapB[planet] = AddPlanetAt(rotationB.AbsoluteApply(center, planet.Location));
             }
 
             foreach (FakePlanet planet in planetsBackup)
@@ -967,8 +985,15 @@ namespace AhyangyiMaps
                     myMatrix = Matrix2x2.FlipX;
                 }
 
-                mapA[planet].WobbleMatrix = myMatrix * rotationA;
-                mapB[planet].WobbleMatrix = myMatrix * rotationB;
+                if (mapA[planet] != mapB[planet])
+                {
+                    mapA[planet].WobbleMatrix = myMatrix * rotationA;
+                    mapB[planet].WobbleMatrix = myMatrix * rotationB;
+                }
+                else
+                {
+                    mapA[planet].WobbleMatrix = myMatrix;
+                }
 
                 ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { mapA[planet], mapB[planet] });
                 mapA[planet].SetReflect(mapA[reflection[planet]]);

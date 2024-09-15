@@ -94,6 +94,10 @@ namespace AhyangyiMaps.Tessellation
             {
                 g.MakeTriptych(unit * 2 * (columns / 3));
             }
+            else if (symmetry == 10101)
+            {
+                g.MakeDoubleSpark();
+            }
 
             return g;
         }

@@ -52,7 +52,8 @@ namespace AhyangyiMaps.Tessellation
                     if (symmetry == 150 && c % 2 == 0) continue;
                     if (symmetry == 10000 && (c % 4 == 1 || c % 4 == 2)) continue;
                     if (symmetry == 10001 && c % 3 != 2) continue;
-                    // FIXME: only works when both are odd
+                    if (symmetry == 10101 && c % 2 != 1) continue;
+                    // FIXME: formula only works when both are odd
                     int planets = 2 * r * c + r + c + 3;
                     FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
                     FInt currentAspectRatio = (FInt)(r + 1) / (FInt)(c + 1);
@@ -106,6 +107,10 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry == 10001)
             {
                 g.MakeTriptych((columns + 1) / 3 * unit);
+            }
+            else if (symmetry == 10101)
+            {
+                g.MakeDoubleSpark();
             }
             else if (symmetry == 10200)
             {

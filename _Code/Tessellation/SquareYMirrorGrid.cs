@@ -89,6 +89,10 @@ namespace AhyangyiMaps.Tessellation
             {
                 g.MakeDualGalaxy(unit * 2 * ((columns + 1) / 2));
             }
+            else if (symmetry == 10101)
+            {
+                g.MakeDoubleSpark();
+            }
 
             return g;
         }
