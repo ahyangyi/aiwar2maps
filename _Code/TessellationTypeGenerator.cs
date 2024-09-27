@@ -47,9 +47,13 @@ namespace AhyangyiMaps
             int dissonance = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Dissonance").RelatedIntValue;
             int symmetry = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Symmetry").RelatedIntValue;
             int outerPath = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "OuterPath").RelatedIntValue;
+            int additionalConnections = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "AdditionalConnections").RelatedIntValue;
+            int traversability = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Traversability").RelatedIntValue;
+            int connectivity = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Connectivity").RelatedIntValue;
             int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
 
             int numPlanetsToMake = numPlanets * 12 / (12 - dissonance);
+            var randomNumberGenerator = Context.RandomToUse;
 
             // STEP 1 - TESSELLATION
             // Generate a base grid
@@ -110,7 +114,7 @@ namespace AhyangyiMaps
                 int retry = 0;
                 while (g.planets.Count > numPlanets)
                 {
-                    SymmetricGroup s = g.symmetricGroups[Context.RandomToUse.Next(0, g.symmetricGroups.Count - 1)];
+                    SymmetricGroup s = g.symmetricGroups[randomNumberGenerator.Next(0, g.symmetricGroups.Count - 1)];
                     if (s.stick)
                     {
                         if (++retry == 1000) break;
@@ -126,24 +130,51 @@ namespace AhyangyiMaps
             g.EnsureConnectivity();
 
             // STEP 4 - EXTRA LINKS
-            // TODO
             // Make extra links available
+            if (additionalConnections == 1)
+            {
+                g.AddExtraLinks(33, 0, randomNumberGenerator);
+            }
+            else if (additionalConnections == 2)
+            {
+                g.AddExtraLinks(67, 0, randomNumberGenerator);
+            }
+            else if (additionalConnections == 3)
+            {
+                g.AddExtraLinks(200, 0, randomNumberGenerator);
+            }
+            else if (additionalConnections == 4)
+            {
+                g.AddExtraLinks(133, 1, randomNumberGenerator);
+            }
+            else if (additionalConnections == 5)
+            {
+                g.AddExtraLinks(400, 1, randomNumberGenerator);
+            }
+            else if (additionalConnections == 6)
+            {
+                g.AddExtraLinks(2000, 5, randomNumberGenerator);
+            }
+            foreach (FakePlanet planet in g.planets)
+            {
+                planet.ConvertExtraLinks();
+            }
 
             // STEP 5 - SKELETON
-            // TODO
             // Select a subset of edges that'll be in the game
+            g.MakeSpanningTree(traversability);
 
             // STEP 6 - FILL
-            // TODO
             // Add edges until the desired density is reached
+            g.AddEdges(connectivity, traversability);
 
             // STEP 7 - WOBBLE
             // Add random offsets to each planet, respecting symmetry
-            g.Wobble(planetType, wobble, Context.RandomToUse);
+            g.Wobble(planetType, wobble, randomNumberGenerator);
 
             // STEP 8 - POPULATE
             // Translate our information into Arcenverse
-            g.Populate(galaxy, planetType, Context.RandomToUse);
+            g.Populate(galaxy, planetType, randomNumberGenerator);
         }
     }
 }

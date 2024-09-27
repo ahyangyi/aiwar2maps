@@ -1,5 +1,6 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -43,6 +44,19 @@ namespace AhyangyiMaps
             if (this == other) return;
             Links.Add(other);
             other.Links.Add(this);
+        }
+
+        public void AddExtraLinkTo(FakePlanet other)
+        {
+            if (this == other) return;
+            ExtraLinks.Add(other);
+            other.ExtraLinks.Add(this);
+        }
+
+        public void ConvertExtraLinks()
+        {
+            Links.UnionWith(ExtraLinks);
+            ExtraLinks.Clear();
         }
 
         public void RemoveLinkTo(FakePlanet other)
@@ -1144,6 +1158,113 @@ namespace AhyangyiMaps
                     dict[planet].AddLinkTo(dict[neighbor]);
                 }
             }
+        }
+
+        public static bool LineSegmentIntersectsLineSegment(ArcenPoint a1, ArcenPoint a2, ArcenPoint b1, ArcenPoint b2)
+        {
+            if (Math.Min(a1.X, a2.X) > Math.Max(b1.X, b2.X))
+                return false;
+            if (Math.Max(a1.X, a2.X) < Math.Min(b1.X, b2.X))
+                return false;
+            if (Math.Min(a1.Y, a2.Y) > Math.Max(b1.Y, b2.Y))
+                return false;
+            if (Math.Max(a1.Y, a2.Y) < Math.Min(b1.Y, b2.Y))
+                return false;
+
+            int x, y;
+            x = (a1 - a2).CrossProduct(b1 - a2);
+            y = (a1 - a2).CrossProduct(b2 - a2);
+            if (x < 0 && y < 0 || x > 0 && y > 0)
+                return false;
+            x = (b1 - b2).CrossProduct(a1 - b2);
+            y = (b1 - b2).CrossProduct(a2 - b2);
+            if (x < 0 && y < 0 || x > 0 && y > 0)
+                return false;
+
+            return true;
+        }
+
+        public bool CrossAtMostLinks(FakePlanet firstPlanet, FakePlanet secondPlanet, int mainLimit, int extraLimit)
+        {
+            if (firstPlanet.Links.Contains(secondPlanet))
+                return false;
+            if (firstPlanet.ExtraLinks.Contains(secondPlanet))
+                return false;
+
+            // We count every edge twice, so...
+            mainLimit *= 2;
+            extraLimit *= 2;
+
+            foreach (FakePlanet planet in planets)
+            {
+                if (planet == firstPlanet || planet == secondPlanet)
+                {
+                    continue;
+                }
+
+                foreach (FakePlanet neighbor in planet.Links)
+                {
+                    if (neighbor == firstPlanet || neighbor == secondPlanet)
+                    {
+                        continue;
+                    }
+                    if (LineSegmentIntersectsLineSegment(firstPlanet.Location, secondPlanet.Location, planet.Location, neighbor.Location))
+                    {
+                        if (--mainLimit < 0)
+                            return false;
+                    }
+                }
+
+                foreach (FakePlanet neighbor in planet.ExtraLinks)
+                {
+                    if (neighbor == firstPlanet || neighbor == secondPlanet)
+                    {
+                        continue;
+                    }
+                    if (LineSegmentIntersectsLineSegment(firstPlanet.Location, secondPlanet.Location, planet.Location, neighbor.Location))
+                    {
+                        if (--extraLimit < 0)
+                            return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+        internal void AddExtraLinks(int density, int maxIntersections, RandomGenerator rng)
+        {
+            int linksToAdd = (planets.Count - 1) * density / 100;
+            int retry = 0;
+
+            while (linksToAdd > 0)
+            {
+                FakePlanet a = planets[rng.Next(0, planets.Count - 1)];
+                var candidates = planets.Where(x => a != x && !a.Links.Contains(x) && CrossAtMostLinks(a, x, 0, maxIntersections)).ToList();
+
+                if (candidates.Count == 0)
+                {
+                    if (++retry == 1000)
+                    {
+                        return;
+                    }
+                    continue;
+                }
+
+                FakePlanet b = candidates[rng.Next(0, candidates.Count - 1)];
+                a.AddExtraLinkTo(b);
+                retry = 0;
+                --linksToAdd;
+            }
+        }
+
+        internal void MakeSpanningTree(int traversability)
+        {
+            // FIXME not implemetned
+        }
+
+        internal void AddEdges(int connectivity, int traversability)
+        {
+            // FIXME not implemetned
         }
     }
 
