@@ -72,6 +72,12 @@ namespace AhyangyiMaps
             other.Links.Remove(this);
         }
 
+        public void RemoveExtraLinkTo(FakePlanet other)
+        {
+            ExtraLinks.Remove(other);
+            other.ExtraLinks.Remove(this);
+        }
+
         public void RemoveAllLinksOnlyUsableForRemovingPlanetFromGalaxy()
         {
             foreach (FakePlanet other in Links)
@@ -1277,8 +1283,39 @@ namespace AhyangyiMaps
                 }
 
                 FakePlanet b = candidates[rng.Next(0, candidates.Count - 1)];
-                linksToAdd -= AddExtraSymmetricLinks(a, b);
-                retry = 0;
+                var symEdges = ListSymmetricEdges(a, b);
+                bool ok = true;
+                for (int i = 0; i < symEdges.Count; ++i)
+                {
+                    var (c, d) = symEdges[i];
+                    if (!CrossAtMostLinks(c, d, 0, maxIntersections))
+                    {
+                        // This link group isn't actually valid, rolling back
+                        for (int j = 0; j < i; ++j)
+                        {
+                            var (e, f) = symEdges[j];
+                            e.RemoveExtraLinkTo(f);
+                        }
+
+                        ok = false;
+                        break;
+                    }
+
+                    c.AddExtraLinkTo(d);
+                }
+
+                if (ok)
+                {
+                    linksToAdd -= symEdges.Count;
+                    retry = 0;
+                }
+                else
+                {
+                    if (++retry == 1000)
+                    {
+                        return;
+                    }
+                }
             }
         }
 
