@@ -39,18 +39,25 @@ namespace AhyangyiMaps
             TranslateNext = null;
         }
 
-        public void AddLinkTo(FakePlanet other)
+        public bool AddLinkTo(FakePlanet other)
         {
-            if (this == other) return;
+            if (this == other) return false;
+            if (this.Links.Contains(other)) return false;
             Links.Add(other);
             other.Links.Add(this);
+
+            return true;
         }
 
-        public void AddExtraLinkTo(FakePlanet other)
+        public bool AddExtraLinkTo(FakePlanet other)
         {
-            if (this == other) return;
+            if (this == other) return false;
+            if (Links.Contains(other)) return false;
+            if (ExtraLinks.Contains(other)) return false;
             ExtraLinks.Add(other);
             other.ExtraLinks.Add(this);
+
+            return true;
         }
 
         public void ConvertExtraLinks()
@@ -339,10 +346,7 @@ namespace AhyangyiMaps
 
                 if (chosenNeighbor != null)
                 {
-                    foreach (var (a, b) in ListSymmetricEdges(chosen, chosenNeighbor))
-                    {
-                        a.AddLinkTo(b);
-                    }
+                    AddSymmetricLinks(chosen, chosenNeighbor);
                 }
 
                 queue.Enqueue(chosen);
@@ -372,6 +376,28 @@ namespace AhyangyiMaps
                     }
                 }
             }
+        }
+
+        private int AddSymmetricLinks(FakePlanet chosen, FakePlanet chosenNeighbor)
+        {
+            int ret = 0;
+            foreach (var (a, b) in ListSymmetricEdges(chosen, chosenNeighbor))
+            {
+                if (a.AddLinkTo(b))
+                    ++ret;
+            }
+            return ret;
+        }
+
+        private int AddExtraSymmetricLinks(FakePlanet chosen, FakePlanet chosenNeighbor)
+        {
+            int ret = 0;
+            foreach (var (a, b) in ListSymmetricEdges(chosen, chosenNeighbor))
+            {
+                if (a.AddExtraLinkTo(b))
+                    ++ret;
+            }
+            return ret;
         }
 
         protected static int RegionNumber(ArcenPoint cur, ArcenPoint prev, ArcenPoint next)
@@ -1251,9 +1277,8 @@ namespace AhyangyiMaps
                 }
 
                 FakePlanet b = candidates[rng.Next(0, candidates.Count - 1)];
-                a.AddExtraLinkTo(b);
+                linksToAdd -= AddExtraSymmetricLinks(a, b);
                 retry = 0;
-                --linksToAdd;
             }
         }
 
