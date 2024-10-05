@@ -1,4 +1,5 @@
 using Arcen.Universal;
+using System;
 
 namespace AhyangyiMaps
 {
@@ -132,5 +133,64 @@ namespace AhyangyiMaps
         public static SymmetryConstants Rotational7 = new SymmetryConstants(FInt.Create(482, false), FInt.Create(1110, false));
         public static SymmetryConstants Rotational8 = new SymmetryConstants(FInt.Create(414, false), FInt.Create(1082, false));
         public static SymmetryConstants[] Rotational = { null, null, null, Rotational3, Rotational4, Rotational5, Rotational6, Rotational7, Rotational8 };
+    }
+
+    public static class Geometry
+    {
+        public static bool LineSegmentIntersectsLineSegment(ArcenPoint a1, ArcenPoint a2, ArcenPoint b1, ArcenPoint b2, bool strict = false)
+        {
+            if (strict)
+            {
+                if (a1 == b1) return false;
+                if (a1 == b2) return false;
+                if (a2 == b1) return false;
+                if (a2 == b2) return false;
+            }
+            if (Math.Min(a1.X, a2.X) > Math.Max(b1.X, b2.X))
+                return false;
+            if (Math.Max(a1.X, a2.X) < Math.Min(b1.X, b2.X))
+                return false;
+            if (Math.Min(a1.Y, a2.Y) > Math.Max(b1.Y, b2.Y))
+                return false;
+            if (Math.Max(a1.Y, a2.Y) < Math.Min(b1.Y, b2.Y))
+                return false;
+
+            int x, y;
+            x = (a1 - a2).CrossProduct(b1 - a2);
+            y = (a1 - a2).CrossProduct(b2 - a2);
+            if (x < 0 && y < 0 || x > 0 && y > 0)
+                return false;
+            x = (b1 - b2).CrossProduct(a1 - b2);
+            y = (b1 - b2).CrossProduct(a2 - b2);
+            if (x < 0 && y < 0 || x > 0 && y > 0)
+                return false;
+
+            return true;
+        }
+
+        // Returns a number between 0 and 3
+        // 0: next is on the ray cur->prev
+        // 1: next is on the "left-hand" semiplane divided by the cur->prev line
+        // 2: next is opposite to cur->prev
+        // 3: next is on the "right-hand" semiplane divided by the cur->prev line
+        // The purpose of this number is that 0->1->2->3 maintains a counterclockwise order,
+        //     and two directions in the same region can be compared by cross product
+        public static int RegionNumber(ArcenPoint cur, ArcenPoint prev, ArcenPoint next)
+        {
+            int cross = (next - cur).CrossProduct(prev - cur);
+            if (cross == 0)
+            {
+                int dot = (next - cur).DotProduct(prev - cur);
+
+                if (dot >= 0)
+                    return 0;
+                return 2;
+            }
+            if (cross > 0)
+            {
+                return 1;
+            }
+            return 3;
+        }
     }
 }

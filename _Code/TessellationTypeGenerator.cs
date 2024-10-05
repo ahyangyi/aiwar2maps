@@ -2,7 +2,6 @@ using AhyangyiMaps.Tessellation;
 using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
-using System.Collections.Generic;
 
 namespace AhyangyiMaps
 {
@@ -86,12 +85,15 @@ namespace AhyangyiMaps
             {
                 g = DiamondYFlowerGrid.MakeGalaxy(planetType, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
             }
-
             g.MakeSymmetricGroups();
 
+            // STEP 2 - MARK OUTER PATH FOR PERSERVATION
+            // Mark outer path.
+            // The marked planets would be prevented from any consideration in STEP 3.
+            // And the links would be always included in STEP 6.
+            var outline = new Outline(g.FindOutline());
             if (outerPath == 1)
             {
-                var outline = new HashSet<FakePlanet>(g.FindOutline());
                 foreach (var sg in g.symmetricGroups)
                 {
                     bool x = false;
@@ -107,7 +109,7 @@ namespace AhyangyiMaps
                 g.MakeBeltWay();
             }
 
-            // STEP 2 - DISSONANCE
+            // STEP 3 - DISSONANCE
             // Remove planets randomly, respecting symmetry and stick bits.
             if (dissonance > 0)
             {
@@ -125,54 +127,54 @@ namespace AhyangyiMaps
                 }
             }
 
-            // STEP 3 - CONNNECT
+            // STEP 4 - CONNNECT
             // In case we cut off the graph, connect it back
             g.EnsureConnectivity();
 
-            // STEP 4 - EXTRA LINKS
+            // STEP 5 - EXTRA LINKS
             // Make extra links available
             if (additionalConnections == 1)
             {
-                g.AddExtraLinks(33, 0, randomNumberGenerator);
+                g.AddExtraLinks(33, 0, randomNumberGenerator, outline);
             }
             else if (additionalConnections == 2)
             {
-                g.AddExtraLinks(67, 0, randomNumberGenerator);
+                g.AddExtraLinks(67, 0, randomNumberGenerator, outline);
             }
             else if (additionalConnections == 3)
             {
-                g.AddExtraLinks(200, 0, randomNumberGenerator);
+                g.AddExtraLinks(200, 0, randomNumberGenerator, outline);
             }
             else if (additionalConnections == 4)
             {
-                g.AddExtraLinks(133, 1, randomNumberGenerator);
+                g.AddExtraLinks(133, 1, randomNumberGenerator, outline);
             }
             else if (additionalConnections == 5)
             {
-                g.AddExtraLinks(400, 1, randomNumberGenerator);
+                g.AddExtraLinks(400, 1, randomNumberGenerator, outline);
             }
             else if (additionalConnections == 6)
             {
-                g.AddExtraLinks(2000, 5, randomNumberGenerator);
+                g.AddExtraLinks(2000, 5, randomNumberGenerator, outline);
             }
             foreach (FakePlanet planet in g.planets)
             {
                 planet.ConvertExtraLinks();
             }
 
-            // STEP 5 - SKELETON
+            // STEP 6 - SKELETON
             // Select a subset of edges that'll be in the game
             g.MakeSpanningTree(traversability);
 
-            // STEP 6 - FILL
+            // STEP 7 - FILL
             // Add edges until the desired density is reached
             g.AddEdges(connectivity, traversability);
 
-            // STEP 7 - WOBBLE
+            // STEP 8 - WOBBLE
             // Add random offsets to each planet, respecting symmetry
             g.Wobble(planetType, wobble, randomNumberGenerator);
 
-            // STEP 8 - POPULATE
+            // STEP 9 - POPULATE
             // Translate our information into Arcenverse
             g.Populate(galaxy, planetType, randomNumberGenerator);
         }

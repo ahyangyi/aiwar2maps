@@ -1,6 +1,5 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -138,6 +137,74 @@ namespace AhyangyiMaps
             {
                 planet.Wobble(wobble, dx2, dy2);
             }
+        }
+    }
+
+    public class Outline
+    {
+        public System.Collections.Generic.List<FakePlanet> Planets;
+        public System.Collections.Generic.Dictionary<FakePlanet, int> PlanetIndex;
+
+        int N { get => Planets.Count; }
+
+        public Outline(System.Collections.Generic.List<FakePlanet> planets)
+        {
+            this.Planets = planets;
+            PlanetIndex = new System.Collections.Generic.Dictionary<FakePlanet, int>();
+            for (int i = 0; i < N; ++i)
+                PlanetIndex[Planets[i]] = i;
+        }
+        public bool Contains(FakePlanet planet)
+        {
+            return PlanetIndex.ContainsKey(planet);
+        }
+
+        public bool ContainsLink(FakePlanet a, FakePlanet b)
+        {
+            if (!PlanetIndex.ContainsKey(a)) return false;
+            if (!PlanetIndex.ContainsKey(b)) return false;
+
+            int ai = PlanetIndex[a];
+            int bi = PlanetIndex[b];
+
+            return ai == (bi + 1) % N || bi == (ai + 1) % N;
+        }
+
+        public bool VenturesOutside(FakePlanet a, FakePlanet b)
+        {
+            if (Contains(a))
+            {
+                int ai = PlanetIndex[a];
+                var prev = Planets[(ai + N - 1) % N].Location;
+                var next = Planets[(ai + 1) % N].Location;
+
+                int nextRegion = Geometry.RegionNumber(a.Location, prev, next);
+                int bRegion = Geometry.RegionNumber(a.Location, prev, b.Location);
+                if (bRegion > nextRegion || bRegion == nextRegion && (b.Location - a.Location).CrossProduct(next - a.Location) > 0)
+                {
+                    return true;
+                }
+            }
+            if (Contains(b))
+            {
+                int bi = PlanetIndex[b];
+                var prev = Planets[(bi + N - 1) % N].Location;
+                var next = Planets[(bi + 1) % N].Location;
+
+                int nextRegion = Geometry.RegionNumber(b.Location, prev, next);
+                int aRegion = Geometry.RegionNumber(b.Location, prev, a.Location);
+                if (aRegion > nextRegion || aRegion == nextRegion && (a.Location - b.Location).CrossProduct(next - b.Location) > 0)
+                {
+                    return true;
+                }
+            }
+            for (int i = 0; i < N; ++i)
+            {
+                if (Geometry.LineSegmentIntersectsLineSegment(a.Location, b.Location, Planets[i].Location, Planets[(i + 1) % N].Location, true))
+                    return true;
+            }
+
+            return false;
         }
     }
 
@@ -406,24 +473,6 @@ namespace AhyangyiMaps
             return ret;
         }
 
-        protected static int RegionNumber(ArcenPoint cur, ArcenPoint prev, ArcenPoint next)
-        {
-            int cross = (next - cur).CrossProduct(prev - cur);
-            if (cross == 0)
-            {
-                int dot = (next - cur).DotProduct(prev - cur);
-
-                if (dot >= 0)
-                    return 0;
-                return 2;
-            }
-            if (cross > 0)
-            {
-                return 1;
-            }
-            return 3;
-        }
-
         protected static FakePlanet LeftMostNeighbor(FakePlanet cur, ArcenPoint prev)
         {
             if (cur.Links.Count == 0)
@@ -434,7 +483,7 @@ namespace AhyangyiMaps
 
             foreach (FakePlanet neighbor in links)
             {
-                int curRegion = RegionNumber(cur.Location, prev, neighbor.Location);
+                int curRegion = Geometry.RegionNumber(cur.Location, prev, neighbor.Location);
                 if (curRegion > retRegion || curRegion == retRegion && (neighbor.Location - cur.Location).CrossProduct(ret.Location - cur.Location) > 0)
                 {
                     ret = neighbor;
@@ -1192,30 +1241,6 @@ namespace AhyangyiMaps
             }
         }
 
-        public static bool LineSegmentIntersectsLineSegment(ArcenPoint a1, ArcenPoint a2, ArcenPoint b1, ArcenPoint b2)
-        {
-            if (Math.Min(a1.X, a2.X) > Math.Max(b1.X, b2.X))
-                return false;
-            if (Math.Max(a1.X, a2.X) < Math.Min(b1.X, b2.X))
-                return false;
-            if (Math.Min(a1.Y, a2.Y) > Math.Max(b1.Y, b2.Y))
-                return false;
-            if (Math.Max(a1.Y, a2.Y) < Math.Min(b1.Y, b2.Y))
-                return false;
-
-            int x, y;
-            x = (a1 - a2).CrossProduct(b1 - a2);
-            y = (a1 - a2).CrossProduct(b2 - a2);
-            if (x < 0 && y < 0 || x > 0 && y > 0)
-                return false;
-            x = (b1 - b2).CrossProduct(a1 - b2);
-            y = (b1 - b2).CrossProduct(a2 - b2);
-            if (x < 0 && y < 0 || x > 0 && y > 0)
-                return false;
-
-            return true;
-        }
-
         public bool CrossAtMostLinks(FakePlanet firstPlanet, FakePlanet secondPlanet, int mainLimit, int extraLimit)
         {
             if (firstPlanet.Links.Contains(secondPlanet))
@@ -1240,7 +1265,7 @@ namespace AhyangyiMaps
                     {
                         continue;
                     }
-                    if (LineSegmentIntersectsLineSegment(firstPlanet.Location, secondPlanet.Location, planet.Location, neighbor.Location))
+                    if (Geometry.LineSegmentIntersectsLineSegment(firstPlanet.Location, secondPlanet.Location, planet.Location, neighbor.Location))
                     {
                         if (--mainLimit < 0)
                             return false;
@@ -1253,7 +1278,7 @@ namespace AhyangyiMaps
                     {
                         continue;
                     }
-                    if (LineSegmentIntersectsLineSegment(firstPlanet.Location, secondPlanet.Location, planet.Location, neighbor.Location))
+                    if (Geometry.LineSegmentIntersectsLineSegment(firstPlanet.Location, secondPlanet.Location, planet.Location, neighbor.Location))
                     {
                         if (--extraLimit < 0)
                             return false;
@@ -1263,7 +1288,7 @@ namespace AhyangyiMaps
 
             return true;
         }
-        internal void AddExtraLinks(int density, int maxIntersections, RandomGenerator rng)
+        internal void AddExtraLinks(int density, int maxIntersections, RandomGenerator rng, Outline outline)
         {
             int linksToAdd = (planets.Count - 1) * density / 100;
             int retry = 0;
@@ -1271,7 +1296,7 @@ namespace AhyangyiMaps
             while (linksToAdd > 0)
             {
                 FakePlanet a = planets[rng.Next(0, planets.Count - 1)];
-                var candidates = planets.Where(x => a != x && !a.Links.Contains(x) && CrossAtMostLinks(a, x, 0, maxIntersections)).ToList();
+                var candidates = planets.Where(x => a != x && !a.Links.Contains(x) && CrossAtMostLinks(a, x, 0, maxIntersections) && !outline.VenturesOutside(a, x)).ToList();
 
                 if (candidates.Count == 0)
                 {
@@ -1288,7 +1313,7 @@ namespace AhyangyiMaps
                 for (int i = 0; i < symEdges.Count; ++i)
                 {
                     var (c, d) = symEdges[i];
-                    if (!CrossAtMostLinks(c, d, 0, maxIntersections))
+                    if (!CrossAtMostLinks(c, d, 0, maxIntersections) || outline.VenturesOutside(c, d))
                     {
                         // This link group isn't actually valid, rolling back
                         for (int j = 0; j < i; ++j)
