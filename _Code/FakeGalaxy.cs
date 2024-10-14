@@ -64,8 +64,8 @@ namespace AhyangyiMaps
             int dx, dy;
             do
             {
-                dx = rng.Next(-1000, 1000);
-                dy = rng.Next(-1000, 1000);
+                dx = rng.NextInclus(-1000, 1000);
+                dy = rng.NextInclus(-1000, 1000);
             } while (dx * dx + dy * dy > 1000 * 1000);
 
             FInt dx2, dy2;
@@ -1213,16 +1213,13 @@ namespace AhyangyiMaps
             }
         }
 
-        public bool CrossAtMostLinks(FakeGalaxy extra, FakePlanet firstPlanet, FakePlanet secondPlanet, int mainLimit, int extraLimit)
+        public bool CrossAtMostLinks(FakePlanet firstPlanet, FakePlanet secondPlanet, int limit)
         {
             if (links[firstPlanet].Contains(secondPlanet))
                 return false;
-            if (extra.links[firstPlanet].Contains(secondPlanet))
-                return false;
 
             // We count every edge twice, so...
-            mainLimit *= 2;
-            extraLimit *= 2;
+            limit *= 2;
 
             foreach (FakePlanet planet in planets)
             {
@@ -1239,20 +1236,7 @@ namespace AhyangyiMaps
                     }
                     if (Geometry.LineSegmentIntersectsLineSegment(firstPlanet.Location, secondPlanet.Location, planet.Location, neighbor.Location))
                     {
-                        if (--mainLimit < 0)
-                            return false;
-                    }
-                }
-
-                foreach (FakePlanet neighbor in extra.links[planet])
-                {
-                    if (neighbor == firstPlanet || neighbor == secondPlanet)
-                    {
-                        continue;
-                    }
-                    if (Geometry.LineSegmentIntersectsLineSegment(firstPlanet.Location, secondPlanet.Location, planet.Location, neighbor.Location))
-                    {
-                        if (--extraLimit < 0)
+                        if (--limit < 0)
                             return false;
                     }
                 }
@@ -1268,8 +1252,8 @@ namespace AhyangyiMaps
 
             while (linksToAdd > 0)
             {
-                FakePlanet a = planets[rng.Next(0, planets.Count - 1)];
-                var candidates = planets.Where(x => a != x && !links[a].Contains(x) && CrossAtMostLinks(extra, a, x, 0, maxIntersections) && !outline.VenturesOutside(a, x)).ToList();
+                FakePlanet a = planets[rng.NextInclus(0, planets.Count - 1)];
+                var candidates = planets.Where(x => a != x && !links[a].Contains(x) && CrossAtMostLinks(a, x, 0) && extra.CrossAtMostLinks(a, x, maxIntersections) && !outline.VenturesOutside(a, x)).ToList();
 
                 if (candidates.Count == 0)
                 {
@@ -1280,13 +1264,13 @@ namespace AhyangyiMaps
                     continue;
                 }
 
-                FakePlanet b = candidates[rng.Next(0, candidates.Count - 1)];
+                FakePlanet b = candidates[rng.NextInclus(0, candidates.Count - 1)];
                 var symEdges = ListSymmetricEdges(a, b);
                 bool ok = true;
                 for (int i = 0; i < symEdges.Count; ++i)
                 {
                     var (c, d) = symEdges[i];
-                    if (!CrossAtMostLinks(extra, c, d, 0, maxIntersections) || outline.VenturesOutside(c, d))
+                    if (!CrossAtMostLinks(c, d, 0) || !extra.CrossAtMostLinks(c, d, maxIntersections) || outline.VenturesOutside(c, d))
                     {
                         // This link group isn't actually valid, rolling back
                         for (int j = 0; j < i; ++j)
@@ -1299,7 +1283,10 @@ namespace AhyangyiMaps
                         break;
                     }
 
-                    extra.AddLink(c, d);
+                    if (!links[c].Contains(d))
+                    {
+                        extra.AddLink(c, d);
+                    }
                 }
 
                 if (ok)
@@ -1325,9 +1312,94 @@ namespace AhyangyiMaps
             }
         }
 
-        internal void MakeSpanningTree(int traversability)
+        internal FakeGalaxy MakeSpanningGraph(int traversability, RandomGenerator rng)
         {
-            // FIXME not implemetned
+            FakeGalaxy spanningGraph = new FakeGalaxy(planets);
+
+            var visited = new HashSet<FakePlanet>();
+            var queue = new System.Collections.Generic.Queue<FakePlanet>();
+            var shortestDistance = new System.Collections.Generic.Dictionary<FakePlanet, (int, FakePlanet)>();
+            var edgeWeight = new System.Collections.Generic.Dictionary<(FakePlanet, FakePlanet), int>();
+
+            foreach (FakePlanet planet in planets)
+            {
+                foreach (FakePlanet neighbor in links[planet])
+                {
+                    if (edgeWeight.ContainsKey((planet, neighbor))) continue;
+
+                    int weight = rng.NextInclus(0, 9999);
+
+                    foreach (var (a, b) in ListSymmetricEdges(planet, neighbor))
+                    {
+                        edgeWeight[(a, b)] = edgeWeight[(b, a)] = weight;
+                    }
+                }
+            }
+
+            foreach (FakePlanet planet in planets)
+            {
+                shortestDistance[planet] = (int.MaxValue, null);
+            }
+            shortestDistance[planets[rng.NextInclus(0, planets.Count - 1)]] = (0, null);
+
+            while (visited.Count < planets.Count)
+            {
+                FakePlanet chosen = null, chosenNeighbor = null;
+                int chosenDistance = int.MaxValue;
+
+                foreach (var kv in shortestDistance)
+                {
+                    FakePlanet planet = kv.Key;
+                    if (visited.Contains(planet))
+                    {
+                        continue;
+                    }
+
+                    if (chosen == null || kv.Value.Item1 < chosenDistance)
+                    {
+                        chosen = kv.Key;
+                        chosenDistance = kv.Value.Item1;
+                        chosenNeighbor = kv.Value.Item2;
+                    }
+                }
+
+                if (chosenNeighbor != null)
+                {
+                    spanningGraph.AddSymmetricLinks(chosen, chosenNeighbor);
+                }
+
+                queue.Enqueue(chosen);
+                visited.Add(chosen);
+                shortestDistance.Remove(chosen);
+
+                while (queue.Count > 0)
+                {
+                    var cur = queue.Dequeue();
+                    foreach (FakePlanet neighbor in spanningGraph.links[cur])
+                    {
+                        if (!visited.Contains(neighbor))
+                        {
+                            visited.Add(neighbor);
+                            shortestDistance.Remove(neighbor);
+                            queue.Enqueue(neighbor);
+                        }
+                    }
+
+                    foreach (FakePlanet neighbor in links[cur])
+                    {
+                        if (shortestDistance.ContainsKey(neighbor))
+                        {
+                            int distance = edgeWeight[(cur, neighbor)];
+                            if (distance < shortestDistance[neighbor].Item1 || shortestDistance[neighbor].Item2 == null)
+                            {
+                                shortestDistance[neighbor] = (distance, cur);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return spanningGraph;
         }
 
         internal void AddEdges(int connectivity, int traversability)

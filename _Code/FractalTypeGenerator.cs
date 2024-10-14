@@ -28,12 +28,12 @@ namespace AhyangyiMaps
                 g = new FakeGalaxy();
                 for (int i = 0; i < 5; ++i)
                 {
-                    g.AddPlanetAt(ArcenPoint.Create(rng.Next(-1000, 1000), rng.Next(-1000, 1000)));
+                    g.AddPlanetAt(ArcenPoint.Create(rng.NextInclus(-1000, 1000), rng.NextInclus(-1000, 1000)));
                 }
 
                 for (int i = 0; i < 5; ++i)
                     for (int j = i + 1; j < 5; ++j)
-                        if (rng.Next(0, 999) < 382)
+                        if (rng.NextInclus(0, 999) < 382)
                         {
                             g.AddLink(g.planets[i], g.planets[j]);
                         }

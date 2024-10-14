@@ -116,7 +116,7 @@ namespace AhyangyiMaps
                 int retry = 0;
                 while (g.planets.Count > numPlanets)
                 {
-                    SymmetricGroup s = g.symmetricGroups[randomNumberGenerator.Next(0, g.symmetricGroups.Count - 1)];
+                    SymmetricGroup s = g.symmetricGroups[randomNumberGenerator.NextInclus(0, g.symmetricGroups.Count - 1)];
                     if (s.stick)
                     {
                         if (++retry == 1000) break;
@@ -160,7 +160,8 @@ namespace AhyangyiMaps
 
             // STEP 6 - SKELETON
             // Select a subset of edges that'll be in the game
-            g.MakeSpanningTree(traversability);
+            var spanningGraph = g.MakeSpanningGraph(traversability, randomNumberGenerator);
+            g = spanningGraph;
 
             // STEP 7 - FILL
             // Add edges until the desired density is reached
