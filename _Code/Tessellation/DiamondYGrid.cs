@@ -21,15 +21,16 @@ namespace AhyangyiMaps.Tessellation
             var center = diamondY.AddPlanetAt(ArcenPoint.Create(unit * 2, unit * 2));
             var topLeft = diamondY.AddPlanetAt(ArcenPoint.Create(unit, unit * 3));
             var topRight = diamondY.AddPlanetAt(ArcenPoint.Create(unit * 3, unit * 3));
-            bottom.AddLinkTo(right);
-            right.AddLinkTo(topRight);
-            topRight.AddLinkTo(top);
-            top.AddLinkTo(topLeft);
-            topLeft.AddLinkTo(left);
-            left.AddLinkTo(bottom);
-            center.AddLinkTo(topLeft);
-            center.AddLinkTo(topRight);
-            center.AddLinkTo(bottom);
+
+            diamondY.AddLink(bottom, right);
+            diamondY.AddLink(right, topRight);
+            diamondY.AddLink(topRight, top);
+            diamondY.AddLink(top, topLeft);
+            diamondY.AddLink(topLeft, left);
+            diamondY.AddLink(left, bottom);
+            diamondY.AddLink(center, topLeft);
+            diamondY.AddLink(center, topRight);
+            diamondY.AddLink(center, bottom);
 
             diamondY.breakpoints.Add((bottom.Location, left.Location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit, unit) });
             diamondY.breakpoints.Add((bottom.Location, right.Location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit * 3, unit) });

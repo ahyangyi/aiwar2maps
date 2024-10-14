@@ -18,9 +18,9 @@ namespace AhyangyiMaps.Tessellation
             var p1 = rightTriangle.AddPlanetAt(ArcenPoint.Create(xunit, yunit));
             var p2 = rightTriangle.AddPlanetAt(ArcenPoint.Create(0, yunit * 2));
 
-            p0.AddLinkTo(p1);
-            p1.AddLinkTo(p2);
-            p2.AddLinkTo(p0);
+            rightTriangle.AddLink(p0, p1);
+            rightTriangle.AddLink(p1, p2);
+            rightTriangle.AddLink(p2, p0);
 
             leftTriangle = rightTriangle.FlipX();
         }

@@ -16,10 +16,11 @@ namespace AhyangyiMaps.Tessellation
             var p1 = square.AddPlanetAt(ArcenPoint.Create(unit, 0));
             var p2 = square.AddPlanetAt(ArcenPoint.Create(unit, unit));
             var p3 = square.AddPlanetAt(ArcenPoint.Create(0, unit));
-            p0.AddLinkTo(p1);
-            p1.AddLinkTo(p2);
-            p2.AddLinkTo(p3);
-            p3.AddLinkTo(p0);
+
+            square.AddLink(p0, p1);
+            square.AddLink(p1, p2);
+            square.AddLink(p2, p3);
+            square.AddLink(p3, p0);
         }
         public static FakeGalaxy MakeSquareGalaxy(PlanetType planetType, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets)
         {

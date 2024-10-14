@@ -18,14 +18,15 @@ namespace AhyangyiMaps.Tessellation
             var p3 = squareY.AddPlanetAt(ArcenPoint.Create(0, unit * 2));
             var center = squareY.AddPlanetAt(ArcenPoint.Create(unit, unit));
             var root = squareY.AddPlanetAt(ArcenPoint.Create(unit, 0));
-            p0.AddLinkTo(root);
-            root.AddLinkTo(p1);
-            p1.AddLinkTo(p2);
-            p2.AddLinkTo(p3);
-            p3.AddLinkTo(p0);
-            center.AddLinkTo(p2);
-            center.AddLinkTo(p3);
-            center.AddLinkTo(root);
+
+            squareY.AddLink(p0, root);
+            squareY.AddLink(root, p1);
+            squareY.AddLink(p1, p2);
+            squareY.AddLink(p2, p3);
+            squareY.AddLink(p3, p0);
+            squareY.AddLink(center, p2);
+            squareY.AddLink(center, p3);
+            squareY.AddLink(center, root);
 
             squareY.breakpoints.Add((p2.Location, p3.Location), new System.Collections.Generic.List<ArcenPoint> { ArcenPoint.Create(unit, unit * 2) });
             squareY.connectionsToBreak.Add((p0.Location, p1.Location));

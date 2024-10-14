@@ -9,17 +9,6 @@ namespace AhyangyiMaps
     {
         public ArcenPoint Location;
 
-        // Adjacency data structures
-        //
-        // Links is the general purpose one.
-        // StickyLinks stores links that are "sticky" for some reason,
-        //   usually because they are marked to be always included.
-        // ExtraLinks stores links that are not part of the graph yet,
-        //   usually during a process to add edges to the graph.
-        public HashSet<FakePlanet> Links;
-        public HashSet<FakePlanet> StickyLinks;
-        public HashSet<FakePlanet> ExtraLinks;
-
         public Matrix2x2 WobbleMatrix = Matrix2x2.Identity;
         public FakePlanet Rotate, Reflect, TranslatePrevious, TranslateNext;
 
@@ -29,61 +18,12 @@ namespace AhyangyiMaps
         public FakePlanet(ArcenPoint location)
         {
             this.Location = location;
-            Links = new HashSet<FakePlanet>();
-            StickyLinks = new HashSet<FakePlanet>();
-            ExtraLinks = new HashSet<FakePlanet>();
             Rotate = null;
             Reflect = null;
             TranslatePrevious = null;
             TranslateNext = null;
         }
 
-        public bool AddLinkTo(FakePlanet other)
-        {
-            if (this == other) return false;
-            if (this.Links.Contains(other)) return false;
-            Links.Add(other);
-            other.Links.Add(this);
-
-            return true;
-        }
-
-        public bool AddExtraLinkTo(FakePlanet other)
-        {
-            if (this == other) return false;
-            if (Links.Contains(other)) return false;
-            if (ExtraLinks.Contains(other)) return false;
-            ExtraLinks.Add(other);
-            other.ExtraLinks.Add(this);
-
-            return true;
-        }
-
-        public void ConvertExtraLinks()
-        {
-            Links.UnionWith(ExtraLinks);
-            ExtraLinks.Clear();
-        }
-
-        public void RemoveLinkTo(FakePlanet other)
-        {
-            Links.Remove(other);
-            other.Links.Remove(this);
-        }
-
-        public void RemoveExtraLinkTo(FakePlanet other)
-        {
-            ExtraLinks.Remove(other);
-            other.ExtraLinks.Remove(this);
-        }
-
-        public void RemoveAllLinksOnlyUsableForRemovingPlanetFromGalaxy()
-        {
-            foreach (FakePlanet other in Links)
-            {
-                other.Links.Remove(this);
-            }
-        }
         public void Wobble(int wobble, FInt dx, FInt dy)
         {
             (dx, dy) = WobbleMatrix.Apply(dx, dy);
@@ -108,7 +48,6 @@ namespace AhyangyiMaps
             other.TranslatePrevious = this;
         }
     }
-
     public class SymmetricGroup
     {
         public System.Collections.Generic.List<FakePlanet> planets;
@@ -213,12 +152,28 @@ namespace AhyangyiMaps
         public System.Collections.Generic.List<FakePlanet> planets;
         public System.Collections.Generic.List<SymmetricGroup> symmetricGroups;
         public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet> locationIndex;
+        protected System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>> links;
 
         public FakeGalaxy()
         {
             planets = new System.Collections.Generic.List<FakePlanet>();
             symmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
             locationIndex = new System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet>();
+            links = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
+        }
+
+        public FakeGalaxy(System.Collections.Generic.List<FakePlanet> new_planets)
+        {
+            planets = new_planets;
+            symmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
+            locationIndex = new System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet>();
+            links = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
+
+            foreach (var planet in planets)
+            {
+                locationIndex[planet.Location] = planet;
+                links[planet] = new System.Collections.Generic.List<FakePlanet>();
+            }
         }
 
         public FakePlanet AddPlanetAt(ArcenPoint location)
@@ -226,12 +181,37 @@ namespace AhyangyiMaps
             FakePlanet planet = new FakePlanet(location);
             planets.Add(planet);
             locationIndex[planet.Location] = planet;
+            links[planet] = new System.Collections.Generic.List<FakePlanet>();
             return planet;
+        }
+
+        public bool AddLink(FakePlanet a, FakePlanet b)
+        {
+            if (a == b) return false;
+            if (links[a].Contains(b)) return false;
+            links[a].Add(b);
+            links[b].Add(a);
+
+            return true;
+        }
+
+        public bool RemoveLink(FakePlanet a, FakePlanet b)
+        {
+            if (a == b) return false;
+            if (!links[a].Contains(b)) return false;
+            links[a].Remove(b);
+            links[b].Remove(a);
+
+            return true;
         }
 
         protected void RemovePlanetButDoesNotUpdateSymmetricGroups(FakePlanet planet)
         {
-            planet.RemoveAllLinksOnlyUsableForRemovingPlanetFromGalaxy();
+            foreach (FakePlanet other in links[planet].ToList())
+            {
+                RemoveLink(planet, other);
+            }
+
             planets.Remove(planet);
             locationIndex.Remove(planet.Location);
         }
@@ -240,7 +220,10 @@ namespace AhyangyiMaps
         {
             foreach (FakePlanet planet in planetsToRemove)
             {
-                planet.RemoveAllLinksOnlyUsableForRemovingPlanetFromGalaxy();
+                foreach (FakePlanet other in links[planet].ToList())
+                {
+                    RemoveLink(planet, other);
+                }
                 locationIndex.Remove(planet.Location);
             }
 
@@ -367,7 +350,7 @@ namespace AhyangyiMaps
             while (queue.Count > 0)
             {
                 var cur = queue.Dequeue();
-                foreach (FakePlanet neighbor in cur.Links)
+                foreach (FakePlanet neighbor in links[cur])
                 {
                     if (!visited.Contains(neighbor))
                     {
@@ -429,7 +412,7 @@ namespace AhyangyiMaps
                 while (queue.Count > 0)
                 {
                     var cur = queue.Dequeue();
-                    foreach (FakePlanet neighbor in cur.Links)
+                    foreach (FakePlanet neighbor in links[cur])
                     {
                         if (!visited.Contains(neighbor))
                         {
@@ -456,32 +439,21 @@ namespace AhyangyiMaps
             int ret = 0;
             foreach (var (a, b) in ListSymmetricEdges(chosen, chosenNeighbor))
             {
-                if (a.AddLinkTo(b))
+                if (AddLink(a, b))
                     ++ret;
             }
             return ret;
         }
 
-        private int AddExtraSymmetricLinks(FakePlanet chosen, FakePlanet chosenNeighbor)
+        protected FakePlanet LeftMostNeighbor(FakePlanet cur, ArcenPoint prev)
         {
-            int ret = 0;
-            foreach (var (a, b) in ListSymmetricEdges(chosen, chosenNeighbor))
-            {
-                if (a.AddExtraLinkTo(b))
-                    ++ret;
-            }
-            return ret;
-        }
-
-        protected static FakePlanet LeftMostNeighbor(FakePlanet cur, ArcenPoint prev)
-        {
-            if (cur.Links.Count == 0)
+            if (links[cur].Count == 0)
                 return cur;
-            var links = cur.Links.ToList();
-            FakePlanet ret = links[0];
+            var linksCopy = links[cur].ToList();
+            FakePlanet ret = linksCopy[0];
             int retRegion = 0;
 
-            foreach (FakePlanet neighbor in links)
+            foreach (FakePlanet neighbor in linksCopy)
             {
                 int curRegion = Geometry.RegionNumber(cur.Location, prev, neighbor.Location);
                 if (curRegion > retRegion || curRegion == retRegion && (neighbor.Location - cur.Location).CrossProduct(ret.Location - cur.Location) > 0)
@@ -529,10 +501,10 @@ namespace AhyangyiMaps
             var p2 = AddPlanetAt(ArcenPoint.Create(maxX + 320, maxY + 320));
             var p3 = AddPlanetAt(ArcenPoint.Create(minX - 320, maxY + 320));
 
-            p0.AddLinkTo(p1);
-            p1.AddLinkTo(p2);
-            p2.AddLinkTo(p3);
-            p3.AddLinkTo(p0);
+            AddLink(p0, p1);
+            AddLink(p1, p2);
+            AddLink(p2, p3);
+            AddLink(p3, p0);
 
             // XXX: not adding these to symmetry groups seems good enough for now?
         }
@@ -807,7 +779,7 @@ namespace AhyangyiMaps
                 if (xdiff <= ydiff * sectorSlope + d * distanceCoefficient && locationIndex.ContainsKey(symPoint))
                 {
                     bool hasAlternativeConnection = false;
-                    foreach (FakePlanet neighbor in planet.Links)
+                    foreach (FakePlanet neighbor in links[planet])
                     {
                         int neighborXdiff = neighbor.X - cx;
                         int neighborYdiff = neighbor.Y - cy;
@@ -830,14 +802,14 @@ namespace AhyangyiMaps
             foreach (var group in rotationGroupLookup.Values)
             {
                 var planet = group[0];
-                foreach (var neighbor in planet.Links)
+                foreach (var neighbor in links[planet])
                 {
                     if (rotationGroupLookup.ContainsKey(neighbor))
                     {
                         var neighborGroup = rotationGroupLookup[neighbor];
                         for (int i = 1; i < n; ++i)
                         {
-                            group[i].AddLinkTo(neighborGroup[i]);
+                            AddLink(group[i], neighborGroup[i]);
                         }
                     }
                 }
@@ -847,7 +819,7 @@ namespace AhyangyiMaps
                     var otherGroup = rotationGroupLookup[intersectorConnection[planet]];
                     for (int i = 0; i < n; ++i)
                     {
-                        group[i].AddLinkTo(otherGroup[(i + n - 1) % n]);
+                        AddLink(group[i], otherGroup[(i + n - 1) % n]);
                     }
                 }
             }
@@ -857,7 +829,7 @@ namespace AhyangyiMaps
                 if (mergeLeftToRight.ContainsKey(planet))
                 {
                     var rightPlanet = mergeLeftToRight[planet];
-                    foreach (var neighbor in rightPlanet.Links)
+                    foreach (var neighbor in links[rightPlanet])
                     {
                         if (!rotationGroupLookup.ContainsKey(neighbor))
                         {
@@ -866,7 +838,7 @@ namespace AhyangyiMaps
                         var otherGroup = rotationGroupLookup[neighbor];
                         for (int i = 0; i < n; ++i)
                         {
-                            group[i].AddLinkTo(otherGroup[(i + n - 1) % n]);
+                            AddLink(group[i], otherGroup[(i + n - 1) % n]);
                         }
                     }
                 }
@@ -875,7 +847,7 @@ namespace AhyangyiMaps
             if (hasCenter)
             {
                 var centerPlanet = locationIndex[center];
-                var neighbors = centerPlanet.Links.ToList();
+                var neighbors = links[centerPlanet].ToList();
 
                 centerPlanet.WobbleMatrix = Matrix2x2.Zero;
                 centerPlanet.Rotate = centerPlanet;
@@ -886,7 +858,7 @@ namespace AhyangyiMaps
                     var neighborGroup = rotationGroupLookup[neighbor];
                     for (int i = 0; i < n; ++i)
                     {
-                        centerPlanet.AddLinkTo(neighborGroup[i]);
+                        AddLink(centerPlanet, neighborGroup[i]);
                     }
                 }
             }
@@ -1008,16 +980,16 @@ namespace AhyangyiMaps
             // Add edges
             foreach (FakePlanet planet in planetsBackup)
             {
-                foreach (FakePlanet neighbor in planet.Links.ToList())
+                foreach (FakePlanet neighbor in links[planet].ToList())
                 {
-                    planet.Reflect.AddLinkTo(neighbor.Reflect);
+                    AddLink(planet.Reflect, neighbor.Reflect);
                 }
             }
 
             // Connect each "outline" planet to its counterpart
             foreach (FakePlanet planet in outline)
             {
-                planet.AddLinkTo(planet.Reflect);
+                AddLink(planet, planet.Reflect);
             }
         }
         public void MakeDoubleSpark()
@@ -1093,10 +1065,10 @@ namespace AhyangyiMaps
                 ConnectRotatedPlanets(new System.Collections.Generic.List<FakePlanet> { mapA[planet], mapB[planet] });
                 mapA[planet].SetReflect(mapA[reflection[planet]]);
                 mapB[planet].SetReflect(mapB[reflection[planet]]);
-                foreach (FakePlanet neighbor in planet.Links)
+                foreach (FakePlanet neighbor in links[planet])
                 {
-                    mapA[planet].AddLinkTo(mapA[neighbor]);
-                    mapB[planet].AddLinkTo(mapB[neighbor]);
+                    AddLink(mapA[planet], mapA[neighbor]);
+                    AddLink(mapB[planet], mapB[neighbor]);
                 }
             }
         }
@@ -1153,11 +1125,11 @@ namespace AhyangyiMaps
 
             foreach (FakePlanet planet in planetsBackup)
             {
-                foreach (FakePlanet neighbor in planet.Links)
+                foreach (FakePlanet neighbor in links[planet])
                 {
                     if (planet.TranslateNext != null && neighbor.TranslateNext != null)
                     {
-                        planet.TranslateNext.AddLinkTo(neighbor.TranslateNext);
+                        AddLink(planet.TranslateNext, neighbor.TranslateNext);
                     }
                 }
             }
@@ -1177,7 +1149,7 @@ namespace AhyangyiMaps
                     foreach (FakePlanet b in partB)
                         if (a.Location.GetDistanceTo(b.Location, false) <= distanceThreshold)
                         {
-                            a.AddLinkTo(b);
+                            AddLink(a, b);
                         }
             }
 
@@ -1203,22 +1175,22 @@ namespace AhyangyiMaps
             foreach (FakePlanet planet in planetsBackup)
             {
                 if (planet.X >= xSpan) continue;
-                foreach (FakePlanet neighbor in planet.Links.ToList())
+                foreach (FakePlanet neighbor in links[planet])
                 {
                     if (planet.Reflect != null && neighbor.Reflect != null)
                     {
-                        planet.Reflect.AddLinkTo(neighbor.Reflect);
+                        AddLink(planet.Reflect, neighbor.Reflect);
                     }
                 }
             }
             foreach (FakePlanet planet in planetsBackup)
             {
                 if (planet.X < xSpan) continue;
-                foreach (FakePlanet neighbor in planet.Links.ToList())
+                foreach (FakePlanet neighbor in links[planet])
                 {
-                    if (neighbor.X >= xSpan && planet.Reflect != null && neighbor.Reflect != null && !planet.Reflect.Links.Contains(neighbor.Reflect))
+                    if (neighbor.X >= xSpan && planet.Reflect != null && neighbor.Reflect != null && !links[planet.Reflect].Contains(neighbor.Reflect))
                     {
-                        planet.RemoveLinkTo(neighbor);
+                        RemoveLink(planet, neighbor);
                     }
                 }
             }
@@ -1234,18 +1206,18 @@ namespace AhyangyiMaps
             }
             foreach (FakePlanet planet in planets)
             {
-                foreach (FakePlanet neighbor in planet.Links)
+                foreach (FakePlanet neighbor in links[planet])
                 {
                     dict[planet].AddLinkTo(dict[neighbor]);
                 }
             }
         }
 
-        public bool CrossAtMostLinks(FakePlanet firstPlanet, FakePlanet secondPlanet, int mainLimit, int extraLimit)
+        public bool CrossAtMostLinks(FakeGalaxy extra, FakePlanet firstPlanet, FakePlanet secondPlanet, int mainLimit, int extraLimit)
         {
-            if (firstPlanet.Links.Contains(secondPlanet))
+            if (links[firstPlanet].Contains(secondPlanet))
                 return false;
-            if (firstPlanet.ExtraLinks.Contains(secondPlanet))
+            if (extra.links[firstPlanet].Contains(secondPlanet))
                 return false;
 
             // We count every edge twice, so...
@@ -1259,7 +1231,7 @@ namespace AhyangyiMaps
                     continue;
                 }
 
-                foreach (FakePlanet neighbor in planet.Links)
+                foreach (FakePlanet neighbor in links[planet])
                 {
                     if (neighbor == firstPlanet || neighbor == secondPlanet)
                     {
@@ -1272,7 +1244,7 @@ namespace AhyangyiMaps
                     }
                 }
 
-                foreach (FakePlanet neighbor in planet.ExtraLinks)
+                foreach (FakePlanet neighbor in extra.links[planet])
                 {
                     if (neighbor == firstPlanet || neighbor == secondPlanet)
                     {
@@ -1290,19 +1262,20 @@ namespace AhyangyiMaps
         }
         internal void AddExtraLinks(int density, int maxIntersections, RandomGenerator rng, Outline outline)
         {
+            FakeGalaxy extra = new FakeGalaxy(planets);
             int linksToAdd = (planets.Count - 1) * density / 100;
             int retry = 0;
 
             while (linksToAdd > 0)
             {
                 FakePlanet a = planets[rng.Next(0, planets.Count - 1)];
-                var candidates = planets.Where(x => a != x && !a.Links.Contains(x) && CrossAtMostLinks(a, x, 0, maxIntersections) && !outline.VenturesOutside(a, x)).ToList();
+                var candidates = planets.Where(x => a != x && !links[a].Contains(x) && CrossAtMostLinks(extra, a, x, 0, maxIntersections) && !outline.VenturesOutside(a, x)).ToList();
 
                 if (candidates.Count == 0)
                 {
                     if (++retry == 1000)
                     {
-                        return;
+                        break;
                     }
                     continue;
                 }
@@ -1313,20 +1286,20 @@ namespace AhyangyiMaps
                 for (int i = 0; i < symEdges.Count; ++i)
                 {
                     var (c, d) = symEdges[i];
-                    if (!CrossAtMostLinks(c, d, 0, maxIntersections) || outline.VenturesOutside(c, d))
+                    if (!CrossAtMostLinks(extra, c, d, 0, maxIntersections) || outline.VenturesOutside(c, d))
                     {
                         // This link group isn't actually valid, rolling back
                         for (int j = 0; j < i; ++j)
                         {
                             var (e, f) = symEdges[j];
-                            e.RemoveExtraLinkTo(f);
+                            extra.RemoveLink(e, f);
                         }
 
                         ok = false;
                         break;
                     }
 
-                    c.AddExtraLinkTo(d);
+                    extra.AddLink(c, d);
                 }
 
                 if (ok)
@@ -1338,8 +1311,16 @@ namespace AhyangyiMaps
                 {
                     if (++retry == 1000)
                     {
-                        return;
+                        break;
                     }
+                }
+            }
+
+            foreach (var planet in extra.planets)
+            {
+                foreach (var neighbor in extra.links[planet])
+                {
+                    AddLink(planet, neighbor);
                 }
             }
         }
@@ -1379,8 +1360,8 @@ namespace AhyangyiMaps
                 planetMap[planet] = ret.AddPlanetAt(trans(planet.Location));
 
             foreach (FakePlanet planet in planets)
-                foreach (var neighbor in planet.Links)
-                    planetMap[planet].AddLinkTo(planetMap[neighbor]);
+                foreach (var neighbor in links[planet])
+                    AddLink(planetMap[planet], planetMap[neighbor]);
 
             ret.connectionsToBreak = connectionsToBreak.Select(p => (trans(p.Item1), trans(p.Item2))).ToList();
 
@@ -1426,14 +1407,14 @@ namespace AhyangyiMaps
                 {
                     var planetA = galaxy.locationIndex[locationA];
                     var planetB = galaxy.locationIndex[locationB];
-                    planetA.RemoveLinkTo(planetB);
+                    galaxy.RemoveLink(planetA, planetB);
                 }
             }
 
             foreach (FakePlanet a in planets)
             {
                 ArcenPoint locationA = a.Location + offset;
-                foreach (FakePlanet b in a.Links)
+                foreach (FakePlanet b in links[a])
                 {
                     ArcenPoint locationB = b.Location + offset;
                     var planetA = galaxy.locationIndex[locationA];
@@ -1461,7 +1442,7 @@ namespace AhyangyiMaps
                     }
                     if (ok)
                     {
-                        planetA.AddLinkTo(planetB);
+                        galaxy.AddLink(planetA, planetB);
                     }
                 }
             }

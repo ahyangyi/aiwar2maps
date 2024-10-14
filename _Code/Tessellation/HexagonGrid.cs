@@ -22,12 +22,12 @@ namespace AhyangyiMaps.Tessellation
             var p4 = hexagon.AddPlanetAt(ArcenPoint.Create(0, yunit * 3));
             var p5 = hexagon.AddPlanetAt(ArcenPoint.Create(0, yunit));
 
-            p0.AddLinkTo(p1);
-            p1.AddLinkTo(p2);
-            p2.AddLinkTo(p3);
-            p3.AddLinkTo(p4);
-            p4.AddLinkTo(p5);
-            p5.AddLinkTo(p0);
+            hexagon.AddLink(p0, p1);
+            hexagon.AddLink(p1, p2);
+            hexagon.AddLink(p2, p3);
+            hexagon.AddLink(p3, p4);
+            hexagon.AddLink(p4, p5);
+            hexagon.AddLink(p5, p0);
         }
         public static FakeGalaxy MakeGalaxy(PlanetType planetType, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets)
         {

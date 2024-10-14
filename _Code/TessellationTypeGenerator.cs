@@ -157,10 +157,6 @@ namespace AhyangyiMaps
             {
                 g.AddExtraLinks(2000, 5, randomNumberGenerator, outline);
             }
-            foreach (FakePlanet planet in g.planets)
-            {
-                planet.ConvertExtraLinks();
-            }
 
             // STEP 6 - SKELETON
             // Select a subset of edges that'll be in the game

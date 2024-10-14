@@ -35,7 +35,7 @@ namespace AhyangyiMaps
                     for (int j = i + 1; j < 5; ++j)
                         if (rng.Next(0, 999) < 382)
                         {
-                            g.planets[i].AddLinkTo(g.planets[j]);
+                            g.AddLink(g.planets[i], g.planets[j]);
                         }
             } while (!g.IsConnected());
             return g;
