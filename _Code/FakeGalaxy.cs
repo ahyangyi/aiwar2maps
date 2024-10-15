@@ -425,7 +425,7 @@ namespace AhyangyiMaps
 
                     foreach (FakePlanet planet in shortestDistance.Keys.ToList())
                     {
-                        int distance = cur.Location.GetDistanceTo(planet.Location, false);
+                        int distance = ListSymmetricEdges(cur, planet).Select(x => x.Item1.Location.GetDistanceTo(x.Item2.Location, false)).Max();
                         if (distance < shortestDistance[planet].Item1 || shortestDistance[planet].Item2 == null)
                         {
                             shortestDistance[planet] = (distance, cur);
@@ -612,6 +612,7 @@ namespace AhyangyiMaps
             var intersectorConnection = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
             var mergeRightToLeft = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
             var mergeLeftToRight = new System.Collections.Generic.Dictionary<FakePlanet, FakePlanet>();
+            var rightLinkBackup = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
 
             var rotations = Matrix2x2.Rotations[n];
             var reflectionLeft = Matrix2x2.RotationReflectLeft[n];
@@ -674,6 +675,7 @@ namespace AhyangyiMaps
                         else
                         {
                             // planet on the right side
+                            rightLinkBackup[planet] = links[planet].ToList();
                             planetsToRemove.Add(planet);
                             continue;
                         }
@@ -830,7 +832,7 @@ namespace AhyangyiMaps
                 if (mergeLeftToRight.ContainsKey(planet))
                 {
                     var rightPlanet = mergeLeftToRight[planet];
-                    foreach (var neighbor in links[rightPlanet])
+                    foreach (var neighbor in rightLinkBackup[rightPlanet])
                     {
                         if (!rotationGroupLookup.ContainsKey(neighbor))
                         {
@@ -1254,7 +1256,13 @@ namespace AhyangyiMaps
             while (linksToAdd > 0)
             {
                 FakePlanet a = planets[rng.NextInclus(0, planets.Count - 1)];
-                var candidates = planets.Where(x => a != x && !links[a].Contains(x) && CrossAtMostLinks(a, x, 0) && extra.CrossAtMostLinks(a, x, maxIntersections) && !outline.VenturesOutside(a, x)).ToList();
+                var candidates = planets.Where(x => a != x &&
+                    !links[a].Contains(x) &&
+                    !extra.links[a].Contains(x) &&
+                    CrossAtMostLinks(a, x, 0) &&
+                    extra.CrossAtMostLinks(a, x, maxIntersections) &&
+                    !outline.VenturesOutside(a, x)
+                    ).ToList();
 
                 if (candidates.Count == 0)
                 {
