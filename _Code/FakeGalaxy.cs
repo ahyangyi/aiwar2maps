@@ -1,5 +1,6 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -1267,9 +1268,14 @@ namespace AhyangyiMaps
                 FakePlanet b = candidates[rng.NextInclus(0, candidates.Count - 1)];
                 var symEdges = ListSymmetricEdges(a, b);
                 bool ok = true;
+                int newEdges = 0;
                 for (int i = 0; i < symEdges.Count; ++i)
                 {
                     var (c, d) = symEdges[i];
+                    if (links[c].Contains(d) || extra.links[c].Contains(d))
+                    {
+                        continue;
+                    }
                     if (!CrossAtMostLinks(c, d, 0) || !extra.CrossAtMostLinks(c, d, maxIntersections) || outline.VenturesOutside(c, d))
                     {
                         // This link group isn't actually valid, rolling back
@@ -1283,15 +1289,15 @@ namespace AhyangyiMaps
                         break;
                     }
 
-                    if (!links[c].Contains(d))
+                    if (extra.AddLink(c, d))
                     {
-                        extra.AddLink(c, d);
+                        ++newEdges;
                     }
                 }
 
                 if (ok)
                 {
-                    linksToAdd -= symEdges.Count;
+                    linksToAdd -= newEdges;
                     retry = 0;
                 }
                 else
@@ -1402,9 +1408,24 @@ namespace AhyangyiMaps
             return spanningGraph;
         }
 
-        internal void AddEdges(int connectivity, int traversability)
+        internal void AddEdges(FakeGalaxy subgraph, int connectivity, int traversability, RandomGenerator rng)
         {
-            // FIXME not implemetned
+            int linksToAdd = Math.Min(planets.Count * connectivity / 20, links.Select(x => x.Value.Count).Sum() / 2) - subgraph.links.Select(x => x.Value.Count).Sum() / 2;
+            int retries = 1000;
+            while (linksToAdd > 0)
+            {
+                var cur = planets[rng.NextInclus(0, planets.Count - 1)];
+                var neighbors = links[cur].Where(x => !subgraph.links[cur].Contains(x)).ToList();
+                if (neighbors.Count == 0) { if (--retries == 0) return; continue; }
+
+                var neighbor = neighbors[rng.NextInclus(0, neighbors.Count - 1)];
+                var edgeChange = subgraph.AddSymmetricLinks(cur, neighbor);
+                linksToAdd -= edgeChange;
+                if (edgeChange == 0)
+                {
+                    if (--retries == 0) return;
+                }
+            }
         }
     }
 
@@ -1433,7 +1454,7 @@ namespace AhyangyiMaps
 
             foreach (FakePlanet planet in planets)
                 foreach (var neighbor in links[planet])
-                    AddLink(planetMap[planet], planetMap[neighbor]);
+                    ret.AddLink(planetMap[planet], planetMap[neighbor]);
 
             ret.connectionsToBreak = connectionsToBreak.Select(p => (trans(p.Item1), trans(p.Item2))).ToList();
 

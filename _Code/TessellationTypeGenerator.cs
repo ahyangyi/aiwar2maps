@@ -161,11 +161,11 @@ namespace AhyangyiMaps
             // STEP 6 - SKELETON
             // Select a subset of edges that'll be in the game
             var spanningGraph = g.MakeSpanningGraph(traversability, randomNumberGenerator);
-            g = spanningGraph;
 
             // STEP 7 - FILL
             // Add edges until the desired density is reached
-            g.AddEdges(connectivity, traversability);
+            g.AddEdges(spanningGraph, connectivity, traversability, randomNumberGenerator);
+            g = spanningGraph;
 
             // STEP 8 - WOBBLE
             // Add random offsets to each planet, respecting symmetry
