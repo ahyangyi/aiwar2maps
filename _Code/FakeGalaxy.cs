@@ -1,4 +1,5 @@
 using Arcen.AIW2.Core;
+using Arcen.AIW2.External;
 using Arcen.Universal;
 using System;
 using System.Collections.Generic;
@@ -148,33 +149,17 @@ namespace AhyangyiMaps
         }
     }
 
-    public class FakeGalaxy
+    public class FakePlanetCollection
     {
         public System.Collections.Generic.List<FakePlanet> planets;
         public System.Collections.Generic.List<SymmetricGroup> symmetricGroups;
         public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet> locationIndex;
-        protected System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>> links;
 
-        public FakeGalaxy()
+        public FakePlanetCollection()
         {
             planets = new System.Collections.Generic.List<FakePlanet>();
             symmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
             locationIndex = new System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet>();
-            links = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
-        }
-
-        public FakeGalaxy(System.Collections.Generic.List<FakePlanet> new_planets)
-        {
-            planets = new_planets;
-            symmetricGroups = new System.Collections.Generic.List<SymmetricGroup>();
-            locationIndex = new System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet>();
-            links = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
-
-            foreach (var planet in planets)
-            {
-                locationIndex[planet.Location] = planet;
-                links[planet] = new System.Collections.Generic.List<FakePlanet>();
-            }
         }
 
         public FakePlanet AddPlanetAt(ArcenPoint location)
@@ -182,6 +167,38 @@ namespace AhyangyiMaps
             FakePlanet planet = new FakePlanet(location);
             planets.Add(planet);
             locationIndex[planet.Location] = planet;
+            return planet;
+        }
+    }
+
+    public class FakeGalaxy
+    {
+        protected FakePlanetCollection planetCollection;
+        protected System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>> links;
+
+        public FakeGalaxy()
+        {
+            planetCollection = new FakePlanetCollection();
+            links = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
+        }
+
+        public FakeGalaxy(FakePlanetCollection planetCollection)
+        {
+            this.planetCollection = planetCollection;
+            links = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
+            foreach (var planet in planets)
+            {
+                links[planet] = new System.Collections.Generic.List<FakePlanet>();
+            }
+        }
+
+        public System.Collections.Generic.List<FakePlanet> planets { get => planetCollection.planets; set => planetCollection.planets = value; }
+        public System.Collections.Generic.List<SymmetricGroup> symmetricGroups { get => planetCollection.symmetricGroups; set => planetCollection.symmetricGroups = value; }
+        public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet>  locationIndex { get => planetCollection.locationIndex; set => planetCollection.locationIndex = value; }
+
+        public FakePlanet AddPlanetAt(ArcenPoint location)
+        {
+            FakePlanet planet = planetCollection.AddPlanetAt(location);
             links[planet] = new System.Collections.Generic.List<FakePlanet>();
             return planet;
         }
@@ -1128,7 +1145,7 @@ namespace AhyangyiMaps
 
             foreach (FakePlanet planet in planetsBackup)
             {
-                foreach (FakePlanet neighbor in links[planet])
+                foreach (FakePlanet neighbor in links[planet].ToList())
                 {
                     if (planet.TranslateNext != null && neighbor.TranslateNext != null)
                     {
@@ -1178,7 +1195,7 @@ namespace AhyangyiMaps
             foreach (FakePlanet planet in planetsBackup)
             {
                 if (planet.X >= xSpan) continue;
-                foreach (FakePlanet neighbor in links[planet])
+                foreach (FakePlanet neighbor in links[planet].ToList())
                 {
                     if (planet.Reflect != null && neighbor.Reflect != null)
                     {
@@ -1189,7 +1206,7 @@ namespace AhyangyiMaps
             foreach (FakePlanet planet in planetsBackup)
             {
                 if (planet.X < xSpan) continue;
-                foreach (FakePlanet neighbor in links[planet])
+                foreach (FakePlanet neighbor in links[planet].ToList())
                 {
                     if (neighbor.X >= xSpan && planet.Reflect != null && neighbor.Reflect != null && !links[planet.Reflect].Contains(neighbor.Reflect))
                     {
@@ -1249,7 +1266,7 @@ namespace AhyangyiMaps
         }
         internal void AddExtraLinks(int density, int maxIntersections, RandomGenerator rng, Outline outline)
         {
-            FakeGalaxy extra = new FakeGalaxy(planets);
+            FakeGalaxy extra = new FakeGalaxy(planetCollection);
             int linksToAdd = (planets.Count - 1) * density / 100;
             int retry = 0;
 
@@ -1328,7 +1345,7 @@ namespace AhyangyiMaps
 
         internal FakeGalaxy MakeSpanningGraph(int traversability, RandomGenerator rng)
         {
-            FakeGalaxy spanningGraph = new FakeGalaxy(planets);
+            FakeGalaxy spanningGraph = new FakeGalaxy(planetCollection);
 
             var visited = new HashSet<FakePlanet>();
             var queue = new System.Collections.Generic.Queue<FakePlanet>();
