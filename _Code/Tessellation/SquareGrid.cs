@@ -22,7 +22,7 @@ namespace AhyangyiMaps.Tessellation
             square.AddLink(p2, p3);
             square.AddLink(p3, p0);
         }
-        public static FakeGalaxy MakeSquareGalaxy(PlanetType planetType, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets)
+        public static (FakeGalaxy, FakeGalaxy) MakeSquareGalaxy(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets)
         {
             int rows = 9;
             int columns = 16;
@@ -97,7 +97,7 @@ namespace AhyangyiMaps.Tessellation
                         }
                     }
                 }
-                return fg;
+                return (fg, new FakeGalaxy(fg.planetCollection));
             }
             else if (symmetry == 10000)
             {
@@ -113,8 +113,9 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry == 10100)
             {
-                g = MakeGridBordered(rows, columns, (Math.Min(rows, columns) + 3) / 4);
-                g.MakeDuplexBarrier((FInt)2);
+                int borderWidth = (Math.Min(rows, columns) + 3) / 4;
+                g = MakeGridBordered(rows, columns, borderWidth);
+                g.MakeDuplexBarrier(unit, unit * borderWidth, unit * borderWidth);
             }
             else if (symmetry == 10101)
             {
@@ -127,7 +128,7 @@ namespace AhyangyiMaps.Tessellation
                 g.MakeY(aspectRatioEnum, unit, ((columns * 4 + 3) / 5) * unit);
             }
 
-            return g;
+            return (g, new FakeGalaxy(g.planetCollection));
         }
 
         protected static FakeGalaxy MakeGrid(int rows, int columns)

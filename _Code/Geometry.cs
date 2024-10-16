@@ -13,6 +13,17 @@ namespace AhyangyiMaps
         {
             return a.X * b.Y - a.Y * b.X;
         }
+
+        public static double AccurateAngleInRadian(this ArcenPoint a)
+        {
+            return Math.Atan2(a.Y, a.X);
+        }
+
+        public static double AccurateDistanceTo(this ArcenPoint a, ArcenPoint b)
+        {
+            var c = a - b;
+            return Math.Sqrt(c.X * c.X + c.Y * c.Y);
+        }
     }
     public struct Matrix2x2
     {

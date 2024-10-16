@@ -1,5 +1,4 @@
 using Arcen.AIW2.Core;
-using Arcen.AIW2.External;
 using Arcen.Universal;
 using System;
 using System.Collections.Generic;
@@ -173,7 +172,7 @@ namespace AhyangyiMaps
 
     public class FakeGalaxy
     {
-        protected FakePlanetCollection planetCollection;
+        public FakePlanetCollection planetCollection;
         protected System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>> links;
 
         public FakeGalaxy()
@@ -194,7 +193,7 @@ namespace AhyangyiMaps
 
         public System.Collections.Generic.List<FakePlanet> planets { get => planetCollection.planets; set => planetCollection.planets = value; }
         public System.Collections.Generic.List<SymmetricGroup> symmetricGroups { get => planetCollection.symmetricGroups; set => planetCollection.symmetricGroups = value; }
-        public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet>  locationIndex { get => planetCollection.locationIndex; set => planetCollection.locationIndex = value; }
+        public System.Collections.Generic.Dictionary<ArcenPoint, FakePlanet> locationIndex { get => planetCollection.locationIndex; set => planetCollection.locationIndex = value; }
 
         public FakePlanet AddPlanetAt(ArcenPoint location)
         {
@@ -975,7 +974,7 @@ namespace AhyangyiMaps
                 }
             }
         }
-        public void MakeDuplexBarrier(FInt scale)
+        public void MakeDuplexBarrier(int unit, int xWidth, int yWidth)
         {
             int maxX = planets.Max(planet => planet.X);
             int maxY = planets.Max(planet => planet.Y);
@@ -987,13 +986,52 @@ namespace AhyangyiMaps
             // Recognize rotation symmetry
             MakeRotational2();
 
+            // Create polygons
+            // Will be part of the extracted interface
+            var center = ArcenPoint.Create(maxX / 2, maxY / 2);
+            var innerAnnulusInnerCircle = new System.Collections.Generic.List<ArcenPoint> {
+                ArcenPoint.Create(xWidth, yWidth),
+                ArcenPoint.Create(maxX - xWidth, yWidth),
+                ArcenPoint.Create(maxX - xWidth, maxY - yWidth),
+                ArcenPoint.Create(xWidth, maxY - yWidth),
+            };
+            var innerAnnulusOuterCircle = new System.Collections.Generic.List<ArcenPoint> {
+                ArcenPoint.Create(0, 0),
+                ArcenPoint.Create(maxX, 0),
+                ArcenPoint.Create(maxX, maxY),
+                ArcenPoint.Create(0, maxY),
+            };
+            var outerAnnulusInnerCircle = new System.Collections.Generic.List<ArcenPoint> {
+                ArcenPoint.Create(-unit, -unit),
+                ArcenPoint.Create(maxX+unit, -unit),
+                ArcenPoint.Create(maxX+unit, maxY+unit),
+                ArcenPoint.Create(-unit, maxY+unit),
+            };
+            var outerAnnulusOuterCircle = new System.Collections.Generic.List<ArcenPoint> {
+                ArcenPoint.Create(-unit-xWidth, -unit-yWidth),
+                ArcenPoint.Create(maxX+unit+xWidth, -unit-yWidth),
+                ArcenPoint.Create(maxX+unit+xWidth, maxY+unit+yWidth),
+                ArcenPoint.Create(-unit-xWidth, maxY+unit+yWidth),
+            };
+
             // Create "reflections"
             foreach (FakePlanet planet in planetsBackup)
             {
-                var newLocation = ArcenPoint.Create(((planet.X - maxX / 2) * scale + maxX / 2).GetNearestIntPreferringLower(), ((planet.Y - maxY / 2) * scale + maxY / 2).GetNearestIntPreferringLower());
+                double psi = (planet.Location - center).AccurateAngleInRadian();
+                double oldRho1 = findIntersection(psi, center, innerAnnulusInnerCircle).AccurateDistanceTo(center);
+                double oldRho2 = findIntersection(psi, center, innerAnnulusOuterCircle).AccurateDistanceTo(center);
+                double newRho1 = findIntersection(psi, center, outerAnnulusInnerCircle).AccurateDistanceTo(center);
+                double newRho2 = findIntersection(psi, center, outerAnnulusOuterCircle).AccurateDistanceTo(center);
+                double rho = planet.Location.AccurateDistanceTo(center);
+                double reflectedRho = (1 - (rho - oldRho1) / (oldRho2 - oldRho1)) * (newRho2 - newRho1) + newRho1;
+                var newLocation = ArcenPoint.Create(
+                    (int)Math.Round(center.X + Math.Cos(psi) * reflectedRho),
+                    (int)Math.Round(center.Y + Math.Sin(psi) * reflectedRho)
+                    );
 
                 FakePlanet other = AddPlanetAt(newLocation);
-                other.WobbleMatrix = planet.WobbleMatrix * scale;
+                // FIXME
+                other.WobbleMatrix = planet.WobbleMatrix;
                 planet.SetReflect(other);
             }
 
@@ -1012,6 +1050,28 @@ namespace AhyangyiMaps
                 AddLink(planet, planet.Reflect);
             }
         }
+
+        private ArcenPoint findIntersection(double radian, ArcenPoint center, System.Collections.Generic.List<ArcenPoint> circle)
+        {
+            double dx = Math.Cos(radian);
+            double dy = Math.Sin(radian);
+            for (int i = 0; i < circle.Count; ++i)
+            {
+                var p1 = circle[i];
+                var p2 = circle[(i + 1) % circle.Count];
+                double radian1 = (p1 - center).AccurateAngleInRadian();
+                double radian2 = (p2 - center).AccurateAngleInRadian();
+                if (radian1 <= radian && radian <= radian2 || radian2 <= radian1 && (radian <= radian2 || radian >= radian1))
+                {
+                    double vx = p2.X - p1.X;
+                    double vy = p2.Y - p1.Y;
+                    double r = ((center.Y - circle[i].Y) * vx - (center.X - circle[i].X) * vy) / (dx * vy - dy * vx);
+                    return ArcenPoint.Create((int)Math.Round(r * dx), (int)Math.Round(r * dy)) + center;
+                }
+            }
+            throw new NotImplementedException();
+        }
+
         public void MakeDoubleSpark()
         {
             int maxX = planets.Max(planet => planet.X);

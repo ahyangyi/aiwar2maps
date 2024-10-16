@@ -56,34 +56,34 @@ namespace AhyangyiMaps
 
             // STEP 1 - TESSELLATION
             // Generate a base grid
-            FakeGalaxy g;
+            FakeGalaxy g, p;
             if (tessellation == 0)
             {
-                g = SquareGrid.MakeSquareGalaxy(planetType, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
+                (g, p) = SquareGrid.MakeSquareGalaxy(outerPath, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 1)
             {
-                g = HexagonGrid.MakeGalaxy(planetType, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
+                (g, p) = HexagonGrid.MakeGalaxy(outerPath, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 2)
             {
-                g = TriangleGrid.MakeGalaxy(planetType, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
+                (g, p) = TriangleGrid.MakeGalaxy(outerPath, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 100)
             {
-                g = SquareYGrid.MakeGalaxy(planetType, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
+                (g, p) = SquareYGrid.MakeGalaxy(outerPath, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 101)
             {
-                g = SquareYMirrorGrid.MakeGalaxy(planetType, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
+                (g, p) = SquareYMirrorGrid.MakeGalaxy(outerPath, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
             }
             else if (tessellation == 102)
             {
-                g = DiamondYGrid.MakeGalaxy(planetType, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
+                (g, p) = DiamondYGrid.MakeGalaxy(outerPath, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
             }
             else
             {
-                g = DiamondYFlowerGrid.MakeGalaxy(planetType, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
+                (g, p) = DiamondYFlowerGrid.MakeGalaxy(outerPath, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
             }
             g.MakeSymmetricGroups();
 
