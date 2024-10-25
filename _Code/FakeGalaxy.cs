@@ -1018,20 +1018,29 @@ namespace AhyangyiMaps
             foreach (FakePlanet planet in planetsBackup)
             {
                 double psi = (planet.Location - center).AccurateAngleInRadian();
-                double oldRho1 = findIntersection(psi, center, innerAnnulusInnerCircle).AccurateDistanceTo(center);
-                double oldRho2 = findIntersection(psi, center, innerAnnulusOuterCircle).AccurateDistanceTo(center);
-                double newRho1 = findIntersection(psi, center, outerAnnulusInnerCircle).AccurateDistanceTo(center);
-                double newRho2 = findIntersection(psi, center, outerAnnulusOuterCircle).AccurateDistanceTo(center);
+                double cosPsi = Math.Cos(psi);
+                double sinPsi = Math.Sin(psi);
+                double oldRho1 = FindIntersection(psi, center, innerAnnulusInnerCircle).AccurateDistanceTo(center);
+                double oldRho2 = FindIntersection(psi, center, innerAnnulusOuterCircle).AccurateDistanceTo(center);
+                double newRho1 = FindIntersection(psi, center, outerAnnulusInnerCircle).AccurateDistanceTo(center);
+                double newRho2 = FindIntersection(psi, center, outerAnnulusOuterCircle).AccurateDistanceTo(center);
+                double lengthRatio = (newRho2 - newRho1) / (oldRho2 - oldRho1);
                 double rho = planet.Location.AccurateDistanceTo(center);
-                double reflectedRho = (1 - (rho - oldRho1) / (oldRho2 - oldRho1)) * (newRho2 - newRho1) + newRho1;
+                double reflectedRho = (oldRho2 - rho) * lengthRatio + newRho1;
                 var newLocation = ArcenPoint.Create(
-                    (int)Math.Round(center.X + Math.Cos(psi) * reflectedRho),
-                    (int)Math.Round(center.Y + Math.Sin(psi) * reflectedRho)
+                    (int)Math.Round(center.X + cosPsi * reflectedRho),
+                    (int)Math.Round(center.Y + sinPsi * reflectedRho)
                     );
 
                 FakePlanet other = AddPlanetAt(newLocation);
-                // FIXME
-                other.WobbleMatrix = planet.WobbleMatrix;
+
+                Matrix2x2 reflectedWobble = new Matrix2x2(
+                    FInt.Create((int)Math.Round(-lengthRatio * cosPsi * cosPsi + sinPsi * sinPsi) * 1000, false),
+                    FInt.Create((int)Math.Round((lengthRatio + 1) * sinPsi * cosPsi) * 1000, false),
+                    FInt.Create((int)Math.Round((lengthRatio + 1) * sinPsi * cosPsi) * 1000, false),
+                    FInt.Create((int)Math.Round(-lengthRatio * sinPsi * sinPsi + cosPsi * cosPsi) * 1000, false)
+                    );
+                other.WobbleMatrix = reflectedWobble * planet.WobbleMatrix;
                 planet.SetReflect(other);
             }
 
@@ -1051,7 +1060,7 @@ namespace AhyangyiMaps
             }
         }
 
-        private ArcenPoint findIntersection(double radian, ArcenPoint center, System.Collections.Generic.List<ArcenPoint> circle)
+        private ArcenPoint FindIntersection(double radian, ArcenPoint center, System.Collections.Generic.List<ArcenPoint> circle)
         {
             double dx = Math.Cos(radian);
             double dy = Math.Sin(radian);
