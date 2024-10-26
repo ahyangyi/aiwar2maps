@@ -2,6 +2,7 @@ using AhyangyiMaps.Tessellation;
 using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
+using System.Linq;
 
 namespace AhyangyiMaps
 {
@@ -56,6 +57,8 @@ namespace AhyangyiMaps
 
             // STEP 1 - TESSELLATION
             // Generate a base grid
+            // Some outerPath values or grid types might demand certain planets and links be preserved,
+            //   this information is represented as the FakeGalaxy p
             FakeGalaxy g, p;
             if (tessellation == 0)
             {
@@ -91,26 +94,16 @@ namespace AhyangyiMaps
             // Mark outer path.
             // The marked planets would be prevented from any consideration in STEP 3.
             // And the links would be always included in STEP 6.
-            var outline = new Outline(g.FindOutline());
-            if (outerPath == 1)
+            foreach (var sg in g.symmetricGroups)
             {
-                foreach (var sg in g.symmetricGroups)
-                {
-                    bool x = false;
-                    foreach (var planet in sg.planets)
-                        if (outline.Contains(planet))
-                            x = true;
-                    if (x)
-                        sg.stick = true;
-                }
-            }
-            else if (outerPath == 2)
-            {
-                g.MakeBeltWay();
+                if (sg.planets.Any(planet => p.planetCollection.planets.Contains(planet)))
+                    sg.stick = true;
             }
 
             // STEP 3 - DISSONANCE
             // Remove planets randomly, respecting symmetry and stick bits.
+            // Also, preserve outline for Step 5
+            var outline = new Outline(g.FindOutline());
             if (dissonance > 0)
             {
                 int retry = 0;

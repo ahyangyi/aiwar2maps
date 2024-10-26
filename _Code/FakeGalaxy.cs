@@ -168,6 +168,12 @@ namespace AhyangyiMaps
             locationIndex[planet.Location] = planet;
             return planet;
         }
+
+        public void ImportPlanet(FakePlanet planet)
+        {
+            planets.Add(planet);
+            locationIndex[planet.Location] = planet;
+        }
     }
 
     public class FakeGalaxy
@@ -200,6 +206,12 @@ namespace AhyangyiMaps
             FakePlanet planet = planetCollection.AddPlanetAt(location);
             links[planet] = new System.Collections.Generic.List<FakePlanet>();
             return planet;
+        }
+
+        public void ImportPlanet(FakePlanet planet)
+        {
+            planetCollection.ImportPlanet(planet);
+            links[planet] = new System.Collections.Generic.List<FakePlanet>();
         }
 
         public bool AddLink(FakePlanet a, FakePlanet b)
@@ -506,8 +518,28 @@ namespace AhyangyiMaps
             return ret;
         }
 
-        public void MakeBeltWay()
+        public FakeGalaxy MarkOutline()
         {
+            var outline = FindOutline();
+            FakeGalaxy marked = new FakeGalaxy();
+
+            foreach (FakePlanet planet in outline)
+            {
+                marked.ImportPlanet(planet);
+            }
+
+            for (int i = 0; i < outline.Count; ++i)
+            {
+                marked.AddLink(outline[i], outline[(i + 1) % outline.Count]);
+            }
+
+            return marked;
+        }
+
+        public FakeGalaxy MakeBeltWay()
+        {
+            var p = new FakeGalaxy();
+
             int minX = planets.Min(planet => planet.X);
             int maxX = planets.Max(planet => planet.X);
             int minY = planets.Min(planet => planet.Y);
@@ -518,12 +550,27 @@ namespace AhyangyiMaps
             var p2 = AddPlanetAt(ArcenPoint.Create(maxX + 320, maxY + 320));
             var p3 = AddPlanetAt(ArcenPoint.Create(minX - 320, maxY + 320));
 
+            p0.WobbleMatrix = Matrix2x2.Zero;
+            p1.WobbleMatrix = Matrix2x2.Zero;
+            p2.WobbleMatrix = Matrix2x2.Zero;
+            p3.WobbleMatrix = Matrix2x2.Zero;
+
             AddLink(p0, p1);
             AddLink(p1, p2);
             AddLink(p2, p3);
             AddLink(p3, p0);
 
-            // XXX: not adding these to symmetry groups seems good enough for now?
+            p.ImportPlanet(p0);
+            p.ImportPlanet(p1);
+            p.ImportPlanet(p2);
+            p.ImportPlanet(p3);
+
+            p.AddLink(p0, p1);
+            p.AddLink(p1, p2);
+            p.AddLink(p2, p3);
+            p.AddLink(p3, p0);
+
+            return p;
         }
 
         public void MakeBilateral()

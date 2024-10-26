@@ -97,7 +97,7 @@ namespace AhyangyiMaps.Tessellation
                         }
                     }
                 }
-                return (fg, new FakeGalaxy(fg.planetCollection));
+                g = fg;
             }
             else if (symmetry == 10000)
             {
@@ -128,7 +128,21 @@ namespace AhyangyiMaps.Tessellation
                 g.MakeY(aspectRatioEnum, unit, ((columns * 4 + 3) / 5) * unit);
             }
 
-            return (g, new FakeGalaxy(g.planetCollection));
+            FakeGalaxy p;
+            if (outerPath == 0)
+            {
+                p = new FakeGalaxy();
+            }
+            else if (outerPath == 1)
+            {
+                p = g.MarkOutline();
+            }
+            else
+            {
+                p = g.MakeBeltWay();
+            }
+
+            return (g, p);
         }
 
         protected static FakeGalaxy MakeGrid(int rows, int columns)
