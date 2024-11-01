@@ -1209,7 +1209,7 @@ namespace AhyangyiMaps
         public void MakeY(AspectRatio e, int d, int xSpan)
         {
             Matrix2x2 rotation = Matrix2x2.Identity;
-            if ((int)e == 0)
+            if (e == 0)
             {
                 rotation = Matrix2x2.Rotation8_1;
             }
