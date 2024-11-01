@@ -1285,6 +1285,29 @@ namespace AhyangyiMaps
                         {
                             AddLink(a, b);
                         }
+
+                if (partA.Count > 0 && partB.Count > 0)
+                {
+                    var nw = partA[0];
+                    foreach (FakePlanet planet in partA)
+                    {
+                        if (planet.X - planet.Y < nw.X - nw.Y)
+                        {
+                            nw = planet;
+                        }
+                    }
+
+                    var closest = partB[0];
+                    foreach (FakePlanet planet in partB)
+                    {
+                        if (planet.Location.GetDistanceTo(nw.Location, false) < closest.Location.GetDistanceTo(nw.Location, false))
+                        {
+                            closest = planet;
+                        }
+                    }
+
+                    AddLink(nw, closest);
+                }
             }
 
             // Step 3: create mirror planets
