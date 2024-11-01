@@ -120,6 +120,11 @@
 			default_value="10"
 			>
     </map_option>
+    <map_option name="TableGen" display_name="Table Gen"
+      description="Please report a bug if you see this option." default_id="0">
+      <choice_value id="0" display_name="No" description="Regular mode." related_int_value="0" />
+      <choice_value id="1" display_name="Yes" description="Tablegen mode." related_int_value="1" />
+    </map_option>
   </map_type>
   <map_type
 		name="Galaxy"

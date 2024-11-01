@@ -37,10 +37,14 @@ namespace AhyangyiMaps
         {
             this.InnerGenerate(galaxy, context, mapConfig, PlanetType.Normal, mapType);
         }
-
-
         protected void InnerGenerate(Galaxy galaxy, ArcenHostOnlySimContext Context, MapConfiguration mapConfig, PlanetType planetType, MapTypeData mapType)
         {
+            int tableGen = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "TableGen").RelatedIntValue;
+            if (tableGen == 1)
+            {
+                TableGen.Main(new string[] { });
+                return;
+            }
             int numPlanets = mapConfig.GetClampedNumberOfPlanetsForMapType(mapType);
             int tessellation = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Tessellation").RelatedIntValue;
             AspectRatio aspectRatioEnum = (AspectRatio)BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "AspectRatio").RelatedIntValue;
@@ -63,7 +67,7 @@ namespace AhyangyiMaps
             FakeGalaxy g, p;
             if (tessellation == 0)
             {
-                (g, p) = SquareGrid.MakeSquareGalaxy(outerPath, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
+                (g, p) = SquareGrid.MakeSquareGalaxy(outerPath, aspectRatioEnum, galaxyShape, symmetry, dissonance, numPlanets);
             }
             else if (tessellation == 1)
             {

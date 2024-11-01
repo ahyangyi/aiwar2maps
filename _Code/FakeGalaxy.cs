@@ -172,6 +172,16 @@ namespace AhyangyiMaps
             planets.Add(planet);
             locationIndex[planet.Location] = planet;
         }
+
+        internal FInt AspectRatio()
+        {
+            int maxX = planets.Max(planet => planet.X);
+            int maxY = planets.Max(planet => planet.Y);
+            int minX = planets.Min(planet => planet.X);
+            int minY = planets.Min(planet => planet.Y);
+
+            return FInt.Create(maxX - minX, false) / FInt.Create(maxY - minY, false);
+        }
     }
 
     public class FakeGalaxy
@@ -1588,6 +1598,11 @@ namespace AhyangyiMaps
                     if (--retries == 0) return;
                 }
             }
+        }
+
+        internal FInt AspectRatio()
+        {
+            return planetCollection.AspectRatio();
         }
     }
 

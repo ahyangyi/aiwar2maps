@@ -1,6 +1,7 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
 using System;
+using System.IO;
 
 namespace AhyangyiMaps.Tessellation
 {
@@ -22,8 +23,10 @@ namespace AhyangyiMaps.Tessellation
             square.AddLink(p2, p3);
             square.AddLink(p3, p0);
         }
-        public static (FakeGalaxy, FakeGalaxy) MakeSquareGalaxy(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets)
+        public static (FakeGalaxy, FakeGalaxy) MakeSquareGalaxy(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int dissonance, int numPlanets)
         {
+            numPlanets = numPlanets * 12 / (12 - dissonance);
+
             int rows = 9;
             int columns = 16;
             FInt badness = (FInt)1000000;
@@ -197,12 +200,64 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        public static void TableGen()
+        public static void TableGen(System.Collections.Generic.List<int> planetNumbers, string path)
         {
-            var planetNumbers = new System.Collections.Generic.List<int> { 40, 42, 44, 46, 48 };
-            for (int i = 50; i <= 300; i += 5) planetNumbers.Add(i);
-            foreach (int desiredPlanets in planetNumbers)
+            var optionalAsymmetrical = new System.Collections.Generic.Dictionary<(int, int, int), (FInt, string, string)>();
+
+            // Things to taken into consideration:
+            //   desired planet numbers
+            //   desired aspect ratio
+            //   symmetry type
+            //   galaxy shape
+            //   dissonance
+            //   outer path (beltway only)
+
+            //   int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets
+
+            for (int r = 1; r <= 35; ++r)
             {
+                for (int c = 1; c <= 35; ++c)
+                {
+                    // shape 0
+                    {
+                        var g = MakeGrid(r, c);
+
+                        FInt aspectRatio = g.AspectRatio();
+                        int planets = g.planetCollection.planets.Count;
+
+                        foreach (int targetPlanets in planetNumbers)
+                        {
+                            for (int dissonance = 0; dissonance <= 4; ++dissonance)
+                            {
+                                FInt planetBadness = (FInt)Math.Abs(planets - targetPlanets * 12 / (12 - dissonance));
+
+                                for (int aspectRatioIndex = 0; aspectRatioIndex <= 2; ++aspectRatioIndex)
+                                {
+                                    FInt targetAspectRatio = ((AspectRatio)aspectRatioIndex).Value();
+
+                                    FInt p1 = targetAspectRatio / aspectRatio;
+                                    FInt p2 = aspectRatio / targetAspectRatio;
+                                    FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
+                                    FInt currentBadness = planetBadness + aspectRatioBadness;
+
+                                    var key = (aspectRatioIndex, dissonance, targetPlanets);
+
+                                    if (!optionalAsymmetrical.ContainsKey(key) || currentBadness < optionalAsymmetrical[key].Item1)
+                                    {
+                                        optionalAsymmetrical[key] = (currentBadness, $"({r}, {c})", $"planets: {planets}");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            using (StreamWriter sw = File.CreateText(path))
+            {
+                foreach (var key in optionalAsymmetrical.Keys)
+                {
+                    sw.WriteLine($"{key}: {optionalAsymmetrical[key].Item2}; // Total badness: {optionalAsymmetrical[key].Item1}; Explanation: {{{optionalAsymmetrical[key].Item3}}}");
+                }
             }
         }
     }
