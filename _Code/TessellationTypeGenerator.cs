@@ -2,6 +2,7 @@ using AhyangyiMaps.Tessellation;
 using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AhyangyiMaps
@@ -94,11 +95,7 @@ namespace AhyangyiMaps
             // Mark outer path.
             // The marked planets would be prevented from any consideration in STEP 3.
             // And the links would be always included in STEP 6.
-            foreach (var sg in g.symmetricGroups)
-            {
-                if (sg.planets.Any(planet => p.planetCollection.planets.Contains(planet)))
-                    sg.stick = true;
-            }
+            var keptGroups = new HashSet<SymmetricGroup>(g.symmetricGroups.Where(x => x.planets.Any(planet => p.planetCollection.planets.Contains(planet))).ToList());
 
             // STEP 3 - DISSONANCE
             // Remove planets randomly, respecting symmetry and stick bits.
@@ -110,7 +107,7 @@ namespace AhyangyiMaps
                 while (g.planets.Count > numPlanets)
                 {
                     SymmetricGroup s = g.symmetricGroups[randomNumberGenerator.NextInclus(0, g.symmetricGroups.Count - 1)];
-                    if (s.stick)
+                    if (keptGroups.Contains(s))
                     {
                         if (++retry == 1000) break;
                         continue;

@@ -52,12 +52,10 @@ namespace AhyangyiMaps
     public class SymmetricGroup
     {
         public System.Collections.Generic.List<FakePlanet> planets;
-        public bool stick;
 
         public SymmetricGroup(System.Collections.Generic.List<FakePlanet> planets)
         {
             this.planets = planets;
-            stick = false;
         }
 
         public void Wobble(PlanetType planetType, int wobble, RandomGenerator rng)
