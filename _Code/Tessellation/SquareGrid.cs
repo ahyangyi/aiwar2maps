@@ -6,8 +6,9 @@ namespace AhyangyiMaps.Tessellation
 {
     public class SquareGrid
     {
-        static readonly int unit;
+        protected static readonly int unit;
         static readonly FakePattern square;
+        static readonly FInt percolationThreshold = FInt.Create(593, false);
         static SquareGrid()
         {
             unit = PlanetType.Normal.GetData().InterStellarRadius * 10;
@@ -24,6 +25,14 @@ namespace AhyangyiMaps.Tessellation
         }
         public static (FakeGalaxy, FakeGalaxy) MakeSquareGalaxy(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int dissonance, int numPlanets)
         {
+            {
+                var (gg, pp) = SquareGridTable.MakeSquareTableGalaxy(outerPath, (int)aspectRatioEnum, galaxyShape, symmetry, dissonance, numPlanets);
+                if (gg != null)
+                {
+                    pp = new FakeGalaxy();
+                    return (gg, pp);
+                }
+            }
             numPlanets = numPlanets * 12 / (12 - dissonance);
 
             int rows = 9;
@@ -199,24 +208,22 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        public static void GenerateTable(System.Collections.Generic.List<int> planetNumbers, string path)
+        public static void GenerateTable(System.Collections.Generic.List<int> planetNumbers, string gridType)
         {
-            var optimalCommands = new System.Collections.Generic.Dictionary<TableGen.TableKey, (FInt, string, string)>();
+            var optimalCommands = new System.Collections.Generic.Dictionary<TableGen.TableKey, TableGen.TableValue>();
             var simpleSymmetries = new System.Collections.Generic.List<int> { 100, 150, 200, 250 };
-            var loopSymmetries = new System.Collections.Generic.List<int> { 100, 150, 200, 250, 10000 };
-            const int maxKnownBadness = 10;
+            var loopSymmetries = new System.Collections.Generic.List<int> { 100, 150, 200, 250, 10000, 10001, 10002 };
+            const int maxKnownBadness = 15;
 
-            for (int r = 1; r <= 35; ++r)
+            for (int r = 1; r <= 45; ++r)
             {
-                for (int c = 1; c <= 35; ++c)
+                for (int c = 1; c <= 45; ++c)
                 {
                     // shape 0
+                    if (r <= 35 && c <= 35)
                     {
                         var g = MakeGrid(r, c);
                         var cmd = $"g = MakeGrid({r}, {c});";
-
-                        FInt aspectRatio = g.AspectRatio();
-                        int planets = g.planetCollection.planets.Count;
 
                         foreach (int symmetry in loopSymmetries)
                         {
@@ -227,93 +234,41 @@ namespace AhyangyiMaps.Tessellation
 
                                 cmd = $"g = MakeGrid({r}, {c}); g.MakeTranslational2(unit * {(c + 1) / 2});";
                             }
-                            foreach (int targetPlanets in planetNumbers)
+                            else if (symmetry == 10001)
                             {
-                                for (int dissonance = 0; dissonance <= 4; ++dissonance)
-                                {
-                                    FInt planetBadness = (FInt)Math.Abs(planets - targetPlanets * 12 / (12 - dissonance));
-                                    if (planetBadness > maxKnownBadness) continue;
+                                if (c % 3 != 0) continue;
+                                g = MakeGrid(r, c);
+                                g.MakeTriptych(unit * (c / 3));
 
-                                    for (int aspectRatioIndex = 0; aspectRatioIndex <= 2; ++aspectRatioIndex)
-                                    {
-                                        FInt targetAspectRatio = ((AspectRatio)aspectRatioIndex).Value();
-
-                                        FInt p1 = targetAspectRatio / aspectRatio;
-                                        FInt p2 = aspectRatio / targetAspectRatio;
-                                        FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
-                                        FInt currentBadness = planetBadness + aspectRatioBadness;
-
-                                        for (int outerPath = 0; outerPath <= 2; ++outerPath)
-                                        {
-                                            var key = new TableGen.TableKey
-                                            {
-                                                aspectRatioIndex = aspectRatioIndex,
-                                                dissonance = dissonance,
-                                                galaxyShape = 0,
-                                                targetPlanets = targetPlanets,
-                                                outerPath = outerPath,
-                                                symmetry = symmetry
-                                            };
-
-                                            if (!optimalCommands.ContainsKey(key) || currentBadness < optimalCommands[key].Item1)
-                                            {
-                                                optimalCommands[key] = (currentBadness, cmd, $"planets: {planets}");
-                                            }
-                                        }
-                                    }
-                                }
+                                cmd = $"g = MakeGrid({r}, {c}); g.MakeTriptych(unit * {c / 3});";
                             }
+                            else if (symmetry == 10002)
+                            {
+                                g = MakeGrid(r, c);
+                                g.MakeDualGalaxy(unit * ((c + 1) / 2));
+
+                                cmd = $"g = MakeGrid({r}, {c}); g.MakeDualGalaxy(unit * {(c + 1) / 2});";
+                            }
+                            RegisterRespectingAspectRatio(planetNumbers, optimalCommands, maxKnownBadness,
+                                cmd, g, symmetry, 0, percolationThreshold, FInt.Zero);
                         }
                     }
                     // shape 1
-                    if (r >= 3 && c >= 3)
+                    if (r >= 3 && c >= 3 && r <= 35 && c <= 35)
                     {
                         for (int o = (Math.Min(r, c) + 2) / 5; o <= (Math.Min(r, c) - 1) / 2; ++o)
                         {
                             var g = MakeGridOctagonal(r, c, o);
+                            var cmd = $"g = MakeGridOctagonal({r}, {c}, {o});";
 
                             FInt idealO = Math.Min(r, c) / FInt.Create(3414, false);
                             FInt octagonalBadness = (idealO < o ? o - idealO : idealO - o) * 2;
 
-                            FInt aspectRatio = g.AspectRatio();
-                            int planets = g.planetCollection.planets.Count;
-
-                            foreach (int targetPlanets in planetNumbers)
+                            foreach (int symmetry in simpleSymmetries)
                             {
-                                for (int dissonance = 0; dissonance <= 4; ++dissonance)
-                                {
-                                    FInt planetBadness = (FInt)Math.Abs(planets - targetPlanets * 12 / (12 - dissonance));
-                                    if (planetBadness + octagonalBadness > maxKnownBadness) continue;
-
-                                    for (int aspectRatioIndex = 0; aspectRatioIndex <= 2; ++aspectRatioIndex)
-                                    {
-                                        FInt targetAspectRatio = ((AspectRatio)aspectRatioIndex).Value();
-
-                                        FInt p1 = targetAspectRatio / aspectRatio;
-                                        FInt p2 = aspectRatio / targetAspectRatio;
-                                        FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
-                                        FInt currentBadness = planetBadness + aspectRatioBadness + octagonalBadness;
-
-                                        foreach (int symmetry in simpleSymmetries)
-                                            for (int outerPath = 0; outerPath <= 2; ++outerPath)
-                                            {
-                                                var key = new TableGen.TableKey
-                                                {
-                                                    aspectRatioIndex = aspectRatioIndex,
-                                                    dissonance = dissonance,
-                                                    galaxyShape = 1,
-                                                    targetPlanets = targetPlanets,
-                                                    outerPath = outerPath,
-                                                    symmetry = symmetry
-                                                };
-
-                                                if (!optimalCommands.ContainsKey(key) || currentBadness < optimalCommands[key].Item1)
-                                                {
-                                                    optimalCommands[key] = (currentBadness, $"g = MakeGridOctagonal({r}, {c}, {o});", $"planets: {planets}");
-                                                }
-                                            }
-                                    }
-                                }
+                                RegisterRespectingAspectRatio(planetNumbers, optimalCommands, maxKnownBadness,
+                                    cmd, g, symmetry, 1, percolationThreshold,
+                                    octagonalBadness, new System.Collections.Generic.Dictionary<string, string> { { "Octagonal Badness", $"{octagonalBadness}" } });
                             }
                         }
                     }
@@ -325,49 +280,16 @@ namespace AhyangyiMaps.Tessellation
                             if ((r + x) % 2 == 0)
                             {
                                 var g = MakeGridCross(r, c, x);
+                                var cmd = $"g = MakeGridCross({r}, {c}, {x});";
 
                                 FInt idealX = Math.Min(r, c) / FInt.Create(3000, false);
                                 FInt crossBadness = (idealX < x ? x - idealX : idealX - x) * 2;
 
-                                FInt aspectRatio = g.AspectRatio();
-                                int planets = g.planetCollection.planets.Count;
-
-                                foreach (int targetPlanets in planetNumbers)
+                                foreach (int symmetry in simpleSymmetries)
                                 {
-                                    for (int dissonance = 0; dissonance <= 4; ++dissonance)
-                                    {
-                                        FInt planetBadness = (FInt)Math.Abs(planets - targetPlanets * 12 / (12 - dissonance));
-                                        if (planetBadness + crossBadness > maxKnownBadness) continue;
-
-                                        for (int aspectRatioIndex = 0; aspectRatioIndex <= 2; ++aspectRatioIndex)
-                                        {
-                                            FInt targetAspectRatio = ((AspectRatio)aspectRatioIndex).Value();
-
-                                            FInt p1 = targetAspectRatio / aspectRatio;
-                                            FInt p2 = aspectRatio / targetAspectRatio;
-                                            FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
-                                            FInt currentBadness = planetBadness + aspectRatioBadness + crossBadness;
-
-                                            foreach (int symmetry in simpleSymmetries)
-                                                for (int outerPath = 0; outerPath <= 2; ++outerPath)
-                                                {
-                                                    var key = new TableGen.TableKey
-                                                    {
-                                                        aspectRatioIndex = aspectRatioIndex,
-                                                        dissonance = dissonance,
-                                                        galaxyShape = 2,
-                                                        targetPlanets = targetPlanets,
-                                                        outerPath = outerPath,
-                                                        symmetry = symmetry
-                                                    };
-
-                                                    if (!optimalCommands.ContainsKey(key) || currentBadness < optimalCommands[key].Item1)
-                                                    {
-                                                        optimalCommands[key] = (currentBadness, $"g = MakeGridCross({r}, {c}, {x});", $"planets: {planets}");
-                                                    }
-                                                }
-                                        }
-                                    }
+                                    RegisterRespectingAspectRatio(planetNumbers, optimalCommands, maxKnownBadness,
+                                        cmd, g, symmetry, 2, percolationThreshold,
+                                        crossBadness, new System.Collections.Generic.Dictionary<string, string> { { "Cross Badness", $"{crossBadness}" } });
                                 }
                             }
                         }
@@ -385,45 +307,147 @@ namespace AhyangyiMaps.Tessellation
                     {
                         var g = MakeGrid(r, c);
                         g.MakeRotationalGeneric(c * unit / 2, r * unit, unit, symmetry / 100, symmetry % 100 == 50, c % 2 == 1);
+                        string reflectional = symmetry % 100 == 50 ? "true" : "false";
+                        string autoAdvance = c % 2 == 1 ? "true" : "false";
 
-                        var cmd = $"g = MakeGrid({r}, {c}); g.MakeRotationalGeneric({c} * unit / 2, {r} * unit, unit, {symmetry / 100}, {symmetry % 100 == 50}, {c % 2 == 1});";
+                        var cmd = $"g = MakeGrid({r}, {c}); g.MakeRotationalGeneric({c} * unit / 2, {r} * unit, unit, {symmetry / 100}, {reflectional}, {autoAdvance});";
 
-                        FInt aspectRatio = g.AspectRatio();
                         int planets = g.planetCollection.planets.Count;
 
-                        foreach (int targetPlanets in planetNumbers)
+                        for (int galaxyShape = 0; galaxyShape <= 2; ++galaxyShape)
                         {
-                            for (int dissonance = 0; dissonance <= 4; ++dissonance)
-                            {
-                                FInt planetBadness = (FInt)Math.Abs(planets - targetPlanets * 12 / (12 - dissonance));
-                                if (planetBadness > maxKnownBadness) continue;
-
-                                FInt currentBadness = planetBadness;
-
-                                for (int outerPath = 0; outerPath <= 2; ++outerPath)
-                                {
-                                    var key = new TableGen.TableKey
-                                    {
-                                        aspectRatioIndex = 0,
-                                        dissonance = dissonance,
-                                        galaxyShape = 0,
-                                        targetPlanets = targetPlanets,
-                                        outerPath = outerPath,
-                                        symmetry = symmetry
-                                    };
-
-                                    if (!optimalCommands.ContainsKey(key) || currentBadness < optimalCommands[key].Item1)
-                                    {
-                                        optimalCommands[key] = (currentBadness, cmd, $"planets: {planets}");
-                                    }
-                                }
-                            }
+                            RegisterWithoutAspectRatio(planetNumbers, optimalCommands, maxKnownBadness,
+                                cmd, planets, symmetry, galaxyShape, percolationThreshold);
                         }
                     }
                 }
             }
 
-            TableGen.WriteTable(path, optimalCommands);
+            TableGen.WriteTable(gridType, optimalCommands);
+        }
+
+        private static void RegisterWithoutAspectRatio(
+            System.Collections.Generic.List<int> planetNumbers,
+            System.Collections.Generic.Dictionary<TableGen.TableKey, TableGen.TableValue> optimalCommands,
+            int maxKnownBadness,
+            string cmd,
+            int planets,
+            int symmetry,
+            int galaxyShape,
+            FInt percolationThreshold
+            )
+        {
+            foreach (int targetPlanets in planetNumbers)
+            {
+                for (int dissonance = 0; dissonance <= 4; ++dissonance)
+                {
+                    FInt desiredPlanets = targetPlanets * 4 / (percolationThreshold * dissonance + (4 - dissonance));
+                    FInt planetsBadness = (planets > desiredPlanets ? planets - desiredPlanets : desiredPlanets - planets);
+                    if (planetsBadness > maxKnownBadness) continue;
+
+                    FInt currentBadness = planetsBadness;
+
+                    for (int outerPath = 0; outerPath <= 2; ++outerPath)
+                    {
+                        var key = new TableGen.TableKey
+                        {
+                            AspectRatioIndex = 0,
+                            Dissonance = dissonance,
+                            GalaxyShape = galaxyShape,
+                            TargetPlanets = targetPlanets,
+                            OuterPath = outerPath,
+                            Symmetry = symmetry
+                        };
+
+                        if (!optimalCommands.ContainsKey(key) || currentBadness < optimalCommands[key].Badness)
+                        {
+                            optimalCommands[key] = new TableGen.TableValue
+                            {
+                                Badness = currentBadness,
+                                Commands = cmd,
+                                Info = new System.Collections.Generic.Dictionary<string, string> {
+                                    { "Planets", $"{planets}" },
+                                    { "Planets Badness", $"{planetsBadness}" },
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void RegisterRespectingAspectRatio(
+            System.Collections.Generic.List<int> planetNumbers,
+            System.Collections.Generic.Dictionary<TableGen.TableKey, TableGen.TableValue> optimalCommands,
+            int maxKnownBadness,
+            string cmd,
+            FakeGalaxy g,
+            int symmetry,
+            int galaxyShape,
+            FInt percolationThreshold,
+            FInt extraBadness,
+            System.Collections.Generic.Dictionary<string, string> extraInfo = null
+            )
+        {
+            FInt aspectRatio = g.AspectRatio();
+            int planets = g.planetCollection.planets.Count;
+
+            foreach (int targetPlanets in planetNumbers)
+            {
+                for (int dissonance = 0; dissonance <= 4; ++dissonance)
+                {
+                    FInt desiredPlanets = targetPlanets * 4 / (percolationThreshold * dissonance + (4 - dissonance));
+                    FInt planetsBadness = (planets > desiredPlanets? planets - desiredPlanets : desiredPlanets - planets);
+                    if (planetsBadness + extraBadness > maxKnownBadness) continue;
+
+                    for (int aspectRatioIndex = 0; aspectRatioIndex <= 2; ++aspectRatioIndex)
+                    {
+                        FInt targetAspectRatio = ((AspectRatio)aspectRatioIndex).Value();
+
+                        FInt p1 = targetAspectRatio / aspectRatio;
+                        FInt p2 = aspectRatio / targetAspectRatio;
+                        FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
+                        FInt currentBadness = planetsBadness + aspectRatioBadness + extraBadness;
+                        if (currentBadness > maxKnownBadness) continue;
+
+                        for (int outerPath = 0; outerPath <= 2; ++outerPath)
+                        {
+                            var key = new TableGen.TableKey
+                            {
+                                AspectRatioIndex = aspectRatioIndex,
+                                Dissonance = dissonance,
+                                GalaxyShape = galaxyShape,
+                                TargetPlanets = targetPlanets,
+                                OuterPath = outerPath,
+                                Symmetry = symmetry
+                            };
+
+                            if (!optimalCommands.ContainsKey(key) || currentBadness < optimalCommands[key].Badness)
+                            {
+                                var info = new System.Collections.Generic.Dictionary<string, string> {
+                                        { "Planets", $"{planets}" },
+                                        { "Planets Badness", $"{planetsBadness}" },
+                                        { "Aspect Ratio", $"{aspectRatio}" },
+                                        { "Aspect Ratio Badness", $"{aspectRatioBadness}" },
+                                    };
+                                if (extraInfo != null)
+                                {
+                                    foreach (var kvp in extraInfo)
+                                    {
+                                        info[kvp.Key] = kvp.Value;
+                                    }
+                                }
+                                optimalCommands[key] = new TableGen.TableValue
+                                {
+                                    Badness = currentBadness,
+                                    Commands = cmd,
+                                    Info = info
+                                };
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

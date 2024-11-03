@@ -112,7 +112,7 @@ namespace AhyangyiMaps.Tessellation
 
             return g;
         }
-        public static void GenerateTable(System.Collections.Generic.List<int> planetNumbers, string path)
+        public static void GenerateTable(System.Collections.Generic.List<int> planetNumbers, string gridType)
         {
 
         }

@@ -10,91 +10,99 @@ namespace AhyangyiMaps
     {
         public struct TableKey
         {
-            public int aspectRatioIndex;
-            public int galaxyShape;
-            public int symmetry;
-            public int dissonance;
-            public int outerPath;
-            public int targetPlanets;
+            public int AspectRatioIndex;
+            public int GalaxyShape;
+            public int Symmetry;
+            public int Dissonance;
+            public int OuterPath;
+            public int TargetPlanets;
         }
 
-        public static void WriteTable(string path, System.Collections.Generic.Dictionary<TableKey, (FInt, string, string)> optimalCommands)
+        public struct TableValue
         {
-            using (StreamWriter sw = File.CreateText(path))
+            public FInt Badness;
+            public string Commands;
+            public System.Collections.Generic.Dictionary<string, string> Info;
+        }
+
+        public static void WriteTable(string gridType, System.Collections.Generic.Dictionary<TableKey, TableValue> optimalCommands)
+        {
+            using (StreamWriter sw = File.CreateText($"XMLMods\\AhyangyiMaps\\_Code\\Tessellation\\Generated\\{gridType}GridTable.cs"))
             {
                 sw.WriteLine("namespace AhyangyiMaps.Tessellation");
                 sw.WriteLine("{");
-                sw.WriteLine("    public class SquareGridTable");
+                sw.WriteLine($"    public class {gridType}GridTable : {gridType}Grid");
                 sw.WriteLine("    {");
-                sw.WriteLine("        public static (FakeGalaxy, FakeGalaxy) MakeSquareGalaxy(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int dissonance, int numPlanets)");
+                sw.WriteLine($"        public static (FakeGalaxy, FakeGalaxy) Make{gridType}TableGalaxy(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, int dissonance, int numPlanets)");
                 sw.WriteLine("        {");
+                sw.WriteLine("            FakeGalaxy g = null, p = null;");
 
-                foreach (int symmetry in optimalCommands.Keys.Select(x => x.symmetry).Distinct().OrderBy(x => x).ToList())
+                foreach (int symmetry in optimalCommands.Keys.Select(x => x.Symmetry).Distinct().OrderBy(x => x).ToList())
                 {
-                    var symmetryCommands = optimalCommands.Where(x => x.Key.symmetry == symmetry).ToDictionary(x => x.Key, x => x.Value);
+                    var symmetryCommands = optimalCommands.Where(x => x.Key.Symmetry == symmetry).ToDictionary(x => x.Key, x => x.Value);
                     sw.WriteLine($"            if (symmetry == {symmetry})");
                     sw.WriteLine("            {");
-                    foreach (int galaxyShape in symmetryCommands.Keys.Select(x => x.galaxyShape).Distinct().OrderBy(x => x).ToList())
+                    foreach (int galaxyShape in symmetryCommands.Keys.Select(x => x.GalaxyShape).Distinct().OrderBy(x => x).ToList())
                     {
-                        var galaxyShapeCommands = symmetryCommands.Where(x => x.Key.galaxyShape == galaxyShape).ToDictionary(x => x.Key, x => x.Value);
+                        var galaxyShapeCommands = symmetryCommands.Where(x => x.Key.GalaxyShape == galaxyShape).ToDictionary(x => x.Key, x => x.Value);
                         sw.WriteLine($"                if (galaxyShape == {galaxyShape})");
                         sw.WriteLine("                {");
-                        foreach (int outerPath in galaxyShapeCommands.Keys.Select(x => x.outerPath).Distinct().OrderBy(x => x).ToList())
+                        foreach (int outerPath in galaxyShapeCommands.Keys.Select(x => x.OuterPath).Distinct().OrderBy(x => x).ToList())
                         {
-                            var outerPathCommands = galaxyShapeCommands.Where(x => x.Key.outerPath == outerPath).ToDictionary(x => x.Key, x => x.Value);
+                            var outerPathCommands = galaxyShapeCommands.Where(x => x.Key.OuterPath == outerPath).ToDictionary(x => x.Key, x => x.Value);
                             sw.WriteLine($"                    if (outerPath == {outerPath})");
                             sw.WriteLine("                    {");
 
-                            var aspectRatios = outerPathCommands.Keys.Select(x => x.aspectRatioIndex).Distinct().OrderBy(x => x).ToList();
+                            var aspectRatios = outerPathCommands.Keys.Select(x => x.AspectRatioIndex).Distinct().OrderBy(x => x).ToList();
                             if (aspectRatios.Count == 1)
                             {
-                                WriteInnermostSwitch(sw, outerPathCommands, "                    ");
+                                WriteInnermostSwitch(sw, outerPathCommands, "                        ");
                             }
                             else
                             {
                                 foreach (int aspectRatioIndex in aspectRatios)
                                 {
-                                    var aspectRatioIndexCommands = outerPathCommands.Where(x => x.Key.aspectRatioIndex == aspectRatioIndex).ToDictionary(x => x.Key, x => x.Value);
+                                    var aspectRatioIndexCommands = outerPathCommands.Where(x => x.Key.AspectRatioIndex == aspectRatioIndex).ToDictionary(x => x.Key, x => x.Value);
                                     var prefix = "                        ";
                                     sw.WriteLine($"{prefix}if (aspectRatioIndex == {aspectRatioIndex})");
                                     sw.WriteLine($"{prefix}{{");
 
-                                    WriteInnermostSwitch(sw, aspectRatioIndexCommands, prefix);
+                                    WriteInnermostSwitch(sw, aspectRatioIndexCommands, prefix + "    ");
+
+                                    sw.WriteLine($"{prefix}}}");
                                 }
-                                sw.WriteLine("                    }");
                             }
+                            sw.WriteLine("                    }");
                         }
                         sw.WriteLine("                }");
                     }
                     sw.WriteLine("            }");
                 }
+
+                sw.WriteLine("            return (g, p);");
                 sw.WriteLine("        }");
                 sw.WriteLine("    }");
                 sw.WriteLine("}");
                 sw.WriteLine("");
 
-                sw.WriteLine($"// Summary: max overall badness {optimalCommands.Values.Select(x => x.Item1).Max()}");
+                sw.WriteLine($"// Summary: max overall badness {optimalCommands.Values.Select(x => x.Badness).Max()}");
             }
         }
 
-        private static void WriteInnermostSwitch(StreamWriter sw, System.Collections.Generic.Dictionary<TableKey, (FInt, string, string)> aspectRatioIndexCommands, string prefix)
+        private static void WriteInnermostSwitch(StreamWriter sw, System.Collections.Generic.Dictionary<TableKey, TableValue> aspectRatioIndexCommands, string prefix)
         {
-            bool firstLine = true;
-            foreach (var key in aspectRatioIndexCommands.Keys)
+            foreach (var key in aspectRatioIndexCommands.Keys.OrderBy(x => (x.TargetPlanets, x.Dissonance)))
             {
-                if (firstLine)
+                sw.WriteLine($"{prefix}if (dissonance == {key.Dissonance} && numPlanets == {key.TargetPlanets})");
+                sw.WriteLine($"{prefix}{{");
+                sw.WriteLine($"{prefix}    // Total badness: {aspectRatioIndexCommands[key].Badness}");
+                foreach (var infoKey in aspectRatioIndexCommands[key].Info.Keys)
                 {
-                    firstLine = false;
+                    sw.WriteLine($"{prefix}    // {infoKey}: {aspectRatioIndexCommands[key].Info[infoKey]}");
                 }
-                else
-                {
-                    sw.WriteLine();
-                }
-                sw.WriteLine($"{prefix}    // Total badness: {aspectRatioIndexCommands[key].Item1}");
-                sw.WriteLine($"{prefix}    // Explanation: {{{aspectRatioIndexCommands[key].Item3}}}");
-                sw.WriteLine($"{prefix}    {key.dissonance}, {key.targetPlanets}: {aspectRatioIndexCommands[key].Item2}");
+                sw.WriteLine($"{prefix}    {aspectRatioIndexCommands[key].Commands}");
+                sw.WriteLine($"{prefix}}}");
             }
-            sw.WriteLine($"{prefix}}}");
         }
 
         public static void Main(string[] args)
@@ -102,8 +110,8 @@ namespace AhyangyiMaps
             var planetNumbers = new System.Collections.Generic.List<int> { 40, 42, 44, 46, 48 };
             for (int i = 50; i <= 300; i += 5) planetNumbers.Add(i);
 
-            SquareGrid.GenerateTable(planetNumbers, "XMLMods\\AhyangyiMaps\\_Code\\Tessellation\\SquareGridTable.cs");
-            SquareYGrid.GenerateTable(planetNumbers, "XMLMods\\AhyangyiMaps\\_Code\\Tessellation\\SquareYGridTable.cs");
+            SquareGrid.GenerateTable(planetNumbers, "Square");
+            SquareYGrid.GenerateTable(planetNumbers, "SquareY");
         }
     }
 }
