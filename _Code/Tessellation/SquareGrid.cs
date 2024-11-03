@@ -1,7 +1,6 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
 using System;
-using System.IO;
 
 namespace AhyangyiMaps.Tessellation
 {
@@ -200,19 +199,12 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        public static void TableGen(System.Collections.Generic.List<int> planetNumbers, string path)
+        public static void GenerateTable(System.Collections.Generic.List<int> planetNumbers, string path)
         {
-            var optionalAsymmetrical = new System.Collections.Generic.Dictionary<(int, int, int), (FInt, string, string)>();
-
-            // Things to taken into consideration:
-            //   desired planet numbers
-            //   desired aspect ratio
-            //   symmetry type
-            //   galaxy shape
-            //   dissonance
-            //   outer path (beltway only)
-
-            //   int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets
+            var optimalCommands = new System.Collections.Generic.Dictionary<TableGen.TableKey, (FInt, string, string)>();
+            var simpleSymmetries = new System.Collections.Generic.List<int> { 100, 150, 200, 250 };
+            var loopSymmetries = new System.Collections.Generic.List<int> { 100, 150, 200, 250, 10000 };
+            const int maxKnownBadness = 10;
 
             for (int r = 1; r <= 35; ++r)
             {
@@ -221,6 +213,180 @@ namespace AhyangyiMaps.Tessellation
                     // shape 0
                     {
                         var g = MakeGrid(r, c);
+                        var cmd = $"g = MakeGrid({r}, {c});";
+
+                        FInt aspectRatio = g.AspectRatio();
+                        int planets = g.planetCollection.planets.Count;
+
+                        foreach (int symmetry in loopSymmetries)
+                        {
+                            if (symmetry == 10000)
+                            {
+                                g = MakeGrid(r, c);
+                                g.MakeTranslational2(unit * ((c + 1) / 2));
+
+                                cmd = $"g = MakeGrid({r}, {c}); g.MakeTranslational2(unit * {(c + 1) / 2});";
+                            }
+                            foreach (int targetPlanets in planetNumbers)
+                            {
+                                for (int dissonance = 0; dissonance <= 4; ++dissonance)
+                                {
+                                    FInt planetBadness = (FInt)Math.Abs(planets - targetPlanets * 12 / (12 - dissonance));
+                                    if (planetBadness > maxKnownBadness) continue;
+
+                                    for (int aspectRatioIndex = 0; aspectRatioIndex <= 2; ++aspectRatioIndex)
+                                    {
+                                        FInt targetAspectRatio = ((AspectRatio)aspectRatioIndex).Value();
+
+                                        FInt p1 = targetAspectRatio / aspectRatio;
+                                        FInt p2 = aspectRatio / targetAspectRatio;
+                                        FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
+                                        FInt currentBadness = planetBadness + aspectRatioBadness;
+
+                                        for (int outerPath = 0; outerPath <= 2; ++outerPath)
+                                        {
+                                            var key = new TableGen.TableKey
+                                            {
+                                                aspectRatioIndex = aspectRatioIndex,
+                                                dissonance = dissonance,
+                                                galaxyShape = 0,
+                                                targetPlanets = targetPlanets,
+                                                outerPath = outerPath,
+                                                symmetry = symmetry
+                                            };
+
+                                            if (!optimalCommands.ContainsKey(key) || currentBadness < optimalCommands[key].Item1)
+                                            {
+                                                optimalCommands[key] = (currentBadness, cmd, $"planets: {planets}");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // shape 1
+                    if (r >= 3 && c >= 3)
+                    {
+                        for (int o = (Math.Min(r, c) + 2) / 5; o <= (Math.Min(r, c) - 1) / 2; ++o)
+                        {
+                            var g = MakeGridOctagonal(r, c, o);
+
+                            FInt idealO = Math.Min(r, c) / FInt.Create(3414, false);
+                            FInt octagonalBadness = (idealO < o ? o - idealO : idealO - o) * 2;
+
+                            FInt aspectRatio = g.AspectRatio();
+                            int planets = g.planetCollection.planets.Count;
+
+                            foreach (int targetPlanets in planetNumbers)
+                            {
+                                for (int dissonance = 0; dissonance <= 4; ++dissonance)
+                                {
+                                    FInt planetBadness = (FInt)Math.Abs(planets - targetPlanets * 12 / (12 - dissonance));
+                                    if (planetBadness + octagonalBadness > maxKnownBadness) continue;
+
+                                    for (int aspectRatioIndex = 0; aspectRatioIndex <= 2; ++aspectRatioIndex)
+                                    {
+                                        FInt targetAspectRatio = ((AspectRatio)aspectRatioIndex).Value();
+
+                                        FInt p1 = targetAspectRatio / aspectRatio;
+                                        FInt p2 = aspectRatio / targetAspectRatio;
+                                        FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
+                                        FInt currentBadness = planetBadness + aspectRatioBadness + octagonalBadness;
+
+                                        foreach (int symmetry in simpleSymmetries)
+                                            for (int outerPath = 0; outerPath <= 2; ++outerPath)
+                                            {
+                                                var key = new TableGen.TableKey
+                                                {
+                                                    aspectRatioIndex = aspectRatioIndex,
+                                                    dissonance = dissonance,
+                                                    galaxyShape = 1,
+                                                    targetPlanets = targetPlanets,
+                                                    outerPath = outerPath,
+                                                    symmetry = symmetry
+                                                };
+
+                                                if (!optimalCommands.ContainsKey(key) || currentBadness < optimalCommands[key].Item1)
+                                                {
+                                                    optimalCommands[key] = (currentBadness, $"g = MakeGridOctagonal({r}, {c}, {o});", $"planets: {planets}");
+                                                }
+                                            }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // shape 2
+                    if (r >= 3 && c >= 3 && (r + c) % 2 == 0)
+                    {
+                        for (int x = (Math.Min(r, c) + 2) / 5; x <= (Math.Min(r, c) - 1) / 2 + 1; ++x)
+                        {
+                            if ((r + x) % 2 == 0)
+                            {
+                                var g = MakeGridCross(r, c, x);
+
+                                FInt idealX = Math.Min(r, c) / FInt.Create(3000, false);
+                                FInt crossBadness = (idealX < x ? x - idealX : idealX - x) * 2;
+
+                                FInt aspectRatio = g.AspectRatio();
+                                int planets = g.planetCollection.planets.Count;
+
+                                foreach (int targetPlanets in planetNumbers)
+                                {
+                                    for (int dissonance = 0; dissonance <= 4; ++dissonance)
+                                    {
+                                        FInt planetBadness = (FInt)Math.Abs(planets - targetPlanets * 12 / (12 - dissonance));
+                                        if (planetBadness + crossBadness > maxKnownBadness) continue;
+
+                                        for (int aspectRatioIndex = 0; aspectRatioIndex <= 2; ++aspectRatioIndex)
+                                        {
+                                            FInt targetAspectRatio = ((AspectRatio)aspectRatioIndex).Value();
+
+                                            FInt p1 = targetAspectRatio / aspectRatio;
+                                            FInt p2 = aspectRatio / targetAspectRatio;
+                                            FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
+                                            FInt currentBadness = planetBadness + aspectRatioBadness + crossBadness;
+
+                                            foreach (int symmetry in simpleSymmetries)
+                                                for (int outerPath = 0; outerPath <= 2; ++outerPath)
+                                                {
+                                                    var key = new TableGen.TableKey
+                                                    {
+                                                        aspectRatioIndex = aspectRatioIndex,
+                                                        dissonance = dissonance,
+                                                        galaxyShape = 2,
+                                                        targetPlanets = targetPlanets,
+                                                        outerPath = outerPath,
+                                                        symmetry = symmetry
+                                                    };
+
+                                                    if (!optimalCommands.ContainsKey(key) || currentBadness < optimalCommands[key].Item1)
+                                                    {
+                                                        optimalCommands[key] = (currentBadness, $"g = MakeGridCross({r}, {c}, {x});", $"planets: {planets}");
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Now let's deal with aspectRatio-irrelevant stuff...
+            var rotationalSymmetries = new System.Collections.Generic.List<int> { 300, 350, 400, 450, 500, 600, 700, 800 };
+            for (int r = 1; r <= 35; ++r)
+            {
+                for (int c = 1; c <= 35; ++c)
+                {
+                    foreach (int symmetry in rotationalSymmetries)
+                    {
+                        var g = MakeGrid(r, c);
+                        g.MakeRotationalGeneric(c * unit / 2, r * unit, unit, symmetry / 100, symmetry % 100 == 50, c % 2 == 1);
+
+                        var cmd = $"g = MakeGrid({r}, {c}); g.MakeRotationalGeneric({c} * unit / 2, {r} * unit, unit, {symmetry / 100}, {symmetry % 100 == 50}, {c % 2 == 1});";
 
                         FInt aspectRatio = g.AspectRatio();
                         int planets = g.planetCollection.planets.Count;
@@ -230,21 +396,25 @@ namespace AhyangyiMaps.Tessellation
                             for (int dissonance = 0; dissonance <= 4; ++dissonance)
                             {
                                 FInt planetBadness = (FInt)Math.Abs(planets - targetPlanets * 12 / (12 - dissonance));
+                                if (planetBadness > maxKnownBadness) continue;
 
-                                for (int aspectRatioIndex = 0; aspectRatioIndex <= 2; ++aspectRatioIndex)
+                                FInt currentBadness = planetBadness;
+
+                                for (int outerPath = 0; outerPath <= 2; ++outerPath)
                                 {
-                                    FInt targetAspectRatio = ((AspectRatio)aspectRatioIndex).Value();
-
-                                    FInt p1 = targetAspectRatio / aspectRatio;
-                                    FInt p2 = aspectRatio / targetAspectRatio;
-                                    FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
-                                    FInt currentBadness = planetBadness + aspectRatioBadness;
-
-                                    var key = (aspectRatioIndex, dissonance, targetPlanets);
-
-                                    if (!optionalAsymmetrical.ContainsKey(key) || currentBadness < optionalAsymmetrical[key].Item1)
+                                    var key = new TableGen.TableKey
                                     {
-                                        optionalAsymmetrical[key] = (currentBadness, $"({r}, {c})", $"planets: {planets}");
+                                        aspectRatioIndex = 0,
+                                        dissonance = dissonance,
+                                        galaxyShape = 0,
+                                        targetPlanets = targetPlanets,
+                                        outerPath = outerPath,
+                                        symmetry = symmetry
+                                    };
+
+                                    if (!optimalCommands.ContainsKey(key) || currentBadness < optimalCommands[key].Item1)
+                                    {
+                                        optimalCommands[key] = (currentBadness, cmd, $"planets: {planets}");
                                     }
                                 }
                             }
@@ -252,13 +422,8 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
-            using (StreamWriter sw = File.CreateText(path))
-            {
-                foreach (var key in optionalAsymmetrical.Keys)
-                {
-                    sw.WriteLine($"{key}: {optionalAsymmetrical[key].Item2}; // Total badness: {optionalAsymmetrical[key].Item1}; Explanation: {{{optionalAsymmetrical[key].Item3}}}");
-                }
-            }
+
+            TableGen.WriteTable(path, optimalCommands);
         }
     }
 }
