@@ -38,6 +38,13 @@
     <Compile Include="Tessellation\DiamondYGrid.cs" />
     <Compile Include="Tessellation\DiamondYFlowerGrid.cs" />
     <Compile Include="Tessellation\Generated\SquareGridTable.cs" />
+    <Compile Include="Tessellation\Generated\SquareGridTable100.cs" />
+    <Compile Include="Tessellation\Generated\SquareGridTable150.cs" />
+    <Compile Include="Tessellation\Generated\SquareGridTable200.cs" />
+    <Compile Include="Tessellation\Generated\SquareGridTable250.cs" />
+    <Compile Include="Tessellation\Generated\SquareGridTable10000.cs" />
+    <Compile Include="Tessellation\Generated\SquareGridTable10001.cs" />
+    <Compile Include="Tessellation\Generated\SquareGridTable10002.cs" />
     <Compile Include="GalaxyTypeGenerator.cs" />
     <Compile Include="TableGen.cs" />
     <ExtraContent Include="..\MapType\MapTypes.xml" />

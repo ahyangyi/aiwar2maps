@@ -1,6 +1,7 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
 using System;
+using System.Linq;
 
 namespace AhyangyiMaps.Tessellation
 {
@@ -27,9 +28,8 @@ namespace AhyangyiMaps.Tessellation
         {
             {
                 var (gg, pp) = SquareGridTable.MakeSquareTableGalaxy(outerPath, (int)aspectRatioEnum, galaxyShape, symmetry, dissonance, numPlanets);
-                if (gg != null)
+                if (gg != null && pp != null)
                 {
-                    pp = new FakeGalaxy();
                     return (gg, pp);
                 }
             }
@@ -182,13 +182,14 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        protected static FakeGalaxy MakeGridCross(int rows, int columns, int crossWidth)
+        protected static FakeGalaxy MakeGridCross(int rows, int columns, int crossWidth, int sectors = 1)
         {
             FakeGalaxy g = new FakeGalaxy();
             for (int i = 0; i < rows; ++i)
                 for (int j = 0; j < columns; ++j)
                 {
-                    if ((i * 2 < rows - crossWidth || i * 2 > rows + crossWidth - 2) && (j * 2 < columns - crossWidth || j * 2 > columns + crossWidth - 2)) continue;
+                    int k = (j + sectors - 1) / sectors;
+                    if ((i * 2 < rows - crossWidth || i * 2 > rows + crossWidth - 2) && (k * 2 < columns - crossWidth || k * 2 > columns + crossWidth - 2)) continue;
                     square.Imprint(g, ArcenPoint.Create(j * unit, i * unit));
                 }
 
@@ -211,92 +212,256 @@ namespace AhyangyiMaps.Tessellation
         public static void GenerateTable(System.Collections.Generic.List<int> planetNumbers, string gridType)
         {
             var optimalCommands = new System.Collections.Generic.Dictionary<TableGen.TableKey, TableGen.TableValue>();
+            var sections = new System.Collections.Generic.Dictionary<TableGen.SectionKey, TableGen.SectionalMetadata>();
             var simpleSymmetries = new System.Collections.Generic.List<int> { 100, 150, 200, 250 };
             var loopSymmetries = new System.Collections.Generic.List<int> { 100, 150, 200, 250, 10000, 10001, 10002 };
-            const int maxKnownBadness = 15;
+            const int maxKnownBadness = 11;
 
-            for (int r = 1; r <= 45; ++r)
+            var rectangularEpilogue = new System.Collections.Generic.List<string> {
+                "if (outerPath == 0)",
+                "{",
+                "    p = new FakeGalaxy();",
+                "}",
+                "else if (outerPath == 1)",
+                "{",
+                "    p = g.MarkOutline();",
+                "}",
+                "else",
+                "{",
+                "    p = g.MakeBeltWay();",
+                "}",
+            };
+
+            // Shape 0 stuff
+            var schemaRC = new System.Collections.Generic.List<(string, string)> { ("int", "r"), ("int", "c") };
+            sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 100 }] = new TableGen.SectionalMetadata
             {
-                for (int c = 1; c <= 45; ++c)
+                Schema = schemaRC,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGrid(r, c);" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 150 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRC,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGrid(r, c);", "g.MakeBilateral();" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 200 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRC,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGrid(r, c);", "g.MakeRotational2();" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 250 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRC,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGrid(r, c);", "g.MakeRotational2Bilateral();" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 10000 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRC,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGrid(r, c);", "g.MakeTranslational2(unit * ((c + 1) / 2));" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 10001 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRC,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGrid(r, c);", "g.MakeTriptych(unit * (c / 3));" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 10002 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRC,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGrid(r, c);", "g.MakeDualGalaxy(unit * ((c + 1) / 2));" }.Concat(rectangularEpilogue).ToList()
+            };
+
+            foreach (int symmetry in loopSymmetries)
+            {
+                var sectionKey = new TableGen.SectionKey { Symmetry = symmetry, GalaxyShape = 0 };
+                for (int r = 1; r <= 35; ++r)
                 {
-                    // shape 0
-                    if (r <= 35 && c <= 35)
+                    for (int c = 1; c <= 35; ++c)
                     {
-                        var g = MakeGrid(r, c);
-                        var cmd = $"g = MakeGrid({r}, {c});";
+                        FakeGalaxy g = null;
+                        string value = $"{r}, {c}";
 
-                        foreach (int symmetry in loopSymmetries)
+                        if (symmetry == 100)
                         {
-                            if (symmetry == 10000)
-                            {
-                                g = MakeGrid(r, c);
-                                g.MakeTranslational2(unit * ((c + 1) / 2));
-
-                                cmd = $"g = MakeGrid({r}, {c}); g.MakeTranslational2(unit * {(c + 1) / 2});";
-                            }
-                            else if (symmetry == 10001)
-                            {
-                                if (c % 3 != 0) continue;
-                                g = MakeGrid(r, c);
-                                g.MakeTriptych(unit * (c / 3));
-
-                                cmd = $"g = MakeGrid({r}, {c}); g.MakeTriptych(unit * {c / 3});";
-                            }
-                            else if (symmetry == 10002)
-                            {
-                                g = MakeGrid(r, c);
-                                g.MakeDualGalaxy(unit * ((c + 1) / 2));
-
-                                cmd = $"g = MakeGrid({r}, {c}); g.MakeDualGalaxy(unit * {(c + 1) / 2});";
-                            }
-                            RegisterRespectingAspectRatio(planetNumbers, optimalCommands, maxKnownBadness,
-                                cmd, g, symmetry, 0, percolationThreshold, FInt.Zero);
+                            g = MakeGrid(r, c);
                         }
+                        else if (symmetry == 150)
+                        {
+                            g = MakeGrid(r, c);
+                            g.MakeBilateral();
+                        }
+                        else if (symmetry == 200)
+                        {
+                            g = MakeGrid(r, c);
+                            g.MakeRotational2();
+                        }
+                        else if (symmetry == 250)
+                        {
+                            g = MakeGrid(r, c);
+                            g.MakeRotational2Bilateral();
+                        }
+                        else if (symmetry == 10000)
+                        {
+                            g = MakeGrid(r, c);
+                            g.MakeTranslational2(unit * ((c + 1) / 2));
+                        }
+                        else if (symmetry == 10001)
+                        {
+                            if (c % 3 != 0) continue;
+                            g = MakeGrid(r, c);
+                            g.MakeTriptych(unit * (c / 3));
+                        }
+                        else if (symmetry == 10002)
+                        {
+                            g = MakeGrid(r, c);
+                            g.MakeDualGalaxy(unit * ((c + 1) / 2));
+                        }
+                        RegisterRespectingAspectRatio(planetNumbers, optimalCommands, maxKnownBadness,
+                            value, g, symmetry, 0, percolationThreshold, FInt.Zero);
                     }
-                    // shape 1
-                    if (r >= 3 && c >= 3 && r <= 35 && c <= 35)
+                }
+            }
+
+            // Shape 1 stuff
+            var schemaRCO = new System.Collections.Generic.List<(string, string)> { ("int", "r"), ("int", "c"), ("int", "o") };
+            sections[new TableGen.SectionKey { GalaxyShape = 1, Symmetry = 100 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRCO,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGridOctagonal(r, c, o);" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 1, Symmetry = 150 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRCO,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGridOctagonal(r, c, o);", "g.MakeBilateral();" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 1, Symmetry = 200 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRCO,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGridOctagonal(r, c, o);", "g.MakeRotational2();" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 1, Symmetry = 250 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRCO,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGridOctagonal(r, c, o);", "g.MakeRotational2Bilateral();" }.Concat(rectangularEpilogue).ToList()
+            };
+
+            foreach (int symmetry in simpleSymmetries)
+            {
+                var sectionKey = new TableGen.SectionKey { Symmetry = symmetry, GalaxyShape = 1 };
+                for (int r = 3; r <= 35; ++r)
+                {
+                    for (int c = 3; c <= 35; ++c)
                     {
                         for (int o = (Math.Min(r, c) + 2) / 5; o <= (Math.Min(r, c) - 1) / 2; ++o)
                         {
-                            var g = MakeGridOctagonal(r, c, o);
-                            var cmd = $"g = MakeGridOctagonal({r}, {c}, {o});";
+                            FakeGalaxy g = null;
+                            string value = $"{r}, {c}, {o}";
 
-                            FInt idealO = Math.Min(r, c) / FInt.Create(3414, false);
-                            FInt octagonalBadness = (idealO < o ? o - idealO : idealO - o) * 2;
-
-                            foreach (int symmetry in simpleSymmetries)
+                            if (symmetry == 100)
                             {
-                                RegisterRespectingAspectRatio(planetNumbers, optimalCommands, maxKnownBadness,
-                                    cmd, g, symmetry, 1, percolationThreshold,
-                                    octagonalBadness, new System.Collections.Generic.Dictionary<string, string> { { "Octagonal Badness", $"{octagonalBadness}" } });
+                                g = MakeGridOctagonal(r, c, o);
                             }
-                        }
-                    }
-                    // shape 2
-                    if (r >= 3 && c >= 3 && (r + c) % 2 == 0)
-                    {
-                        for (int x = (Math.Min(r, c) + 2) / 5; x <= (Math.Min(r, c) - 1) / 2 + 1; ++x)
-                        {
-                            if ((r + x) % 2 == 0)
+                            else if (symmetry == 150)
                             {
-                                var g = MakeGridCross(r, c, x);
-                                var cmd = $"g = MakeGridCross({r}, {c}, {x});";
-
-                                FInt idealX = Math.Min(r, c) / FInt.Create(3000, false);
-                                FInt crossBadness = (idealX < x ? x - idealX : idealX - x) * 2;
-
-                                foreach (int symmetry in simpleSymmetries)
-                                {
-                                    RegisterRespectingAspectRatio(planetNumbers, optimalCommands, maxKnownBadness,
-                                        cmd, g, symmetry, 2, percolationThreshold,
-                                        crossBadness, new System.Collections.Generic.Dictionary<string, string> { { "Cross Badness", $"{crossBadness}" } });
-                                }
+                                g = MakeGridOctagonal(r, c, o);
+                                g.MakeBilateral();
                             }
+                            else if (symmetry == 200)
+                            {
+                                g = MakeGridOctagonal(r, c, o);
+                                g.MakeRotational2();
+                            }
+                            else if (symmetry == 250)
+                            {
+                                g = MakeGridOctagonal(r, c, o);
+                                g.MakeRotational2Bilateral();
+                            }
+                            RegisterRespectingAspectRatio(planetNumbers, optimalCommands, maxKnownBadness,
+                                value, g, symmetry, 1, percolationThreshold, FInt.Zero);
                         }
                     }
                 }
             }
 
+
+            // Shape 2 stuff
+            var schemaRCX = new System.Collections.Generic.List<(string, string)> { ("int", "r"), ("int", "c"), ("int", "x") };
+            sections[new TableGen.SectionKey { GalaxyShape = 2, Symmetry = 100 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRCX,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGridCross(r, c, x);" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 2, Symmetry = 150 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRCX,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGridCross(r, c, x);", "g.MakeBilateral();" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 2, Symmetry = 200 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRCX,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGridCross(r, c, x);", "g.MakeRotational2();" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 2, Symmetry = 250 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRCX,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGridCross(r, c, x);", "g.MakeRotational2Bilateral();" }.Concat(rectangularEpilogue).ToList()
+            };
+            sections[new TableGen.SectionKey { GalaxyShape = 2, Symmetry = 10001 }] = new TableGen.SectionalMetadata
+            {
+                Schema = schemaRCX,
+                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGridCross(r, c, x, 3);", "g.MakeTriptych(unit * (c / 3));" }.Concat(rectangularEpilogue).ToList()
+            };
+
+            foreach (int symmetry in new System.Collections.Generic.List<int> { 100, 150, 200, 250, 10001 })
+            {
+                var sectionKey = new TableGen.SectionKey { Symmetry = symmetry, GalaxyShape = 1 };
+                for (int r = 3; r <= 45; ++r)
+                {
+                    for (int c = 3; c <= 45; ++c)
+                    {
+                        if ((r + c) % 2 != 0) continue;
+                        for (int x = (Math.Min(r, c) + 2) / 5; x <= (Math.Min(r, c) - 1) / 2 + 1; ++x)
+                        {
+                            FakeGalaxy g = null;
+                            string value = $"{r}, {c}, {x}";
+
+                            if (symmetry == 100)
+                            {
+                                if ((r + x) % 2 != 0) continue;
+                                g = MakeGridCross(r, c, x);
+                            }
+                            else if (symmetry == 150)
+                            {
+                                if ((r + x) % 2 != 0) continue;
+                                g = MakeGridCross(r, c, x);
+                                g.MakeBilateral();
+                            }
+                            else if (symmetry == 200)
+                            {
+                                if ((r + x) % 2 != 0) continue;
+                                g = MakeGridCross(r, c, x);
+                                g.MakeRotational2();
+                            }
+                            else if (symmetry == 250)
+                            {
+                                if ((r + x) % 2 != 0) continue;
+                                g = MakeGridCross(r, c, x);
+                                g.MakeRotational2Bilateral();
+                            }
+                            else if (symmetry == 10001)
+                            {
+                                if ((r + x) % 2 != 0) continue;
+                                if (c % 3 != 0) continue;
+                                g = MakeGridCross(r, c, x, 3);
+                                g.MakeTriptych(unit * (c / 3));
+                            }
+                            RegisterRespectingAspectRatio(planetNumbers, optimalCommands, maxKnownBadness,
+                                value, g, symmetry, 2, percolationThreshold, FInt.Zero);
+                        }
+                    }
+                }
+            }
+            /*
+            
             // Now let's deal with aspectRatio-irrelevant stuff...
             var rotationalSymmetries = new System.Collections.Generic.List<int> { 300, 350, 400, 450, 500, 600, 700, 800 };
             for (int r = 1; r <= 35; ++r)
@@ -322,15 +487,16 @@ namespace AhyangyiMaps.Tessellation
                     }
                 }
             }
+            */
 
-            TableGen.WriteTable(gridType, optimalCommands);
+            TableGen.WriteTable(gridType, optimalCommands, sections);
         }
 
         private static void RegisterWithoutAspectRatio(
             System.Collections.Generic.List<int> planetNumbers,
             System.Collections.Generic.Dictionary<TableGen.TableKey, TableGen.TableValue> optimalCommands,
             int maxKnownBadness,
-            string cmd,
+            string value,
             int planets,
             int symmetry,
             int galaxyShape,
@@ -364,7 +530,7 @@ namespace AhyangyiMaps.Tessellation
                             optimalCommands[key] = new TableGen.TableValue
                             {
                                 Badness = currentBadness,
-                                Commands = cmd,
+                                Value = value,
                                 Info = new System.Collections.Generic.Dictionary<string, string> {
                                     { "Planets", $"{planets}" },
                                     { "Planets Badness", $"{planetsBadness}" },
@@ -380,7 +546,7 @@ namespace AhyangyiMaps.Tessellation
             System.Collections.Generic.List<int> planetNumbers,
             System.Collections.Generic.Dictionary<TableGen.TableKey, TableGen.TableValue> optimalCommands,
             int maxKnownBadness,
-            string cmd,
+            string value,
             FakeGalaxy g,
             int symmetry,
             int galaxyShape,
@@ -397,7 +563,7 @@ namespace AhyangyiMaps.Tessellation
                 for (int dissonance = 0; dissonance <= 4; ++dissonance)
                 {
                     FInt desiredPlanets = targetPlanets * 4 / (percolationThreshold * dissonance + (4 - dissonance));
-                    FInt planetsBadness = (planets > desiredPlanets? planets - desiredPlanets : desiredPlanets - planets);
+                    FInt planetsBadness = (planets > desiredPlanets ? planets - desiredPlanets : desiredPlanets - planets);
                     if (planetsBadness + extraBadness > maxKnownBadness) continue;
 
                     for (int aspectRatioIndex = 0; aspectRatioIndex <= 2; ++aspectRatioIndex)
@@ -440,7 +606,7 @@ namespace AhyangyiMaps.Tessellation
                                 optimalCommands[key] = new TableGen.TableValue
                                 {
                                     Badness = currentBadness,
-                                    Commands = cmd,
+                                    Value = value,
                                     Info = info
                                 };
                             }

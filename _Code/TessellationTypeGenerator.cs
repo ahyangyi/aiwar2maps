@@ -15,7 +15,7 @@ namespace AhyangyiMaps
     }
     public static class AspectRatioExtensions
     {
-        private static readonly FInt[] values = { FInt.Create(563, false), FInt.Create(1000, false), FInt.Create(1778, false) };
+        private static readonly FInt[] values = { FInt.Create(1778, false), FInt.Create(1000, false), FInt.Create(563, false) };
         public static FInt Value(this AspectRatio aspectRatio)
         {
             return values[(int)aspectRatio];

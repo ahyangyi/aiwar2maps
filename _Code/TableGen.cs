@@ -21,11 +21,26 @@ namespace AhyangyiMaps
         public struct TableValue
         {
             public FInt Badness;
-            public string Commands;
+            public string Value;
             public System.Collections.Generic.Dictionary<string, string> Info;
         }
 
-        public static void WriteTable(string gridType, System.Collections.Generic.Dictionary<TableKey, TableValue> optimalCommands)
+        public struct SectionKey
+        {
+            public int Symmetry;
+            public int GalaxyShape;
+        }
+        public struct SectionalMetadata
+        {
+            public System.Collections.Generic.List<(string, string)> Schema;
+            public System.Collections.Generic.List<string> Epilogue;
+        }
+
+        public static void WriteTable(
+            string gridType,
+            System.Collections.Generic.Dictionary<TableKey, TableValue> optimalCommands,
+            System.Collections.Generic.Dictionary<SectionKey, SectionalMetadata> sections
+            )
         {
             using (StreamWriter sw = File.CreateText($"XMLMods\\AhyangyiMaps\\_Code\\Tessellation\\Generated\\{gridType}GridTable.cs"))
             {
@@ -37,42 +52,26 @@ namespace AhyangyiMaps
                 sw.WriteLine("        {");
                 sw.WriteLine("            FakeGalaxy g = null, p = null;");
 
-                foreach (int symmetry in optimalCommands.Keys.Select(x => x.Symmetry).Distinct().OrderBy(x => x).ToList())
+                foreach (int symmetry in sections.Keys.Select(x => x.Symmetry).Distinct().OrderBy(x => x).ToList())
                 {
+                    var symmetrySections = sections.Where(x => x.Key.Symmetry == symmetry).ToDictionary(x => x.Key, x => x.Value);
                     var symmetryCommands = optimalCommands.Where(x => x.Key.Symmetry == symmetry).ToDictionary(x => x.Key, x => x.Value);
                     sw.WriteLine($"            if (symmetry == {symmetry})");
                     sw.WriteLine("            {");
-                    foreach (int galaxyShape in symmetryCommands.Keys.Select(x => x.GalaxyShape).Distinct().OrderBy(x => x).ToList())
+                    foreach (int galaxyShape in symmetrySections.Keys.Select(x => x.GalaxyShape).Distinct().OrderBy(x => x).ToList())
                     {
-                        var galaxyShapeCommands = symmetryCommands.Where(x => x.Key.GalaxyShape == galaxyShape).ToDictionary(x => x.Key, x => x.Value);
+                        var section = sections[new SectionKey { Symmetry = symmetry, GalaxyShape = galaxyShape }];
+                        var galaxyShapeCommands = symmetryCommands.Where(x => x.Key.GalaxyShape == galaxyShape)
+                            .OrderBy(x => (x.Key.TargetPlanets, x.Key.Dissonance, x.Key.OuterPath, x.Key.AspectRatioIndex))
+                            .ToDictionary(x => x.Key, x => x.Value);
+
                         sw.WriteLine($"                if (galaxyShape == {galaxyShape})");
                         sw.WriteLine("                {");
-                        foreach (int outerPath in galaxyShapeCommands.Keys.Select(x => x.OuterPath).Distinct().OrderBy(x => x).ToList())
+                        var namesTuple = "(" + string.Join(", ", section.Schema.Select(x => x.Item2)) + ")";
+                        sw.WriteLine($"                    var {namesTuple} = {gridType}GridTable{symmetry}.lookupTable{galaxyShape}[(numPlanets, dissonance, outerPath, aspectRatioIndex)];");
+                        foreach (var line in section.Epilogue)
                         {
-                            var outerPathCommands = galaxyShapeCommands.Where(x => x.Key.OuterPath == outerPath).ToDictionary(x => x.Key, x => x.Value);
-                            sw.WriteLine($"                    if (outerPath == {outerPath})");
-                            sw.WriteLine("                    {");
-
-                            var aspectRatios = outerPathCommands.Keys.Select(x => x.AspectRatioIndex).Distinct().OrderBy(x => x).ToList();
-                            if (aspectRatios.Count == 1)
-                            {
-                                WriteInnermostSwitch(sw, outerPathCommands, "                        ");
-                            }
-                            else
-                            {
-                                foreach (int aspectRatioIndex in aspectRatios)
-                                {
-                                    var aspectRatioIndexCommands = outerPathCommands.Where(x => x.Key.AspectRatioIndex == aspectRatioIndex).ToDictionary(x => x.Key, x => x.Value);
-                                    var prefix = "                        ";
-                                    sw.WriteLine($"{prefix}if (aspectRatioIndex == {aspectRatioIndex})");
-                                    sw.WriteLine($"{prefix}{{");
-
-                                    WriteInnermostSwitch(sw, aspectRatioIndexCommands, prefix + "    ");
-
-                                    sw.WriteLine($"{prefix}}}");
-                                }
-                            }
-                            sw.WriteLine("                    }");
+                            sw.WriteLine($"                    {line}");
                         }
                         sw.WriteLine("                }");
                     }
@@ -87,21 +86,44 @@ namespace AhyangyiMaps
 
                 sw.WriteLine($"// Summary: max overall badness {optimalCommands.Values.Select(x => x.Badness).Max()}");
             }
-        }
 
-        private static void WriteInnermostSwitch(StreamWriter sw, System.Collections.Generic.Dictionary<TableKey, TableValue> aspectRatioIndexCommands, string prefix)
-        {
-            foreach (var key in aspectRatioIndexCommands.Keys.OrderBy(x => (x.TargetPlanets, x.Dissonance)))
+            foreach (int symmetry in sections.Keys.Select(x => x.Symmetry).Distinct().OrderBy(x => x).ToList())
             {
-                sw.WriteLine($"{prefix}if (dissonance == {key.Dissonance} && numPlanets == {key.TargetPlanets})");
-                sw.WriteLine($"{prefix}{{");
-                sw.WriteLine($"{prefix}    // Total badness: {aspectRatioIndexCommands[key].Badness}");
-                foreach (var infoKey in aspectRatioIndexCommands[key].Info.Keys)
+                var symmetrySections = sections.Where(x => x.Key.Symmetry == symmetry).ToDictionary(x => x.Key, x => x.Value);
+                var symmetryCommands = optimalCommands.Where(x => x.Key.Symmetry == symmetry).ToDictionary(x => x.Key, x => x.Value);
+
+                using (StreamWriter sw = File.CreateText($"XMLMods\\AhyangyiMaps\\_Code\\Tessellation\\Generated\\{gridType}GridTable{symmetry}.cs"))
                 {
-                    sw.WriteLine($"{prefix}    // {infoKey}: {aspectRatioIndexCommands[key].Info[infoKey]}");
+                    sw.WriteLine("namespace AhyangyiMaps.Tessellation");
+                    sw.WriteLine("{");
+                    sw.WriteLine($"    public class {gridType}GridTable{symmetry}");
+                    sw.WriteLine("    {");
+                    foreach (int galaxyShape in symmetrySections.Keys.Select(x => x.GalaxyShape).Distinct().OrderBy(x => x).ToList())
+                    {
+                        var section = sections[new SectionKey { Symmetry = symmetry, GalaxyShape = galaxyShape }];
+                        var galaxyShapeCommands = symmetryCommands.Where(x => x.Key.GalaxyShape == galaxyShape)
+                            .OrderBy(x => (x.Key.TargetPlanets, x.Key.Dissonance, x.Key.OuterPath, x.Key.AspectRatioIndex))
+                            .ToDictionary(x => x.Key, x => x.Value);
+
+                        var valueTuple = "(" + string.Join(", ", section.Schema.Select(x => x.Item1)) + ")";
+                        var typeStr = $"System.Collections.Generic.Dictionary <(int, int, int, int), {valueTuple}>";
+                        sw.WriteLine($"        public static {typeStr} lookupTable{galaxyShape} = new {typeStr} {{");
+
+                        foreach (var kvp in galaxyShapeCommands)
+                        {
+                            sw.WriteLine($"            // Total badness: {kvp.Value.Badness}");
+                            foreach (var infoKey in kvp.Value.Info.Keys)
+                            {
+                                sw.WriteLine($"            // {infoKey}: {kvp.Value.Info[infoKey]}");
+                            }
+                            sw.WriteLine($"            {{({kvp.Key.TargetPlanets}, {kvp.Key.Dissonance}, {kvp.Key.OuterPath}, {kvp.Key.AspectRatioIndex}), ({kvp.Value.Value})}},");
+                        }
+
+                        sw.WriteLine($"        }};");
+                    }
+                    sw.WriteLine("    }");
+                    sw.WriteLine("}");
                 }
-                sw.WriteLine($"{prefix}    {aspectRatioIndexCommands[key].Commands}");
-                sw.WriteLine($"{prefix}}}");
             }
         }
 

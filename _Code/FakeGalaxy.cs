@@ -1582,7 +1582,12 @@ namespace AhyangyiMaps
 
         internal void AddEdges(FakeGalaxy subgraph, int connectivity, int traversability, RandomGenerator rng)
         {
-            int linksToAdd = Math.Min(planets.Count * connectivity / 20, links.Select(x => x.Value.Count).Sum() / 2) - subgraph.links.Select(x => x.Value.Count).Sum() / 2;
+            if (connectivity == 0)
+            {
+                return;
+            }
+            int linksToAdd = Math.Min((planets.Count * connectivity + 25) / 25, links.Select(x => x.Value.Count).Sum() / 2)
+                - subgraph.links.Select(x => x.Value.Count).Sum() / 2;
             int retries = 1000;
             while (linksToAdd > 0)
             {
