@@ -109,7 +109,7 @@ namespace AhyangyiMaps
                         var typeStr = $"System.Collections.Generic.Dictionary <(int, int, int, int), {valueTuple}>";
                         sw.WriteLine($"        public static {typeStr} lookupTable{galaxyShape} = new {typeStr} {{");
 
-                        foreach (var kvp in galaxyShapeCommands)
+                        foreach (var kvp in galaxyShapeCommands.OrderBy(x => (x.Key.TargetPlanets, x.Key.Dissonance, x.Key.OuterPath, x.Key.AspectRatioIndex)))
                         {
                             sw.WriteLine($"            // Total badness: {kvp.Value.Badness}");
                             foreach (var infoKey in kvp.Value.Info.Keys)
