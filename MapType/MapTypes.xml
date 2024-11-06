@@ -57,10 +57,10 @@
       <!--Should be hidden--> <choice_value id="11" display_name="8-fold Rotational" description="." related_int_value="800" />
       <choice_value id="12" display_name="Juxtaposition" description="Two halves of the map look exactly the same." related_int_value="10000" />
       <choice_value id="13" display_name="Triptych" description="." related_int_value="10001" />
-      <choice_value id="14" display_name="Dual Galaxy" description="." related_int_value="10002" />
-      <choice_value id="15" display_name="Duplex Barrier" description="." related_int_value="10100" />
-      <choice_value id="16" display_name="Double Spark" description="." related_int_value="10101" />
-      <choice_value id="17" display_name="Y" description="." related_int_value="10200" />
+      <choice_value id="14" display_name="Dual Galaxies" description="Two identical rotationally symmetrical galaxies fuse to each other." related_int_value="10002" />
+      <choice_value id="15" display_name="Duplex Barrier" description="Barriers are created from willpower. The planets are in a regular arrangement, but the barrier distorts their paths." related_int_value="10100" />
+      <choice_value id="16" display_name="Double Spark" description="Still, though, what a terrible &quot;loving heart&quot;. It's an annihilating love." related_int_value="10101" />
+      <choice_value id="17" display_name="Y" description="The two branches of the galaxy mysteriously look like half the trunk." related_int_value="10200" />
     </map_option>
     <map_option name="Connectivity" display_name="Connectivity"
       description="How connected the planets should be?"

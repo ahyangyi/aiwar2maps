@@ -949,12 +949,16 @@ namespace AhyangyiMaps
                 }
             }
         }
-        public void MakeTriptych(int xDiff)
+        public void MakeTriptych(int x1, int x2 = 0)
         {
+            if (x2 == 0)
+            {
+                x2 = x1 * 2;
+            }
             foreach (FakePlanet planet in planets)
             {
                 {
-                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 2 - planet.X, planet.Y);
+                    ArcenPoint newPoint = ArcenPoint.Create(x1 * 2 - planet.X, planet.Y);
                     if (locationIndex.ContainsKey(newPoint))
                     {
                         FakePlanet other = locationIndex[newPoint];
@@ -962,18 +966,18 @@ namespace AhyangyiMaps
                     }
                 }
                 {
-                    ArcenPoint newPoint = ArcenPoint.Create(xDiff * 4 - planet.X, planet.Y);
+                    ArcenPoint newPoint = ArcenPoint.Create(x2 * 2 - planet.X, planet.Y);
                     if (locationIndex.ContainsKey(newPoint))
                     {
                         FakePlanet other = locationIndex[newPoint];
                         planet.FakeReflect(other);
                     }
                 }
-                if (planet.X % xDiff == 0)
+                if (planet.X == x1 || planet.X == x2)
                 {
                     planet.WobbleMatrix = Matrix2x2.ProjectToY;
                 }
-                else if (planet.X > xDiff && planet.X < xDiff * 2)
+                else if (planet.X > x1 && planet.X < x2)
                 {
                     planet.WobbleMatrix = Matrix2x2.FlipX;
                 }

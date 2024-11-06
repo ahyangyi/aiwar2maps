@@ -123,6 +123,8 @@ namespace AhyangyiMaps
                     }
                     sw.WriteLine("    }");
                     sw.WriteLine("}");
+                    sw.WriteLine("");
+                    sw.WriteLine($"// Summary: max overall badness in this file: {symmetryCommands.Values.Select(x => x.Badness).Max()}");
                 }
             }
         }
