@@ -224,7 +224,7 @@ namespace AhyangyiMaps.Tessellation
             var optimalCommands = new System.Collections.Generic.Dictionary<TableGen.TableKey, TableGen.TableValue>();
             var sections = new System.Collections.Generic.Dictionary<TableGen.SectionKey, TableGen.SectionalMetadata>();
             var loopSymmetries = new System.Collections.Generic.List<int> { 100, 150, 200, 250, 10000, 10001, 10002 };
-            const int maxKnownBadness = 33;
+            const int maxKnownBadness = 26;
 
             var rectangularEpilogue = new System.Collections.Generic.List<string> {
                 "if (outerPath == 0)",
@@ -243,6 +243,7 @@ namespace AhyangyiMaps.Tessellation
 
             // Shape 0 stuff
             var schemaRC = new System.Collections.Generic.List<(string, string)> { ("int", "r"), ("int", "c") };
+            var schemaRCD = new System.Collections.Generic.List<(string, string)> { ("int", "r"), ("int", "c"), ("int", "d") };
             sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 100 }] = new TableGen.SectionalMetadata
             {
                 Schema = schemaRC,
@@ -265,18 +266,18 @@ namespace AhyangyiMaps.Tessellation
             };
             sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 10000 }] = new TableGen.SectionalMetadata
             {
-                Schema = schemaRC,
-                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGrid(r, c);", "g.MakeTranslational2(unit * ((c + 1) / 2));" }.Concat(rectangularEpilogue).ToList()
+                Schema = schemaRCD,
+                Epilogue = new System.Collections.Generic.List<string> { "int f = (c + d) / 2;", "int offset = c - f;", "g = MakeGrid(r, c);", "g.MakeTranslational2(unit * offset);" }.Concat(rectangularEpilogue).ToList()
             };
             sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 10001 }] = new TableGen.SectionalMetadata
             {
-                Schema = schemaRC,
-                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGrid(r, c);", "g.MakeTriptych(unit * (c / 3));" }.Concat(rectangularEpilogue).ToList()
+                Schema = schemaRCD,
+                Epilogue = new System.Collections.Generic.List<string> { "int f = (c + d) / 3;", "int offset = (c - f) / 2;", "g = MakeGrid(r, c);", "g.MakeTriptych(unit * (f + offset) / 2, unit * (f + offset * 3) / 2);" }.Concat(rectangularEpilogue).ToList()
             };
             sections[new TableGen.SectionKey { GalaxyShape = 0, Symmetry = 10002 }] = new TableGen.SectionalMetadata
             {
-                Schema = schemaRC,
-                Epilogue = new System.Collections.Generic.List<string> { "g = MakeGrid(r, c);", "g.MakeDualGalaxy(unit * ((c + 1) / 2));" }.Concat(rectangularEpilogue).ToList()
+                Schema = schemaRCD,
+                Epilogue = new System.Collections.Generic.List<string> { "int f = (c + d) / 2;", "int offset = c - f;", "g = MakeGrid(r, c);", "g.MakeDualGalaxy(unit * offset);" }.Concat(rectangularEpilogue).ToList()
             };
 
             // Shape 1 stuff
@@ -444,7 +445,14 @@ namespace AhyangyiMaps.Tessellation
 
                                     if (galaxyShape == 0)
                                     {
-                                        value = $"{r}, {c}";
+                                        if (parts == 1)
+                                        {
+                                            value = $"{r}, {c}";
+                                        }
+                                        else
+                                        {
+                                            value = $"{r}, {c}, {d}";
+                                        }
                                     }
                                     else
                                     {
@@ -500,8 +508,8 @@ namespace AhyangyiMaps.Tessellation
                                     {
                                         if (overlap == 0)
                                         {
-                                            badness += 2;
-                                            badnessReasons["Two-part Galaxies sharing an edge"] = "+2";
+                                            badness += 5;
+                                            badnessReasons["Two-part Galaxies sharing an edge"] = "+5";
                                         }
                                         else if (overlap > 0)
                                         {
@@ -518,8 +526,8 @@ namespace AhyangyiMaps.Tessellation
                                         }
                                         else if (overlap > 0)
                                         {
-                                            badness += 3;
-                                            badnessReasons["Three-part Galaxies overlapping"] = "+3";
+                                            badness += 5;
+                                            badnessReasons["Three-part Galaxies overlapping"] = "+5";
                                         }
                                     }
 

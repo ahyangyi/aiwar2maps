@@ -154,7 +154,7 @@ namespace AhyangyiMaps
 
             // STEP 6 - SKELETON
             // Select a subset of edges that'll be in the game
-            var spanningGraph = g.MakeSpanningGraph(traversability, randomNumberGenerator);
+            var spanningGraph = g.MakeSpanningGraph(traversability, randomNumberGenerator, p);
 
             // STEP 7 - FILL
             // Add edges until the desired density is reached

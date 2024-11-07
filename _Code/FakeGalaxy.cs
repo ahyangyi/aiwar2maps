@@ -191,17 +191,25 @@ namespace AhyangyiMaps
 
         public FakeGalaxy()
         {
-            planetCollection = new FakePlanetCollection();
             links = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
+            SetPlanetCollection(new FakePlanetCollection());
         }
 
         public FakeGalaxy(FakePlanetCollection planetCollection)
         {
-            this.planetCollection = planetCollection;
             links = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
+            SetPlanetCollection(planetCollection);
+        }
+
+        public void SetPlanetCollection(FakePlanetCollection planetCollection)
+        {
+            this.planetCollection = planetCollection;
             foreach (var planet in planets)
             {
-                links[planet] = new System.Collections.Generic.List<FakePlanet>();
+                if (!links.ContainsKey(planet))
+                {
+                    links[planet] = new System.Collections.Generic.List<FakePlanet>();
+                }
             }
         }
 
@@ -1494,13 +1502,81 @@ namespace AhyangyiMaps
             }
         }
 
-        internal FakeGalaxy MakeSpanningGraph(int traversability, RandomGenerator rng)
+        internal void Floodfill(System.Collections.Generic.Dictionary<FakePlanet, int> color, FakePlanet a, int c)
         {
-            FakeGalaxy spanningGraph = new FakeGalaxy(planetCollection);
+            var queue = new System.Collections.Generic.Queue<FakePlanet>();
+            queue.Enqueue(a);
+            color[a] = c;
+
+            while (queue.Count > 0)
+            {
+                var cur = queue.Dequeue();
+                foreach (FakePlanet neighbor in links[cur])
+                {
+                    if (!color.ContainsKey(neighbor))
+                    {
+                        color[neighbor] = c;
+                        queue.Enqueue(neighbor);
+                    }
+                }
+            }
+        }
+
+        internal int LoopCount(FakePlanet a, FakePlanet b)
+        {
+            var planetPairs = ListSymmetricEdges(a, b);
+            var color = new System.Collections.Generic.Dictionary<FakePlanet, int>();
+            int colorCount = 0;
+
+            foreach (var (p1, p2) in planetPairs)
+            {
+                if (!color.ContainsKey(p1))
+                {
+                    Floodfill(color, p1, colorCount++);
+                }
+                if (!color.ContainsKey(p2))
+                {
+                    Floodfill(color, p2, colorCount++);
+                }
+            }
+
+            int ret = planetPairs.Concat(planetPairs.Select(p => (p.Item2, p.Item1))).Distinct().Count() / 2;
+
+            var parent = new System.Collections.Generic.List<int>();
+            for (int i = 0; i < colorCount; ++i)
+            {
+                parent.Add(-1);
+            }
+
+            foreach (var (p1, p2) in planetPairs)
+            {
+                int c1 = color[p1];
+                while (parent[c1] != -1)
+                {
+                    c1 = parent[c1];
+                }
+                int c2 = color[p2];
+                while (parent[c2] != -1)
+                {
+                    c2 = parent[c2];
+                }
+                if (c1 != c2)
+                {
+                    --ret;
+                    parent[c1] = c2;
+                }
+            }
+
+            return ret;
+        }
+
+        internal FakeGalaxy MakeSpanningGraph(int traversability, RandomGenerator rng, FakeGalaxy spanningGraph)
+        {
+            spanningGraph.SetPlanetCollection(planetCollection);
 
             var visited = new HashSet<FakePlanet>();
             var queue = new System.Collections.Generic.Queue<FakePlanet>();
-            var shortestDistance = new System.Collections.Generic.Dictionary<FakePlanet, (int, FakePlanet)>();
+            var shortestDistance = new System.Collections.Generic.Dictionary<FakePlanet, (int, int, FakePlanet)>();
             var edgeWeight = new System.Collections.Generic.Dictionary<(FakePlanet, FakePlanet), int>();
 
             foreach (FakePlanet planet in planets)
@@ -1520,13 +1596,14 @@ namespace AhyangyiMaps
 
             foreach (FakePlanet planet in planets)
             {
-                shortestDistance[planet] = (int.MaxValue, null);
+                shortestDistance[planet] = (int.MaxValue, int.MaxValue, null);
             }
-            shortestDistance[planets[rng.NextInclus(0, planets.Count - 1)]] = (0, null);
+            shortestDistance[planets[rng.NextInclus(0, planets.Count - 1)]] = (0, 0, null);
 
             while (visited.Count < planets.Count)
             {
                 FakePlanet chosen = null, chosenNeighbor = null;
+                int chosenLoopCount = int.MaxValue;
                 int chosenDistance = int.MaxValue;
 
                 foreach (var kv in shortestDistance)
@@ -1537,22 +1614,60 @@ namespace AhyangyiMaps
                         continue;
                     }
 
-                    if (chosen == null || kv.Value.Item1 < chosenDistance)
+                    if (chosen == null || kv.Value.Item1 < chosenLoopCount || kv.Value.Item1 == chosenLoopCount && kv.Value.Item2 < chosenDistance)
                     {
                         chosen = kv.Key;
-                        chosenDistance = kv.Value.Item1;
-                        chosenNeighbor = kv.Value.Item2;
+                        chosenLoopCount = kv.Value.Item1;
+                        chosenDistance = kv.Value.Item2;
+                        chosenNeighbor = kv.Value.Item3;
                     }
                 }
 
                 if (chosenNeighbor != null)
                 {
-                    spanningGraph.AddSymmetricLinks(chosen, chosenNeighbor);
-                }
+                    int loopCount = spanningGraph.LoopCount(chosen, chosenNeighbor);
+                    if (loopCount != chosenLoopCount)
+                    {
+                        // We have been fooled by stale statistics!
+                        // It's OK, our strategy relies on the rarity of such events, not the absence of them.
+                        // Recalculate the stats
+                        shortestDistance[chosen] = (loopCount, chosenDistance, chosenNeighbor);
+                        foreach (var starter in links[chosen])
+                        {
+                            if (visited.Contains(starter))
+                            {
+                                int altLoopCount = spanningGraph.LoopCount(starter, chosen);
+                                int distance = edgeWeight[(starter, chosen)];
+                                if (altLoopCount < shortestDistance[chosen].Item1 ||
+                                    altLoopCount == shortestDistance[chosen].Item1 && distance < shortestDistance[chosen].Item2)
+                                {
+                                    shortestDistance[chosen] = (altLoopCount, distance, starter);
+                                }
+                            }
+                        }
+                        // And find another optimal link
+                        continue;
+                    }
 
-                queue.Enqueue(chosen);
-                visited.Add(chosen);
-                shortestDistance.Remove(chosen);
+                    foreach (var (a, b) in ListSymmetricEdges(chosen, chosenNeighbor))
+                    {
+                        if (visited.Contains(a))
+                        {
+                            queue.Enqueue(a);
+                        }
+                        if (visited.Contains(b))
+                        {
+                            queue.Enqueue(b);
+                        }
+                        spanningGraph.AddLink(a, b);
+                    }
+                }
+                else
+                {
+                    queue.Enqueue(chosen);
+                    visited.Add(chosen);
+                    shortestDistance.Remove(chosen);
+                }
 
                 while (queue.Count > 0)
                 {
@@ -1571,10 +1686,13 @@ namespace AhyangyiMaps
                     {
                         if (shortestDistance.ContainsKey(neighbor))
                         {
+                            int loopCount = spanningGraph.LoopCount(cur, neighbor);
                             int distance = edgeWeight[(cur, neighbor)];
-                            if (distance < shortestDistance[neighbor].Item1 || shortestDistance[neighbor].Item2 == null)
+                            if (loopCount < shortestDistance[neighbor].Item1 ||
+                                loopCount == shortestDistance[neighbor].Item1 && distance < shortestDistance[neighbor].Item2 ||
+                                shortestDistance[neighbor].Item3 == null)
                             {
-                                shortestDistance[neighbor] = (distance, cur);
+                                shortestDistance[neighbor] = (loopCount, distance, cur);
                             }
                         }
                     }
@@ -1590,7 +1708,7 @@ namespace AhyangyiMaps
             {
                 return;
             }
-            int linksToAdd = Math.Min((planets.Count * connectivity + 25) / 25, links.Select(x => x.Value.Count).Sum() / 2)
+            int linksToAdd = Math.Min((planets.Count * (connectivity + 25)) / 25, links.Select(x => x.Value.Count).Sum() / 2)
                 - subgraph.links.Select(x => x.Value.Count).Sum() / 2;
             int retries = 1000;
             while (linksToAdd > 0)

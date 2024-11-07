@@ -25,6 +25,20 @@ namespace AhyangyiMaps
             return Math.Sqrt(c.X * c.X + c.Y * c.Y);
         }
     }
+
+    public static class FIntExtensions
+    {
+        public static FInt Abs(this FInt a)
+        {
+            return a < 0 ? -a : a;
+        }
+        public static FInt RatioDeviance(this FInt a, FInt b)
+        {
+            FInt r1 = a / b, r2 = b / a;
+            return (r1 - r2).Abs();
+        }
+    }
+
     public struct Matrix2x2
     {
         public FInt xx, xy, yx, yy;
