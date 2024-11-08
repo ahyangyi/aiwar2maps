@@ -12,6 +12,7 @@ namespace AhyangyiMaps
         SIXTEEN_TO_NINE = 0,
         SQUARE = 1,
         NINE_TO_SIXTEEN = 2,
+        COUNT = 3,
     }
     public static class AspectRatioExtensions
     {
@@ -22,10 +23,30 @@ namespace AhyangyiMaps
         }
     }
 
+    interface GridGenerator
+    {
+        (FakeGalaxy, FakeGalaxy) MakeGrid(
+            int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par);
+    }
+
     public class TessellationTypeGenerator : IMapGenerator
     {
-        public TessellationTypeGenerator()
+        public const int MAX_PLANETS = 300;
+        public const int DISSONANCE_TYPES = 5;
+        public const int OUTER_PATH_TYPES = 3;
+        public const int ASPECT_RATIO_TYPES = (int)AspectRatio.COUNT;
+        static System.Collections.Generic.Dictionary<int, GridGenerator> GridGenerators;
+        static TessellationTypeGenerator()
         {
+            GridGenerators = new System.Collections.Generic.Dictionary<int, GridGenerator> {
+                { 0, new SquareGrid() },
+                { 1, new HexagonGrid() },
+                { 2, new TriangleGrid() },
+                { 100, new SquareYGrid() },
+                { 101, new SquareYMirrorGrid() },
+                { 102, new DiamondYGrid() },
+                { 103, new DiamondYFlowerGrid() },
+            };
         }
 
         public void ClearAllMyDataForQuitToMainMenuOrBeforeNewMap()
@@ -40,7 +61,7 @@ namespace AhyangyiMaps
         protected void InnerGenerate(Galaxy galaxy, ArcenHostOnlySimContext Context, MapConfiguration mapConfig, PlanetType planetType, MapTypeData mapType)
         {
             int tableGen = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "TableGen").RelatedIntValue;
-            if (tableGen == 1)
+            if (tableGen == 2)
             {
                 TableGen.Main(new string[] { });
                 return;
@@ -65,35 +86,7 @@ namespace AhyangyiMaps
             // Some outerPath values or grid types might demand certain planets and links be preserved,
             //   this information is represented as the FakeGalaxy p
             FakeGalaxy g, p;
-            if (tessellation == 0)
-            {
-                (g, p) = SquareGrid.MakeSquareGalaxy(outerPath, aspectRatioEnum, galaxyShape, symmetry, dissonance, numPlanets);
-            }
-            else if (tessellation == 1)
-            {
-                (g, p) = HexagonGrid.MakeGalaxy(outerPath, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
-            }
-            else if (tessellation == 2)
-            {
-                (g, p) = TriangleGrid.MakeGalaxy(outerPath, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
-            }
-            else if (tessellation == 100)
-            {
-                (g, p) = SquareYGrid.MakeGalaxy(outerPath, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
-            }
-            else if (tessellation == 101)
-            {
-                (g, p) = SquareYMirrorGrid.MakeGalaxy(outerPath, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
-            }
-            else if (tessellation == 102)
-            {
-                (g, p) = DiamondYGrid.MakeGalaxy(outerPath, aspectRatioEnum, galaxyShape, symmetry, numPlanetsToMake);
-            }
-            else
-            {
-                (g, p) = DiamondYFlowerGrid.MakeGalaxy(outerPath, aspectRatioEnum.Value(), galaxyShape, symmetry, numPlanetsToMake);
-            }
-            g.MakeSymmetricGroups();
+            GenerateGrid(tableGen, numPlanets, tessellation, aspectRatioEnum, galaxyShape, dissonance, symmetry, outerPath, numPlanetsToMake, out g, out p);
 
             // STEP 2 - MARK OUTER PATH FOR PERSERVATION
             // Mark outer path.
@@ -168,6 +161,20 @@ namespace AhyangyiMaps
             // STEP 9 - POPULATE
             // Translate our information into Arcenverse
             g.Populate(galaxy, planetType, randomNumberGenerator);
+        }
+
+        private static void GenerateGrid(int tableGen, int numPlanets, int tessellation, AspectRatio aspectRatioEnum, int galaxyShape, int dissonance, int symmetry, int outerPath, int numPlanetsToMake, out FakeGalaxy g, out FakeGalaxy p)
+        {
+            if (tableGen == 0)
+            {
+                var tableName = $"custom_AhyangyiTessellation{tessellation}_{symmetry}_{galaxyShape}";
+                tableName = "custom_YYTest";
+                string table = ExternalConstants.Instance.GetCustomString_Slow(tableName);
+            }
+
+            var par = new ParameterService(TableGenMode.HEURISTIC, numPlanets, dissonance, (int)aspectRatioEnum, outerPath);
+            (g, p) = GridGenerators[tessellation].MakeGrid(outerPath, aspectRatioEnum, galaxyShape, symmetry, dissonance, numPlanets, par);
+            g.MakeSymmetricGroups();
         }
     }
 }

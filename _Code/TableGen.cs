@@ -1,13 +1,160 @@
 using AhyangyiMaps.Tessellation;
+using Arcen.AIW2.External;
 using Arcen.Universal;
+using System;
 using System.IO;
 using System.Linq;
+using UnityEngine.Assertions;
 
 namespace AhyangyiMaps
 {
+    public enum TableGenMode
+    {
+        USE = 0,
+        HEURISTIC = 1,
+        OPTIMIZE = 2,
+        GEN_TABLE = 3,
+    }
+
+    public class ParameterService
+    {
+        public const int MAX_PARAMETERS = 6;
+        static System.Collections.Generic.List<int> planetNumbers;
+        static ParameterService()
+        {
+            planetNumbers = new System.Collections.Generic.List<int> { 40, 42, 44, 46, 48 };
+            for (int i = 50; i <= TessellationTypeGenerator.MAX_PLANETS; i += 5) planetNumbers.Add(i);
+        }
+
+        TableGenMode mode;
+        System.Collections.Generic.List<ParameterRange> history;
+        int historyRevisited;
+        System.Collections.Generic.Dictionary<string, string> info;
+        FInt badness;
+        public FakeGalaxy g, p;
+        int numPlanets, dissonance, aspectRatioIndex, outerPath;
+
+        class ParameterRange
+        {
+            public int Low, High, Current;
+        }
+
+        public ParameterService(TableGenMode mode, int numPlanets, int dissonance, int aspectRatioIndex, int outerPath)
+        {
+            this.mode = mode;
+            this.numPlanets = numPlanets;
+            this.dissonance = dissonance;
+            this.aspectRatioIndex = aspectRatioIndex;
+            this.outerPath = outerPath;
+
+            badness = FInt.Zero;
+            history = new System.Collections.Generic.List<ParameterRange>();
+            historyRevisited = 0;
+            info = new System.Collections.Generic.Dictionary<string, string>();
+        }
+
+        public void SetTable(System.Collections.Generic.List<int> values)
+        {
+            foreach (int value in values)
+            {
+                history.Add(new ParameterRange { Low=0, High=0, Current=value });
+            }
+        }
+
+        public int AddParameter(int low, int high, int heuristicValue)
+        {
+            if (mode == TableGenMode.HEURISTIC)
+            {
+                return heuristicValue;
+            }
+
+            if (mode == TableGenMode.USE)
+            {
+                return history[historyRevisited++].Current;
+            }
+
+            if (historyRevisited < history.Count)
+            {
+                if (low != history[historyRevisited].Low || high != history[historyRevisited].High)
+                {
+                    ArcenDebugging.ArcenDebugLogSingleLine(
+                        $"Table replay history inconsistent: was {history[historyRevisited].Low} {history[historyRevisited].High}, got {low} {high}",
+                        Verbosity.ShowAsError);
+                }
+                return history[historyRevisited++].Current;
+            }
+
+            history.Add(new ParameterRange { Low = low, High = high, Current = low });
+            return low;
+        }
+
+        internal void AddInfo(string key, string value)
+        {
+            info[key] = value;
+        }
+
+        internal bool AddBadness(string key, FInt badness)
+        {
+            this.badness += badness;
+            return false;
+        }
+
+        internal void Commit(FakeGalaxy g, FakeGalaxy p)
+        {
+            this.g = g;
+            this.p = p;
+
+            if (mode == TableGenMode.GEN_TABLE || mode == TableGenMode.OPTIMIZE)
+            {
+                int planets = g.planets.Count;
+                int irremovablePlanets = p.planets.Count;
+                FInt aspectRatio = g.AspectRatio();
+
+                FInt percolationThreshold = FInt.Create(593, false);
+ 
+                if (mode == TableGenMode.GEN_TABLE)
+                {
+                    for (int targetPlanetIndex = 0; targetPlanetIndex < planetNumbers.Count; ++targetPlanetIndex)
+                    {
+                        int targetPlanets = planetNumbers[targetPlanetIndex];
+                        for (int dissonance = 0; dissonance < TessellationTypeGenerator.DISSONANCE_TYPES; ++dissonance)
+                        {
+                            FInt dissonanceRatio = (percolationThreshold * dissonance + (4 - dissonance)) / 4;
+                            FInt postDissonancePlanets = irremovablePlanets + (planets * irremovablePlanets) * dissonanceRatio;
+                            FInt planetDifference = (postDissonancePlanets - targetPlanets).Abs();
+                            AddInfo("Equivalent Planets", postDissonancePlanets.ToString());
+                            AddBadness("Planets Difference", planetDifference / dissonanceRatio);
+                        }
+                    }
+                }
+            }
+        }
+        public bool Step()
+        {
+            // General clean-up
+            badness = FInt.Zero;
+            historyRevisited = 0;
+            info.Clear();
+
+            // Rewind history...
+            while (history.Count > 0)
+            {
+                int i = history.Count - 1;
+                if (history[i].Current < history[i].High)
+                {
+                    history[i].Current += 1;
+                    break;
+                }
+                history.PopLast();
+            }
+
+            return history.Count > 0;
+        }
+    }
 
     class TableGen
     {
+
         public struct TableKey
         {
             public int AspectRatioIndex;

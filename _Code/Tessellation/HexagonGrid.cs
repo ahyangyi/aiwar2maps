@@ -4,7 +4,7 @@ using System;
 
 namespace AhyangyiMaps.Tessellation
 {
-    public class HexagonGrid
+    public class HexagonGrid : GridGenerator
     {
         static readonly int xunit, yunit, dunit;
         static readonly FakePattern hexagon;
@@ -29,9 +29,10 @@ namespace AhyangyiMaps.Tessellation
             hexagon.AddLink(p4, p5);
             hexagon.AddLink(p5, p0);
         }
-        public static (FakeGalaxy, FakeGalaxy) MakeGalaxy(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets)
+        public (FakeGalaxy, FakeGalaxy) MakeGrid(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par)
         {
-            FInt aspectRatio = aspectRatioEnum.Value();
+            numPlanets = numPlanets * 12 / (12 - dissonance);
+            FInt aspectRatio = 1 / aspectRatioEnum.Value();
             int rows = 9;
             int columns = 16;
             FInt badness = (FInt)1000000;

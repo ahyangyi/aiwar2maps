@@ -4,7 +4,7 @@ using System;
 
 namespace AhyangyiMaps.Tessellation
 {
-    public class SquareYGrid
+    public class SquareYGrid : GridGenerator
     {
         static readonly int unit;
         public static readonly FakePattern squareY, squareYFlipped;
@@ -33,8 +33,10 @@ namespace AhyangyiMaps.Tessellation
 
             squareYFlipped = squareY.FlipY();
         }
-        public static (FakeGalaxy, FakeGalaxy) MakeGalaxy(int outerPath, FInt aspectRatio, int galaxyShape, int symmetry, int numPlanets)
+        public (FakeGalaxy, FakeGalaxy) MakeGrid(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par)
         {
+            numPlanets = numPlanets * 12 / (12 - dissonance);
+            FInt aspectRatio = 1 / aspectRatioEnum.Value();
             int rows = 5;
             int columns = 8;
             FInt badness = (FInt)1000000;

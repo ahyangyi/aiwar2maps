@@ -4,7 +4,7 @@ using System;
 
 namespace AhyangyiMaps.Tessellation
 {
-    public class DiamondYGrid
+    public class DiamondYGrid : GridGenerator
     {
         static readonly int unit, dunit;
         public static readonly FakePattern diamondY, diamondYFlipped;
@@ -39,9 +39,10 @@ namespace AhyangyiMaps.Tessellation
 
             diamondYFlipped = diamondY.FlipY();
         }
-        public static (FakeGalaxy, FakeGalaxy) MakeGalaxy(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int numPlanets)
+        public (FakeGalaxy, FakeGalaxy) MakeGrid(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par)
         {
-            FInt aspectRatio = aspectRatioEnum.Value();
+            numPlanets = numPlanets * 12 / (12 - dissonance);
+            FInt aspectRatio = 1 / aspectRatioEnum.Value();
             int rows = 5;
             int columns = 8;
 

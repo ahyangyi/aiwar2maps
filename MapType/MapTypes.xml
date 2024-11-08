@@ -122,8 +122,10 @@
     </map_option>
     <map_option name="TableGen" display_name="Table Gen"
       description="Please report a bug if you see this option." default_id="0">
-      <choice_value id="0" display_name="No" description="Regular mode." related_int_value="0" />
-      <choice_value id="1" display_name="Yes" description="Tablegen mode." related_int_value="1" />
+      <choice_value id="0" display_name="Look-up" description="Table look up mode." related_int_value="0" />
+      <choice_value id="1" display_name="Heuristics" description="Use heuristics only." related_int_value="1" />
+      <choice_value id="2" display_name="Optimize" description="Optimize on the go." related_int_value="2" />
+      <choice_value id="3" display_name="Generate" description="Generate LUT." related_int_value="3" />
     </map_option>
   </map_type>
   <map_type
