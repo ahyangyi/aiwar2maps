@@ -32,6 +32,13 @@ namespace AhyangyiMaps.Tessellation
             int c = par.AddParameter(1, 45, 9);
 
             if (galaxyShape != 2 && (r > 35 || c > 35)) return;
+            if (galaxyShape != 0 && (r < 3 || c < 3)) return;
+            if (symmetry == 10100)
+            {
+                // FIXME, should support all combinations
+                galaxyShape = 0;
+                if (r < 3 || c < 3) return;
+            }
             if (symmetry >= 300 && symmetry < 10000)
             {
                 FInt idealR = c / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false);
@@ -83,22 +90,22 @@ namespace AhyangyiMaps.Tessellation
             {
                 if (overlap == 0)
                 {
-                    if (par.AddBadness("Two-part Galaxies sharing an edge", (FInt)7)) return;
+                    if (par.AddBadness("Two-part Galaxies sharing an edge", (FInt)7, true)) return;
                 }
                 else if (overlap > 0)
                 {
-                    if (par.AddBadness("Two-part Galaxies overlapping", (FInt)12)) return;
+                    if (par.AddBadness("Two-part Galaxies overlapping", (FInt)12, true)) return;
                 }
             }
             else if (parts == 3 && c % 3 != 0)
             {
                 if (overlap < 0)
                 {
-                    if (par.AddBadness("Three-part Galaxies not touching", (FInt)12)) return;
+                    if (par.AddBadness("Three-part Galaxies not touching", (FInt)12, true)) return;
                 }
                 else if (overlap > 0)
                 {
-                    if (par.AddBadness("Three-part Galaxies overlapping", (FInt)7)) return;
+                    if (par.AddBadness("Three-part Galaxies overlapping", (FInt)7, true)) return;
                 }
             }
 
@@ -111,13 +118,13 @@ namespace AhyangyiMaps.Tessellation
             {
                 FInt idealO = Math.Min(r, f) / FInt.Create(3414, false);
                 par.AddInfo("Ideal O", idealO.ToString());
-                if (par.AddBadness("O Badness", (sp - idealO).Abs())) return;
+                if (par.AddBadness("Octagon Shape", (sp - idealO).Abs())) return;
             }
             else if (galaxyShape == 2)
             {
                 FInt idealX = Math.Min(r, f) / FInt.Create(3000, false);
                 par.AddInfo("Ideal X", idealX.ToString());
-                if (par.AddBadness("X Badness", (sp - idealX).Abs())) return;
+                if (par.AddBadness("Cross Shape", (sp - idealX).Abs())) return;
             }
 
             // `offset`

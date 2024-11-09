@@ -1,10 +1,12 @@
 using AhyangyiMaps.Tessellation;
+using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using UnityEngine.Assertions;
 
@@ -18,31 +20,33 @@ namespace AhyangyiMaps
         GEN_TABLE = 3,
     }
 
-    public enum AspectRatioMode
-    {
-        NORMAL = 0,
-        IGNORE = 1,
-        SPECIAL = 2,
-    }
-
     public class ParameterService
     {
         public const int MAX_PARAMETERS = 6;
-        static System.Collections.Generic.List<int> PlanetNumbers;
-        static int TABLE_SIZE;
+        public static System.Collections.Generic.List<int> PlanetNumbers;
+        public static System.Collections.Generic.Dictionary<int, int> PlanetIndex;
+        static readonly int TABLE_SIZE;
+        static readonly int TABLE_SIZE_NO_ASPECT_RATIO;
         static ParameterService()
         {
             PlanetNumbers = new System.Collections.Generic.List<int> { 40, 42, 44, 46, 48 };
             for (int i = 50; i <= TessellationTypeGenerator.MAX_PLANETS; i += 5) PlanetNumbers.Add(i);
 
-            TABLE_SIZE = PlanetNumbers.Count
+            PlanetIndex = new System.Collections.Generic.Dictionary<int, int>();
+            for (int i = 0; i < PlanetNumbers.Count; ++i)
+            {
+                PlanetIndex[PlanetNumbers[i]] = i;
+            }
+
+            TABLE_SIZE_NO_ASPECT_RATIO = PlanetNumbers.Count
                     * TessellationTypeGenerator.DISSONANCE_TYPES
-                    * TessellationTypeGenerator.ASPECT_RATIO_TYPES
                     * TessellationTypeGenerator.OUTER_PATH_TYPES;
+            TABLE_SIZE = TABLE_SIZE_NO_ASPECT_RATIO * TessellationTypeGenerator.ASPECT_RATIO_TYPES;
         }
         public struct TableValue
         {
             public FInt Badness;
+            public bool HasWarning;
             public System.Collections.Generic.Dictionary<string, string> Info;
             public System.Collections.Generic.Dictionary<string, FInt> BadnessBreakdown;
             public System.Collections.Generic.List<int> Parameters;
@@ -52,13 +56,13 @@ namespace AhyangyiMaps
         System.Collections.Generic.List<ParameterRange> history;
         int historyRevisited;
         System.Collections.Generic.Dictionary<string, string> info;
-        System.Collections.Generic.Dictionary<string, FInt> badnessInfo;
+        System.Collections.Generic.Dictionary<string, (FInt, bool)> badnessInfo;
         System.Collections.Generic.List<TableValue> table;
         FInt CurrentBadness;
         public FakeGalaxy g, p;
         public readonly int Tessellation, Symmetry, GalaxyShape;
         public int NumPlanets, Dissonance, AspectRatioIndex, OuterPath;
-        public AspectRatioMode aspectRatioMode;
+        public SymmetryMetadata.AspectRatioMode aspectRatioMode;
 
         class ParameterRange
         {
@@ -66,7 +70,7 @@ namespace AhyangyiMaps
         }
 
         public ParameterService(TableGenMode mode,
-            int tessellation, int symmetry, int galaxyShape, int numPlanets, int dissonance, int aspectRatioIndex, int outerPath, AspectRatioMode aspectRatioMode)
+            int tessellation, int symmetry, int galaxyShape, int numPlanets, int dissonance, int aspectRatioIndex, int outerPath)
         {
             this.mode = mode;
             Tessellation = tessellation;
@@ -76,29 +80,69 @@ namespace AhyangyiMaps
             Dissonance = dissonance;
             AspectRatioIndex = aspectRatioIndex;
             OuterPath = outerPath;
-            this.aspectRatioMode = aspectRatioMode;
+            this.aspectRatioMode = SymmetryMetadata.AspectRatioModeLookup[symmetry];
 
             CurrentBadness = FInt.Zero;
             history = new System.Collections.Generic.List<ParameterRange>();
             historyRevisited = 0;
             info = new System.Collections.Generic.Dictionary<string, string>();
-            badnessInfo = new System.Collections.Generic.Dictionary<string, FInt>();
+            badnessInfo = new System.Collections.Generic.Dictionary<string, (FInt, bool)>();
+
+            if (mode == TableGenMode.USE)
+            {
+                var tableName = $"custom_AhyangyiTessellation_{tessellation}_{symmetry}_{galaxyShape}";
+                string table = ExternalConstants.Instance.GetCustomString_Slow(tableName);
+
+                int index = CalculateIndex(symmetry, PlanetIndex[numPlanets], aspectRatioIndex, dissonance, outerPath);
+
+                for (int i = 0; i < MAX_PARAMETERS; ++i)
+                {
+                    char c = table[index * MAX_PARAMETERS + i];
+                    int value;
+                    if (c == '-')
+                    {
+                        value = -1;
+                    }
+                    else if (c >= '0' && c <= '9')
+                    {
+                        value = c - '0';
+                    }
+                    else if (c >= 'A' && c <= 'Z')
+                    {
+                        value = c - 'A' + 10;
+                    }
+                    else if (c >= 'a' && c <= 'z')
+                    {
+                        value = c - 'a' + 36;
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                    history.Add(new ParameterRange { Low = 0, High = 0, Current = value });
+                }
+            }
 
             if (mode == TableGenMode.GEN_TABLE || mode == TableGenMode.OPTIMIZE)
             {
                 table = new System.Collections.Generic.List<TableValue>();
-                for (int i = 0; i < (mode == TableGenMode.GEN_TABLE? TABLE_SIZE: 1); ++i)
+                int tableSize;
+                if (mode == TableGenMode.GEN_TABLE)
+                {
+                    if (aspectRatioMode == SymmetryMetadata.AspectRatioMode.IGNORE)
+                        tableSize = TABLE_SIZE_NO_ASPECT_RATIO;
+                    else
+                        tableSize = TABLE_SIZE;
+                }
+                else
+                {
+                    tableSize = 1;
+                }
+                for (int i = 0; i < tableSize; ++i)
                 {
                     table.Add(new TableValue { Badness = (FInt)999, Info = null, BadnessBreakdown = null, Parameters = null });
                 }
-            }
-        }
-
-        public void SetTable(System.Collections.Generic.List<int> values)
-        {
-            foreach (int value in values)
-            {
-                history.Add(new ParameterRange { Low=0, High=0, Current=value });
             }
         }
 
@@ -135,13 +179,13 @@ namespace AhyangyiMaps
             info[key] = value;
         }
 
-        internal bool AddBadness(string key, FInt badness)
+        internal bool AddBadness(string key, FInt badness, bool isWarning = false)
         {
             if (badnessInfo.ContainsKey(key))
             {
-                CurrentBadness -= badnessInfo[key];
+                CurrentBadness -= badnessInfo[key].Item1;
             }
-            badnessInfo[key] = badness;
+            badnessInfo[key] = (badness, isWarning);
             CurrentBadness += badness;
             return CurrentBadness >= 25;
         }
@@ -153,7 +197,7 @@ namespace AhyangyiMaps
 
             if (mode == TableGenMode.GEN_TABLE || mode == TableGenMode.OPTIMIZE)
             {
-                if (aspectRatioMode == AspectRatioMode.NORMAL)
+                if (aspectRatioMode == SymmetryMetadata.AspectRatioMode.NORMAL)
                 {
                     FInt aspectRatio = g.AspectRatio();
                     AddInfo("AspectRatio", aspectRatio.ToString());
@@ -215,9 +259,7 @@ namespace AhyangyiMaps
                 int index;
                 if (mode == TableGenMode.GEN_TABLE)
                 {
-                    index = ((targetPlanetIndex * TessellationTypeGenerator.DISSONANCE_TYPES + dissonanceType)
-                        * TessellationTypeGenerator.ASPECT_RATIO_TYPES + aspectRatioIndex)
-                        * TessellationTypeGenerator.OUTER_PATH_TYPES + OuterPath;
+                    index = CalculateIndex(Symmetry, targetPlanetIndex, aspectRatioIndex, dissonanceType, OuterPath);
                 }
                 else
                 {
@@ -230,11 +272,30 @@ namespace AhyangyiMaps
                     {
                         Badness = CurrentBadness,
                         Info = info.ToDictionary(x => x.Key, x => x.Value),
-                        BadnessBreakdown = badnessInfo.ToDictionary(x=>x.Key, x=>x.Value),
+                        BadnessBreakdown = badnessInfo.ToDictionary(x => x.Key, x => x.Value.Item1),
                         Parameters = history.Select(x => x.Current).ToList(),
+                        HasWarning = badnessInfo.Any(x => x.Value.Item2)
                     };
                 }
             }
+        }
+
+        public static int CalculateIndex(int symmetry, int targetPlanetIndex, int aspectRatioIndex, int dissonanceType, int outerPath)
+        {
+            int index;
+            if (SymmetryMetadata.AspectRatioModeLookup[symmetry] == SymmetryMetadata.AspectRatioMode.IGNORE)
+            {
+                index = (targetPlanetIndex * TessellationTypeGenerator.DISSONANCE_TYPES + dissonanceType)
+                    * TessellationTypeGenerator.OUTER_PATH_TYPES + outerPath;
+            }
+            else
+            {
+                index = ((targetPlanetIndex * TessellationTypeGenerator.DISSONANCE_TYPES + dissonanceType)
+                    * TessellationTypeGenerator.ASPECT_RATIO_TYPES + aspectRatioIndex)
+                    * TessellationTypeGenerator.OUTER_PATH_TYPES + outerPath;
+            }
+
+            return index;
         }
 
         public bool Next()
@@ -299,7 +360,7 @@ namespace AhyangyiMaps
             }
 
             StringBuilder s = new StringBuilder();
-            for (int i = 0; i < TABLE_SIZE; ++i)
+            for (int i = 0; i < table.Count; ++i)
             {
                 for (int j = 0; j < MAX_PARAMETERS; ++j)
                 {
@@ -308,7 +369,7 @@ namespace AhyangyiMaps
                         int value = table[i].Parameters[j];
                         if (value == -1)
                         {
-                            s.Append('?');
+                            s.Append('-');
                         }
                         else if (value < 10)
                         {
@@ -348,12 +409,12 @@ namespace AhyangyiMaps
 
             using (StreamWriter sw = File.CreateText($"XMLMods\\AhyangyiMaps\\Debug\\Debug_{Tessellation}_{Symmetry}_{GalaxyShape}.txt"))
             {
-                for (int i = 0; i < TABLE_SIZE; ++i)
+                for (int i = 0; i < table.Count; ++i)
                 {
-                    if (table[i].Badness >= 25)
+                    if (table[i].Badness >= 25 || table[i].HasWarning)
                     {
                         sw.WriteLine("-------------------------------------------------------------------------------");
-                        sw.WriteLine($"Warning for case {i}");
+                        sw.WriteLine($"Warning for case {IndexToString(i)}");
                         sw.WriteLine($"Badness: {table[i].Badness}");
 
                         sw.WriteLine();
@@ -379,6 +440,30 @@ namespace AhyangyiMaps
                     }
                 }
            }
+        }
+
+        private string IndexToString(int i)
+        {
+            int outerPath = i % TessellationTypeGenerator.OUTER_PATH_TYPES;
+            i /= TessellationTypeGenerator.OUTER_PATH_TYPES;
+
+            int aspectRatioIndex = 0;
+            if (aspectRatioMode != SymmetryMetadata.AspectRatioMode.IGNORE)
+            {
+                aspectRatioIndex = i % TessellationTypeGenerator.ASPECT_RATIO_TYPES;
+                i /= TessellationTypeGenerator.ASPECT_RATIO_TYPES;
+            }
+
+            int dissonance = i % TessellationTypeGenerator.DISSONANCE_TYPES;
+            i /= TessellationTypeGenerator.DISSONANCE_TYPES;
+
+            int planets = i;
+
+            if (aspectRatioMode != SymmetryMetadata.AspectRatioMode.IGNORE)
+            {
+                return $"{{Planets: {PlanetNumbers[planets]}, Dissonance: {dissonance}, aspectRatio: {aspectRatioIndex}, outerPath: {outerPath}}}";
+            }
+            return $"{{Planets: {PlanetNumbers[planets]}, Dissonance: {dissonance}, outerPath: {outerPath}}}";
         }
     }
 }

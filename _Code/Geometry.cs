@@ -1,3 +1,4 @@
+using AhyangyiMaps.Tessellation;
 using Arcen.Universal;
 using System;
 
@@ -216,6 +217,40 @@ namespace AhyangyiMaps
                 return 1;
             }
             return 3;
+        }
+    }
+
+    public class SymmetryMetadata
+    {
+        public enum AspectRatioMode
+        {
+            NORMAL = 0,
+            IGNORE = 1,
+            SPECIAL = 2,
+        }
+        public static System.Collections.Generic.Dictionary<int, AspectRatioMode> AspectRatioModeLookup;
+        static SymmetryMetadata()
+        {
+            AspectRatioModeLookup = new System.Collections.Generic.Dictionary<int, AspectRatioMode> {
+                { 100, AspectRatioMode.NORMAL},
+                { 150, AspectRatioMode.NORMAL},
+                { 200, AspectRatioMode.NORMAL},
+                { 250, AspectRatioMode.NORMAL},
+                { 300, AspectRatioMode.IGNORE},
+                { 350, AspectRatioMode.IGNORE},
+                { 400, AspectRatioMode.IGNORE},
+                { 450, AspectRatioMode.IGNORE},
+                { 500, AspectRatioMode.IGNORE},
+                { 600, AspectRatioMode.IGNORE},
+                { 700, AspectRatioMode.IGNORE},
+                { 800, AspectRatioMode.IGNORE},
+                { 10000, AspectRatioMode.NORMAL},
+                { 10001, AspectRatioMode.NORMAL},
+                { 10002, AspectRatioMode.NORMAL},
+                { 10100, AspectRatioMode.NORMAL},
+                { 10101, AspectRatioMode.SPECIAL},
+                { 10200, AspectRatioMode.SPECIAL},
+            };
         }
     }
 }
