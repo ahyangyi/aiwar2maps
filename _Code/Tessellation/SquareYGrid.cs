@@ -1,6 +1,5 @@
 ﻿using Arcen.AIW2.Core;
 using Arcen.Universal;
-using System;
 
 namespace AhyangyiMaps.Tessellation
 {
@@ -33,35 +32,21 @@ namespace AhyangyiMaps.Tessellation
 
             squareYFlipped = squareY.FlipY();
         }
-        public (FakeGalaxy, FakeGalaxy) MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par)
+        public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
         {
-            var aspectRatioEnum = (AspectRatio)aspectRatioIndex;
-            numPlanets = numPlanets * 12 / (12 - dissonance);
-            FInt aspectRatio = 1 / aspectRatioEnum.Value();
-            int rows = 5;
-            int columns = 8;
-            FInt badness = (FInt)1000000;
-            for (int r = 1; r <= 60; ++r)
+            // `rows` & `columns`: The base grid size
+            int rows = par.AddParameter("rows", 1, 21, 7);
+            int columns = par.AddParameter("columns", 1, 21, symmetry == 10001 ? 9 : 10);
+
+            if (symmetry >= 300 && symmetry < 10000)
             {
-                for (int c = 1; c <= 60; ++c)
-                {
-                    if (symmetry == 10001 && c % 3 != 0) continue;
-                    int planets = (r + 1) * (c + 1) + r * c * 2;
-                    FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
-                    FInt currentAspectRatio = (FInt)r / (FInt)c;
-                    FInt p1 = currentAspectRatio / aspectRatio;
-                    FInt p2 = aspectRatio / currentAspectRatio;
-                    FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
-                    FInt currentBadness = planetBadness + aspectRatioBadness;
-                    if (currentBadness < badness)
-                    {
-                        badness = currentBadness;
-                        rows = r;
-                        columns = c;
-                    }
-                }
+                FInt idealR = columns / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false);
+                par.AddInfo("Ideal R", idealR.ToString());
+                if (par.AddBadness("Rotational Shape", (rows - idealR).Abs())) return;
             }
-            FakeGalaxy g = MakeGrid(rows, columns, false);
+            if (symmetry == 10001 && columns == 1) return;
+
+            FakeGalaxy g = MakeGrid(rows, columns, symmetry >= 300 && symmetry < 10000);
 
             if (symmetry == 150)
             {
@@ -69,26 +54,7 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry >= 300 && symmetry < 10000)
             {
-                FInt newBadness = (FInt)1000000;
-                FakeGalaxy fg = MakeGrid(1, 1, true);
-                for (int c = 4; c <= 30; ++c)
-                {
-                    int r1 = (c / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false)).ToInt();
-                    for (int r = r1; r <= r1 + 1; ++r)
-                    {
-                        var g2 = MakeGrid(r, c, true);
-                        g2.MakeRotationalGeneric(c * unit, r * 2 * unit, unit, symmetry / 100, symmetry % 100 == 50, c % 2 == 0);
-                        int planets = g2.planets.Count;
-                        FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
-                        FInt currentBadness = planetBadness;
-                        if (currentBadness < newBadness)
-                        {
-                            newBadness = currentBadness;
-                            fg = g2;
-                        }
-                    }
-                }
-                return (fg, new FakeGalaxy(fg.planetCollection));
+                g.MakeRotationalGeneric(columns * unit, rows * 2 * unit, unit, symmetry / 100, symmetry % 100 == 50, columns % 2 == 0);
             }
             else if (symmetry == 10000)
             {
@@ -96,14 +62,39 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry == 10001)
             {
-                g.MakeTriptych(unit * 2 * (columns / 3));
+                if (columns % 3 == 0)
+                {
+                    g.MakeTriptych(unit * 2 * (columns / 3));
+                }
+                else if (columns % 3 == 1)
+                {
+                    g.MakeTriptych((columns * 2 + 1) * unit / 3, (columns * 4 - 1) * unit / 3);
+                }
+                else
+                {
+                    g.MakeTriptych((columns * 2 - 1) * unit / 3, (columns * 4 + 1) * unit / 3);
+                }
             }
             else if (symmetry == 10101)
             {
                 g.MakeDoubleSpark();
             }
 
-            return (g, new FakeGalaxy(g.planetCollection));
+            FakeGalaxy p;
+            if (outerPath == 0)
+            {
+                p = new FakeGalaxy();
+            }
+            else if (outerPath == 1)
+            {
+                p = g.MarkOutline();
+            }
+            else
+            {
+                p = g.MakeBeltWay();
+            }
+
+            par.Commit(g, p);
         }
 
         private static FakeGalaxy MakeGrid(int rows, int columns, bool flip)

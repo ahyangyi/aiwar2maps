@@ -250,7 +250,7 @@ namespace AhyangyiMaps
             return true;
         }
 
-         protected void RemovePlanetsButDoesNotUpdateSymmetricGroups(HashSet<FakePlanet> planetsToRemove)
+        protected void RemovePlanetsButDoesNotUpdateSymmetricGroups(HashSet<FakePlanet> planetsToRemove)
         {
             foreach (FakePlanet planet in planetsToRemove)
             {

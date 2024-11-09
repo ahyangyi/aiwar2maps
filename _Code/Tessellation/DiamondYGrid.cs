@@ -1,6 +1,5 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
-using System;
 
 namespace AhyangyiMaps.Tessellation
 {
@@ -39,39 +38,24 @@ namespace AhyangyiMaps.Tessellation
 
             diamondYFlipped = diamondY.FlipY();
         }
-        public (FakeGalaxy, FakeGalaxy) MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par)
+        public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
         {
-            var aspectRatioEnum = (AspectRatio)aspectRatioIndex;
-            numPlanets = numPlanets * 12 / (12 - dissonance);
-            FInt aspectRatio = 1 / aspectRatioEnum.Value();
-            int rows = 5;
-            int columns = 8;
+            // `rows` & `columns`: The base grid size
+            int rows = par.AddParameter("rows", 1, 35, 7);
+            int columns = par.AddParameter("columns", 1, 35, symmetry == 10001 ? 9 : 10);
 
-            FInt badness = (FInt)1000000;
-            for (int r = 2; r <= 60; r++)
+            if (symmetry == 150 && columns % 2 == 0) return;
+            if (symmetry >= 300 && symmetry < 10000)
             {
-                for (int c = 2; c <= 60; c++)
-                {
-                    if (symmetry == 150 && c % 2 == 0) continue;
-                    if (symmetry == 10000 && (c % 4 == 1 || c % 4 == 2)) continue;
-                    if (symmetry == 10001 && c % 3 != 2) continue;
-                    if (symmetry == 10101 && c % 2 != 1) continue;
-                    // FIXME: formula only works when both are odd
-                    int planets = 2 * r * c + r + c + 3;
-                    FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
-                    FInt currentAspectRatio = (FInt)(r + 1) / (FInt)(c + 1);
-                    FInt p1 = currentAspectRatio / aspectRatio;
-                    FInt p2 = aspectRatio / currentAspectRatio;
-                    FInt aspectRatioBadness = ((p1 > p2 ? p1 : p2) - FInt.One) * (FInt)10;
-                    FInt currentBadness = planetBadness + aspectRatioBadness;
-                    if (currentBadness < badness)
-                    {
-                        badness = currentBadness;
-                        rows = r;
-                        columns = c;
-                    }
-                }
+                if (columns % 2 == 0) return;
+                FInt idealR = ((columns + 1) / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false) - 1) / 2;
+                par.AddInfo("Ideal R", idealR.ToString());
+                if (par.AddBadness("Rotational Shape", (rows - idealR).Abs())) return;
             }
+            if (symmetry == 10000 && (columns % 4 == 1 || columns % 4 == 2)) return;
+            if (symmetry == 10001 && columns % 3 != 2) return;
+            if (symmetry == 10101 && columns % 2 != 1) return;
+
             FakeGalaxy g = MakeGrid(rows, columns, false);
 
             if (symmetry == 150)
@@ -80,28 +64,7 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry >= 300 && symmetry < 10000)
             {
-                FInt newBadness = (FInt)1000000;
-                FakeGalaxy fg = MakeGrid(1, 1, true);
-                for (int c = 1; c <= 60; ++c)
-                {
-                    int r1 = ((c + 1) / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false) - 1).ToInt();
-                    for (int r = Math.Max(r1 - 1, 1); r <= r1 + 3; ++r)
-                    {
-                        if ((r * 2 + c) % 4 != 3)
-                            continue;
-                        var g2 = MakeGrid(r, c, true);
-                        g2.MakeRotationalGeneric((c + 1) * unit, (r + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50, false);
-                        int planets = g2.planets.Count;
-                        FInt planetBadness = (FInt)Math.Abs(planets - numPlanets);
-                        FInt currentBadness = planetBadness;
-                        if (currentBadness < newBadness)
-                        {
-                            newBadness = currentBadness;
-                            fg = g2;
-                        }
-                    }
-                }
-                return (fg, new FakeGalaxy(fg.planetCollection));
+                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50, false);
             }
             else if (symmetry == 10000)
             {
@@ -109,7 +72,14 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry == 10001)
             {
-                g.MakeTriptych((columns + 1) / 3 * unit);
+                if (columns % 3 == 0)
+                {
+                    g.MakeTriptych(columns / 3 * unit);
+                }
+                else
+                {
+                    g.MakeTriptych((columns * 2 + 1) * unit / 6, (columns * 4 - 1) * unit / 6);
+                }
             }
             else if (symmetry == 10101)
             {
@@ -120,10 +90,24 @@ namespace AhyangyiMaps.Tessellation
                 columns = (columns + 3) / 4;
                 rows = (rows * 4 / 3) / 2 * 2 + columns % 2;
                 g = MakeGrid(rows, columns, false);
-                g.MakeY(aspectRatioEnum, dunit, columns * 2 * unit);
+                g.MakeY((AspectRatio)aspectRatioIndex, dunit, columns * 2 * unit);
             }
 
-            return (g, new FakeGalaxy(g.planetCollection));
+            FakeGalaxy p;
+            if (outerPath == 0)
+            {
+                p = new FakeGalaxy();
+            }
+            else if (outerPath == 1)
+            {
+                p = g.MarkOutline();
+            }
+            else
+            {
+                p = g.MakeBeltWay();
+            }
+
+            par.Commit(g, p);
         }
 
         private static FakeGalaxy MakeGrid(int rows, int columns, bool flip)

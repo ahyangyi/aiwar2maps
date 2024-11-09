@@ -1,8 +1,6 @@
 using Arcen.AIW2.Core;
 using Arcen.Universal;
 using System;
-using System.Linq;
-using System.Net;
 
 namespace AhyangyiMaps.Tessellation
 {
@@ -25,32 +23,34 @@ namespace AhyangyiMaps.Tessellation
             square.AddLink(p2, p3);
             square.AddLink(p3, p0);
         }
-        public static void MakeSquareGalaxyNew(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par)
-        {
-            // `r` & `c`: The base grid size
-            int r = par.AddParameter(1, 45, 9);
-            int c = par.AddParameter(1, 45, 9);
 
-            if (galaxyShape != 2 && (r > 35 || c > 35)) return;
-            if (galaxyShape != 0 && (r < 3 || c < 3)) return;
+        public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
+        {
+            // `rows` & `columns`: The base grid size
+            int rows = par.AddParameter("rows", 1, 45, 7);
+            int columns = par.AddParameter("columns", 1, 45, 10);
+
+            if (galaxyShape != 2 && (rows > 35 || columns > 35)) return;
+            if (galaxyShape != 0 && (rows < 3 || columns < 3)) return;
+
+            if (symmetry >= 300 && symmetry < 10000)
+            {
+                FInt idealR = columns / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false);
+                par.AddInfo("Ideal R", idealR.ToString());
+                if (par.AddBadness("Rotational Shape", (rows - idealR).Abs())) return;
+            }
             if (symmetry == 10100)
             {
                 // FIXME, should support all combinations
                 galaxyShape = 0;
-                if (r < 3 || c < 3) return;
-            }
-            if (symmetry >= 300 && symmetry < 10000)
-            {
-                FInt idealR = c / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false);
-                par.AddInfo("Ideal R", idealR.ToString());
-                if (par.AddBadness("Rotational Shape", (r - idealR).Abs())) return;
+                if (rows < 3 || columns < 3) return;
             }
             if (symmetry == 10200)
             {
-                if (r < c) return;
-                if (c < 2) return;
+                if (rows < columns) return;
+                if (columns < 2) return;
 
-                FInt aspectRatio = (FInt)c / (FInt)r;
+                FInt aspectRatio = (FInt)columns / (FInt)rows;
                 FInt idealAspectRatio = ((AspectRatio)aspectRatioIndex).Value() * FInt.Create(500, false);
                 if (par.AddBadness("Y-Trunk Aspect Ratio", aspectRatio.RatioDeviance(idealAspectRatio) * 10)) return;
             }
@@ -69,31 +69,31 @@ namespace AhyangyiMaps.Tessellation
             {
                 parts = 1;
             }
-            if (c % parts > 1 && c % parts < parts - 1) return;
+            if (columns % parts > 1 && columns % parts < parts - 1) return;
 
             // `sp`: extra shape parameter for shape 1 & 2
-            // For shape 1, it is the corner size for the octagon
+            // For shape 1, it is the "bevel" size for the octagon
             // For shape 2, it is the cross width
             int sp = 0;
             if (galaxyShape == 1)
             {
-                sp = par.AddParameter((Math.Min(r, c) + 12) / 15, (Math.Min(r, c) * 2 + 2) / 3, (Math.Min(r, c / parts) + 3) / 4);
+                sp = par.AddParameter("bevel", (Math.Min(rows, columns) + 12) / 15, (Math.Min(rows, columns) * 2 + 2) / 3, (Math.Min(rows, columns / parts) + 3) / 4);
             }
             else if (galaxyShape == 2)
             {
-                sp = par.AddParameter((Math.Min(r, c) + 12) / 15, (Math.Min(r, c) - 1) / 2, (Math.Min(r, c / parts) + 2) / 3 | (r % 2));
+                sp = par.AddParameter("cross_width", (Math.Min(rows, columns) + 12) / 15, (Math.Min(rows, columns) - 1) / 2, (Math.Min(rows, columns / parts) + 2) / 3 | (rows % 2));
             }
-            if (galaxyShape == 1 && r <= sp * 2) return;
-            if (galaxyShape == 2 && ((r + sp) % 2 != 0 || r < sp + 2)) return;
+            if (galaxyShape == 1 && rows <= sp * 2) return;
+            if (galaxyShape == 2 && ((rows + sp) % 2 != 0 || rows < sp + 2)) return;
 
             // `overlap`
             int overlap;
             if (parts == 1)
                 overlap = 0;
             else
-                overlap = par.AddParameter(-1, 1, parts == 2? 1 : 0);
+                overlap = par.AddParameter("overlap", -1, 1, parts == 2 ? 1 : 0);
             int d = overlap * (parts - 1);
-            if ((c + d) % parts != 0) return;
+            if ((columns + d) % parts != 0) return;
 
             if (parts == 2)
             {
@@ -106,7 +106,7 @@ namespace AhyangyiMaps.Tessellation
                     if (par.AddBadness("Two-part Galaxies overlapping", (FInt)12, true)) return;
                 }
             }
-            else if (parts == 3 && c % 3 != 0)
+            else if (parts == 3 && columns % 3 != 0)
             {
                 if (overlap < 0)
                 {
@@ -119,25 +119,25 @@ namespace AhyangyiMaps.Tessellation
             }
 
             // `f`
-            int f = (c + d) / parts;
+            int f = (columns + d) / parts;
             if (galaxyShape == 1 && f <= sp * 2) return;
             if (galaxyShape == 2 && ((f + sp) % 2 != 0 || f < sp + 2)) return;
 
             if (galaxyShape == 1)
             {
-                FInt idealO = Math.Min(r, f) / FInt.Create(3414, false);
+                FInt idealO = Math.Min(rows, f) / FInt.Create(3414, false);
                 par.AddInfo("Ideal O", idealO.ToString());
                 if (par.AddBadness("Octagon Shape", (sp - idealO).Abs())) return;
             }
             else if (galaxyShape == 2)
             {
-                FInt idealX = Math.Min(r, f) / FInt.Create(3000, false);
+                FInt idealX = Math.Min(rows, f) / FInt.Create(3000, false);
                 par.AddInfo("Ideal X", idealX.ToString());
                 if (par.AddBadness("Cross Shape", (sp - idealX).Abs())) return;
             }
 
             // `offset`
-            int offset = parts == 1 ? c : (c - f) / (parts - 1);
+            int offset = parts == 1 ? columns : (columns - f) / (parts - 1);
             if (offset == 0) return;
 
             // `borderThickness`
@@ -145,7 +145,7 @@ namespace AhyangyiMaps.Tessellation
             int borderThickness = 0;
             if (symmetry == 10100)
             {
-                borderThickness = par.AddParameter(1, (Math.Min(r, c) - 1) / 2, 1);
+                borderThickness = par.AddParameter("border_thickness", 1, (Math.Min(rows, columns) - 1) / 2, 1);
             }
 
             // `branchWidth`
@@ -153,22 +153,22 @@ namespace AhyangyiMaps.Tessellation
             int branchWidth = 0;
             if (symmetry == 10200)
             {
-                branchWidth = par.AddParameter((c + 1) / 2, c - 1, (c * 4 + 3) / 5);
+                branchWidth = par.AddParameter("branch_width", (columns + 1) / 2, columns - 1, (columns * 4 + 3) / 5);
             }
 
             FakeGalaxy g = null;
 
             if (galaxyShape == 0)
             {
-                g = MakeGrid(r, c, borderThickness);
+                g = MakeGrid(rows, columns, borderThickness);
             }
             else if (galaxyShape == 1)
             {
-                g = MakeGridOctagonal(r, c, sp, f, offset);
+                g = MakeGridOctagonal(rows, columns, sp, f, offset);
             }
             else
             {
-                g = MakeGridCross(r, c, sp, f, offset);
+                g = MakeGridCross(rows, columns, sp, f, offset);
             }
 
             if (symmetry == 150)
@@ -185,7 +185,7 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry >= 300 && symmetry < 10000)
             {
-                g.MakeRotationalGeneric(unit * c / 2, unit * r, unit, symmetry / 100, symmetry % 100 == 50, c % 2 == 1);
+                g.MakeRotationalGeneric(unit * columns / 2, unit * rows, unit, symmetry / 100, symmetry % 100 == 50, columns % 2 == 1);
             }
             else if (symmetry == 10000)
             {
@@ -227,12 +227,6 @@ namespace AhyangyiMaps.Tessellation
             }
 
             par.Commit(g, p);
-        }
-
-        public (FakeGalaxy, FakeGalaxy) MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par)
-        {
-            MakeSquareGalaxyNew(outerPath, aspectRatioIndex, galaxyShape, symmetry, dissonance, numPlanets, par);
-            return (par.g, par.p);
         }
 
         protected static FakeGalaxy MakeGrid(int rows, int columns, int borderWidth = 0)
@@ -288,5 +282,5 @@ namespace AhyangyiMaps.Tessellation
 
             return g;
         }
-   }
+    }
 }

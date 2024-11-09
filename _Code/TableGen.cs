@@ -1,14 +1,10 @@
-using AhyangyiMaps.Tessellation;
 using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using UnityEngine.Assertions;
 
 namespace AhyangyiMaps
 {
@@ -49,7 +45,7 @@ namespace AhyangyiMaps
             public bool HasWarning;
             public System.Collections.Generic.Dictionary<string, string> Info;
             public System.Collections.Generic.Dictionary<string, FInt> BadnessBreakdown;
-            public System.Collections.Generic.List<int> Parameters;
+            public System.Collections.Generic.List<ParameterRange> Parameters;
         }
 
         readonly TableGenMode mode;
@@ -64,8 +60,9 @@ namespace AhyangyiMaps
         public int NumPlanets, Dissonance, AspectRatioIndex, OuterPath;
         public SymmetryConstants.AspectRatioMode aspectRatioMode;
 
-        class ParameterRange
+        public class ParameterRange
         {
+            public string Name;
             public int Low, High, Current;
         }
 
@@ -146,7 +143,7 @@ namespace AhyangyiMaps
             }
         }
 
-        public int AddParameter(int low, int high, int heuristicValue)
+        public int AddParameter(string name, int low, int high, int heuristicValue)
         {
             if (mode == TableGenMode.HEURISTIC)
             {
@@ -160,16 +157,17 @@ namespace AhyangyiMaps
 
             if (historyRevisited < history.Count)
             {
-                if (low != history[historyRevisited].Low || high != history[historyRevisited].High)
+                var old = history[historyRevisited];
+                if (low != old.Low || high != old.High)
                 {
                     ArcenDebugging.ArcenDebugLogSingleLine(
-                        $"Table replay history step #{historyRevisited} inconsistent: was {history[historyRevisited].Low} {history[historyRevisited].High}, got {low} {high}",
+                        $"Table replay history step #{historyRevisited} inconsistent: was {old.Low} {old.High}, got {low} {high}",
                         Verbosity.ShowAsError);
                 }
                 return history[historyRevisited++].Current;
             }
 
-            history.Add(new ParameterRange { Low = low, High = high, Current = low });
+            history.Add(new ParameterRange { Name = name, Low = low, High = high, Current = low });
             historyRevisited++;
             return low;
         }
@@ -253,6 +251,8 @@ namespace AhyangyiMaps
                 FInt dissonanceRatio = (percolationThreshold * dissonance + (4 - dissonance)) / 4;
                 FInt postDissonancePlanets = irremovablePlanets + (planets - irremovablePlanets) * dissonanceRatio;
                 FInt planetDifference = (postDissonancePlanets - targetPlanets).Abs();
+                AddInfo("Planets", planets.ToString());
+                AddInfo("Irremoveable Planets", irremovablePlanets.ToString());
                 AddInfo("Equivalent Planets", postDissonancePlanets.ToString());
                 AddBadness("Planets Difference", planetDifference / dissonanceRatio);
 
@@ -273,7 +273,7 @@ namespace AhyangyiMaps
                         Badness = CurrentBadness,
                         Info = info.ToDictionary(x => x.Key, x => x.Value),
                         BadnessBreakdown = badnessInfo.ToDictionary(x => x.Key, x => x.Value.Item1),
-                        Parameters = history.Select(x => x.Current).ToList(),
+                        Parameters = history.Select(x => new ParameterRange { Current = x.Current, Name = x.Name }).ToList(),
                         HasWarning = badnessInfo.Any(x => x.Value.Item2)
                     };
                 }
@@ -366,7 +366,7 @@ namespace AhyangyiMaps
                 {
                     if (j < table[i].Parameters.Count)
                     {
-                        int value = table[i].Parameters[j];
+                        int value = table[i].Parameters[j].Current;
                         if (value == -1)
                         {
                             s.Append('-');
@@ -411,20 +411,30 @@ namespace AhyangyiMaps
             {
                 for (int i = 0; i < table.Count; ++i)
                 {
-                    if (table[i].Badness >= 25 || table[i].HasWarning)
+                    if (table[i].Badness >= 20 || table[i].HasWarning)
                     {
                         sw.WriteLine("-------------------------------------------------------------------------------");
                         sw.WriteLine($"Warning for case {IndexToString(i)}");
                         sw.WriteLine($"Badness: {table[i].Badness}");
 
                         sw.WriteLine();
-                        sw.WriteLine("Parameters");
+                        string parameterString = "";
+                        bool first = true;
                         foreach (var par in table[i].Parameters)
                         {
-                            sw.WriteLine($"{par}");
+                            if (first)
+                            {
+                                first = false;
+                            }
+                            else
+                            {
+                                parameterString += ", ";
+                            }
+                            parameterString += $"{par.Name}: {par.Current}";
                         }
+                        sw.WriteLine($"Parameters: {parameterString}");
 
-                            sw.WriteLine();
+                        sw.WriteLine();
                         sw.WriteLine("Badness Breakdown");
                         foreach (var badnessReason in table[i].BadnessBreakdown)
                         {
@@ -439,7 +449,7 @@ namespace AhyangyiMaps
                         }
                     }
                 }
-           }
+            }
         }
 
         private string IndexToString(int i)
