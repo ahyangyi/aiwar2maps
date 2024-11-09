@@ -23,7 +23,7 @@ namespace AhyangyiMaps
         }
     }
 
-    interface GridGenerator
+    interface IGridGenerator
     {
         void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par);
     }
@@ -35,10 +35,10 @@ namespace AhyangyiMaps
         public const int OUTER_PATH_TYPES = 3;
         public const int ASPECT_RATIO_TYPES = (int)AspectRatio.COUNT;
         public const int GALAXY_SHAPE_TYPES = 3;
-        static System.Collections.Generic.Dictionary<int, GridGenerator> GridGenerators;
+        static readonly System.Collections.Generic.Dictionary<int, IGridGenerator> GridGenerators;
         static TessellationTypeGenerator()
         {
-            GridGenerators = new System.Collections.Generic.Dictionary<int, GridGenerator> {
+            GridGenerators = new System.Collections.Generic.Dictionary<int, IGridGenerator> {
                 { 0, new SquareGrid() },
                 { 1, new HexagonGrid() },
                 { 2, new TriangleGrid() },
@@ -159,13 +159,7 @@ namespace AhyangyiMaps
 
         private static void GenerateGrid(int tableGen, int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry, int outerPath, out FakeGalaxy g, out FakeGalaxy p)
         {
-            ParameterService par = new ParameterService((TableGenMode)tableGen, tessellation, symmetry, galaxyShape, numPlanets, dissonance, aspectRatioIndex, outerPath);
-
-            if (tableGen == 2)
-            {
-                RunTableGen2(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, par, outerPath);
-            }
-            else if (tableGen == 3)
+            if (tableGen == 3)
             {
                 RunTableGen(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry);
             }
@@ -174,9 +168,12 @@ namespace AhyangyiMaps
                 RunTableGenGrande(numPlanets, tessellation, aspectRatioIndex, dissonance, symmetry);
             }
 
-            if (tableGen >= 3)
+            ParameterService par = new ParameterService((TableGenMode)(tableGen >= 3 ? 0 : tableGen),
+                tessellation, symmetry, galaxyShape, numPlanets, dissonance, aspectRatioIndex, outerPath);
+
+            if (tableGen == 2)
             {
-                par = new ParameterService((TableGenMode)1, tessellation, symmetry, galaxyShape, numPlanets, dissonance, aspectRatioIndex, outerPath);
+                RunTableGen2(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, par, outerPath);
             }
 
             GridGenerators[tessellation].MakeGrid(outerPath, aspectRatioIndex, galaxyShape, symmetry, par);
@@ -197,7 +194,12 @@ namespace AhyangyiMaps
 
         private static void RunTableGen(int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry)
         {
-            ParameterService par = new ParameterService((TableGenMode)3, tessellation, symmetry, galaxyShape, numPlanets, dissonance, aspectRatioIndex, 0);
+            ParameterService par = new ParameterService((TableGenMode)3,
+                tessellation, symmetry, galaxyShape, numPlanets, dissonance, aspectRatioIndex, 0);
+            if (par.alreadyDone())
+            {
+                return;
+            }
             for (int curOuterPath = 0; curOuterPath < OUTER_PATH_TYPES; ++curOuterPath)
             {
                 par.OuterPath = curOuterPath;
@@ -222,7 +224,7 @@ namespace AhyangyiMaps
         {
             do
             {
-                GridGenerators[tessellation].MakeGrid(curOuterPath, aspectRatioIndex, galaxyShape, numPlanets, par);
+                GridGenerators[tessellation].MakeGrid(curOuterPath, aspectRatioIndex, galaxyShape, symmetry, par);
             } while (par.Next());
         }
     }

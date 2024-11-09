@@ -3,7 +3,7 @@ using Arcen.Universal;
 
 namespace AhyangyiMaps.Tessellation
 {
-    public class SquareYGrid : GridGenerator
+    public class SquareYGrid : IGridGenerator
     {
         static readonly int unit;
         public static readonly FakePattern squareY, squareYFlipped;

@@ -3,7 +3,7 @@ using Arcen.Universal;
 
 namespace AhyangyiMaps.Tessellation
 {
-    public class DiamondYFlowerGrid : GridGenerator
+    public class DiamondYFlowerGrid : IGridGenerator
     {
         static readonly int unit, dunit;
         public static readonly FakePattern diamondY, diamondYFlipped, diamondYLeft, diamondYRight;

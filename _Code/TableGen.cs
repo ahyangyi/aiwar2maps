@@ -87,8 +87,17 @@ namespace AhyangyiMaps
 
             if (mode == TableGenMode.USE)
             {
-                var tableName = $"custom_AhyangyiTessellation_{tessellation}_{symmetry}_{galaxyShape}";
-                string table = ExternalConstants.Instance.GetCustomString_Slow(tableName);
+                var entryName = $"custom_AhyangyiTessellation_{tessellation}_{symmetry}_{galaxyShape}";
+                string table;
+
+                if (existingTable != null)
+                {
+                    table = existingTable[entryName];
+                }
+                else
+                {
+                    table = ExternalConstants.Instance.GetCustomString_Slow(entryName);
+                }
 
                 int index = CalculateIndex(symmetry, PlanetIndex[numPlanets], aspectRatioIndex, dissonance, outerPath);
 
@@ -322,7 +331,7 @@ namespace AhyangyiMaps
         }
 
         static System.Collections.Generic.Dictionary<string, string> existingTable = null;
-        static HashSet<string> generatedThisSession = null;
+        public static HashSet<string> generatedThisSession = null;
 
         internal void LoadTable()
         {
@@ -353,11 +362,6 @@ namespace AhyangyiMaps
             }
 
             string key = $"custom_AhyangyiTessellation_{Tessellation}_{Symmetry}_{GalaxyShape}";
-
-            if (generatedThisSession.Contains(key))
-            {
-                return;
-            }
 
             StringBuilder s = new StringBuilder();
             for (int i = 0; i < table.Count; ++i)
@@ -474,6 +478,13 @@ namespace AhyangyiMaps
                 return $"{{Planets: {PlanetNumbers[planets]}, Dissonance: {dissonance}, aspectRatio: {aspectRatioIndex}, outerPath: {outerPath}}}";
             }
             return $"{{Planets: {PlanetNumbers[planets]}, Dissonance: {dissonance}, outerPath: {outerPath}}}";
+        }
+
+        internal bool alreadyDone()
+        {
+            string key = $"custom_AhyangyiTessellation_{Tessellation}_{Symmetry}_{GalaxyShape}";
+
+            return generatedThisSession != null && generatedThisSession.Contains(key);
         }
     }
 }

@@ -4,7 +4,7 @@ using System;
 
 namespace AhyangyiMaps.Tessellation
 {
-    public class SquareGrid : GridGenerator
+    public class SquareGrid : IGridGenerator
     {
         protected static readonly int unit;
         static readonly FakePattern square;

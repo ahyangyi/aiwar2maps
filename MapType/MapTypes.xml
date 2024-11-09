@@ -130,6 +130,12 @@
       <choice_value id="5" display_name="Generate (Venti)" description="Generate LUT (across symmetry and galaxyShape)." related_int_value="5" />
       <choice_value id="6" display_name="Generate (Trenta)" description="Generate LUT (across gridtype, symmetry and galaxyShape)." related_int_value="6" />
     </map_option>
+    <map_option name="TableGenDebug" display_name="Table Gen Debug Level"
+      description="Please report a bug if you see this option." default_id="0">
+      <choice_value id="0" display_name="Low" description="Only warnings." related_int_value="0" />
+      <choice_value id="1" display_name="Medium" description="Warnings and hints." related_int_value="1" />
+      <choice_value id="2" display_name="High" description="All information." related_int_value="2" />
+    </map_option>
   </map_type>
   <map_type
 		name="Galaxy"
