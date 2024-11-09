@@ -43,6 +43,7 @@
     <Compile Include="GalaxyTypeGenerator.cs" />
     <Compile Include="TableGen.cs" />
     <ExtraContent Include="..\MapType\MapTypes.xml" />
+    <ExtraContent Include="..\ExternalConstants\TessellationLookup.xml" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="system" />

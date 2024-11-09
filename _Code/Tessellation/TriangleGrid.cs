@@ -24,8 +24,9 @@ namespace AhyangyiMaps.Tessellation
 
             leftTriangle = rightTriangle.FlipX();
         }
-        public (FakeGalaxy, FakeGalaxy) MakeGrid(int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par)
+        public (FakeGalaxy, FakeGalaxy) MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par)
         {
+            var aspectRatioEnum = (AspectRatio)aspectRatioIndex;
             numPlanets = numPlanets * 12 / (12 - dissonance);
             FInt aspectRatio = 1 / aspectRatioEnum.Value();
             int rows = 9;

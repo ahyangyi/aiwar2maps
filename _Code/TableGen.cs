@@ -2,8 +2,10 @@ using AhyangyiMaps.Tessellation;
 using Arcen.AIW2.External;
 using Arcen.Universal;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEngine.Assertions;
 
 namespace AhyangyiMaps
@@ -16,41 +18,80 @@ namespace AhyangyiMaps
         GEN_TABLE = 3,
     }
 
+    public enum AspectRatioMode
+    {
+        NORMAL = 0,
+        IGNORE = 1,
+        SPECIAL = 2,
+    }
+
     public class ParameterService
     {
         public const int MAX_PARAMETERS = 6;
-        static System.Collections.Generic.List<int> planetNumbers;
+        static System.Collections.Generic.List<int> PlanetNumbers;
+        static int TABLE_SIZE;
         static ParameterService()
         {
-            planetNumbers = new System.Collections.Generic.List<int> { 40, 42, 44, 46, 48 };
-            for (int i = 50; i <= TessellationTypeGenerator.MAX_PLANETS; i += 5) planetNumbers.Add(i);
+            PlanetNumbers = new System.Collections.Generic.List<int> { 40, 42, 44, 46, 48 };
+            for (int i = 50; i <= TessellationTypeGenerator.MAX_PLANETS; i += 5) PlanetNumbers.Add(i);
+
+            TABLE_SIZE = PlanetNumbers.Count
+                    * TessellationTypeGenerator.DISSONANCE_TYPES
+                    * TessellationTypeGenerator.ASPECT_RATIO_TYPES
+                    * TessellationTypeGenerator.OUTER_PATH_TYPES;
+        }
+        public struct TableValue
+        {
+            public FInt Badness;
+            public System.Collections.Generic.Dictionary<string, string> Info;
+            public System.Collections.Generic.Dictionary<string, FInt> BadnessBreakdown;
+            public System.Collections.Generic.List<int> Parameters;
         }
 
-        TableGenMode mode;
+        readonly TableGenMode mode;
         System.Collections.Generic.List<ParameterRange> history;
         int historyRevisited;
         System.Collections.Generic.Dictionary<string, string> info;
-        FInt badness;
+        System.Collections.Generic.Dictionary<string, FInt> badnessInfo;
+        System.Collections.Generic.List<TableValue> table;
+        FInt CurrentBadness;
         public FakeGalaxy g, p;
-        int numPlanets, dissonance, aspectRatioIndex, outerPath;
+        public readonly int Tessellation, Symmetry, GalaxyShape;
+        public int NumPlanets, Dissonance, AspectRatioIndex, OuterPath;
+        public AspectRatioMode aspectRatioMode;
 
         class ParameterRange
         {
             public int Low, High, Current;
         }
 
-        public ParameterService(TableGenMode mode, int numPlanets, int dissonance, int aspectRatioIndex, int outerPath)
+        public ParameterService(TableGenMode mode,
+            int tessellation, int symmetry, int galaxyShape, int numPlanets, int dissonance, int aspectRatioIndex, int outerPath, AspectRatioMode aspectRatioMode)
         {
             this.mode = mode;
-            this.numPlanets = numPlanets;
-            this.dissonance = dissonance;
-            this.aspectRatioIndex = aspectRatioIndex;
-            this.outerPath = outerPath;
+            Tessellation = tessellation;
+            Symmetry = symmetry;
+            GalaxyShape = galaxyShape;
+            NumPlanets = numPlanets;
+            Dissonance = dissonance;
+            AspectRatioIndex = aspectRatioIndex;
+            OuterPath = outerPath;
+            this.aspectRatioMode = aspectRatioMode;
 
-            badness = FInt.Zero;
+            CurrentBadness = FInt.Zero;
             history = new System.Collections.Generic.List<ParameterRange>();
             historyRevisited = 0;
             info = new System.Collections.Generic.Dictionary<string, string>();
+            badnessInfo = new System.Collections.Generic.Dictionary<string, FInt>();
+
+            if (mode == TableGenMode.GEN_TABLE || mode == TableGenMode.OPTIMIZE)
+            {
+                table = new System.Collections.Generic.List<TableValue>();
+                for (int i = 0; i < (mode == TableGenMode.GEN_TABLE? TABLE_SIZE: 1); ++i)
+                {
+                    table.Add(new TableValue { Badness = (FInt)999, Info = null, BadnessBreakdown = null, Parameters = null });
+                }
+            }
         }
 
         public void SetTable(System.Collections.Generic.List<int> values)
@@ -78,13 +119,14 @@ namespace AhyangyiMaps
                 if (low != history[historyRevisited].Low || high != history[historyRevisited].High)
                 {
                     ArcenDebugging.ArcenDebugLogSingleLine(
-                        $"Table replay history inconsistent: was {history[historyRevisited].Low} {history[historyRevisited].High}, got {low} {high}",
+                        $"Table replay history step #{historyRevisited} inconsistent: was {history[historyRevisited].Low} {history[historyRevisited].High}, got {low} {high}",
                         Verbosity.ShowAsError);
                 }
                 return history[historyRevisited++].Current;
             }
 
             history.Add(new ParameterRange { Low = low, High = high, Current = low });
+            historyRevisited++;
             return low;
         }
 
@@ -95,8 +137,13 @@ namespace AhyangyiMaps
 
         internal bool AddBadness(string key, FInt badness)
         {
-            this.badness += badness;
-            return false;
+            if (badnessInfo.ContainsKey(key))
+            {
+                CurrentBadness -= badnessInfo[key];
+            }
+            badnessInfo[key] = badness;
+            CurrentBadness += badness;
+            return CurrentBadness >= 25;
         }
 
         internal void Commit(FakeGalaxy g, FakeGalaxy p)
@@ -106,35 +153,97 @@ namespace AhyangyiMaps
 
             if (mode == TableGenMode.GEN_TABLE || mode == TableGenMode.OPTIMIZE)
             {
-                int planets = g.planets.Count;
-                int irremovablePlanets = p.planets.Count;
-                FInt aspectRatio = g.AspectRatio();
-
-                FInt percolationThreshold = FInt.Create(593, false);
- 
-                if (mode == TableGenMode.GEN_TABLE)
+                if (aspectRatioMode == AspectRatioMode.NORMAL)
                 {
-                    for (int targetPlanetIndex = 0; targetPlanetIndex < planetNumbers.Count; ++targetPlanetIndex)
+                    FInt aspectRatio = g.AspectRatio();
+                    AddInfo("AspectRatio", aspectRatio.ToString());
+
+                    if (mode == TableGenMode.GEN_TABLE)
                     {
-                        int targetPlanets = planetNumbers[targetPlanetIndex];
-                        for (int dissonance = 0; dissonance < TessellationTypeGenerator.DISSONANCE_TYPES; ++dissonance)
+                        for (int aspectRatioIndex = 0; aspectRatioIndex < TessellationTypeGenerator.ASPECT_RATIO_TYPES; ++aspectRatioIndex)
                         {
-                            FInt dissonanceRatio = (percolationThreshold * dissonance + (4 - dissonance)) / 4;
-                            FInt postDissonancePlanets = irremovablePlanets + (planets * irremovablePlanets) * dissonanceRatio;
-                            FInt planetDifference = (postDissonancePlanets - targetPlanets).Abs();
-                            AddInfo("Equivalent Planets", postDissonancePlanets.ToString());
-                            AddBadness("Planets Difference", planetDifference / dissonanceRatio);
+                            AddBadness("Aspect Ratio Difference", ((AspectRatio)aspectRatioIndex).Value().RatioDeviance(aspectRatio) * 10);
+                            EvaluateStep1(g, p, aspectRatioIndex);
                         }
                     }
+                    else
+                    {
+                        AddBadness("Aspect Ratio Difference", ((AspectRatio)AspectRatioIndex).Value().RatioDeviance(aspectRatio) * 10);
+                        EvaluateStep1(g, p, AspectRatioIndex);
+                    }
+                }
+                else
+                {
+                    EvaluateStep1(g, p, AspectRatioIndex);
                 }
             }
         }
-        public bool Step()
+
+        private void EvaluateStep1(FakeGalaxy g, FakeGalaxy p, int aspectRatioIndex)
+        {
+            int planets = g.planets.Count;
+            int irremovablePlanets = p.planets.Count;
+
+            FInt percolationThreshold = FInt.Create(593, false);
+
+            if (mode == TableGenMode.GEN_TABLE)
+            {
+                for (int targetPlanetIndex = 0; targetPlanetIndex < PlanetNumbers.Count; ++targetPlanetIndex)
+                {
+                    int targetPlanets = PlanetNumbers[targetPlanetIndex];
+                    EvaluateStep2(planets, irremovablePlanets, percolationThreshold, targetPlanetIndex, targetPlanets, aspectRatioIndex);
+                }
+            }
+            else
+            {
+                EvaluateStep2(planets, irremovablePlanets, percolationThreshold, 0, NumPlanets, aspectRatioIndex);
+            }
+        }
+
+        private void EvaluateStep2(int planets, int irremovablePlanets, FInt percolationThreshold, int targetPlanetIndex, int targetPlanets, int aspectRatioIndex)
+        {
+            for (int dissonanceType = 0; dissonanceType < (mode == TableGenMode.GEN_TABLE ? TessellationTypeGenerator.DISSONANCE_TYPES : 1); ++dissonanceType)
+            {
+                int dissonance = (mode == TableGenMode.GEN_TABLE ? dissonanceType : this.Dissonance);
+
+                FInt dissonanceRatio = (percolationThreshold * dissonance + (4 - dissonance)) / 4;
+                FInt postDissonancePlanets = irremovablePlanets + (planets - irremovablePlanets) * dissonanceRatio;
+                FInt planetDifference = (postDissonancePlanets - targetPlanets).Abs();
+                AddInfo("Equivalent Planets", postDissonancePlanets.ToString());
+                AddBadness("Planets Difference", planetDifference / dissonanceRatio);
+
+                int index;
+                if (mode == TableGenMode.GEN_TABLE)
+                {
+                    index = ((targetPlanetIndex * TessellationTypeGenerator.DISSONANCE_TYPES + dissonanceType)
+                        * TessellationTypeGenerator.ASPECT_RATIO_TYPES + aspectRatioIndex)
+                        * TessellationTypeGenerator.OUTER_PATH_TYPES + OuterPath;
+                }
+                else
+                {
+                    index = 0;
+                }
+
+                if (CurrentBadness < table[index].Badness)
+                {
+                    table[index] = new TableValue
+                    {
+                        Badness = CurrentBadness,
+                        Info = info.ToDictionary(x => x.Key, x => x.Value),
+                        BadnessBreakdown = badnessInfo.ToDictionary(x=>x.Key, x=>x.Value),
+                        Parameters = history.Select(x => x.Current).ToList(),
+                    };
+                }
+            }
+        }
+
+        public bool Next()
         {
             // General clean-up
-            badness = FInt.Zero;
+            CurrentBadness = FInt.Zero;
             historyRevisited = 0;
             info.Clear();
+            badnessInfo.Clear();
 
             // Rewind history...
             while (history.Count > 0)
@@ -150,139 +259,126 @@ namespace AhyangyiMaps
 
             return history.Count > 0;
         }
-    }
 
-    class TableGen
-    {
+        static System.Collections.Generic.Dictionary<string, string> existingTable = null;
+        static HashSet<string> generatedThisSession = null;
 
-        public struct TableKey
+        internal void LoadTable()
         {
-            public int AspectRatioIndex;
-            public int GalaxyShape;
-            public int Symmetry;
-            public int Dissonance;
-            public int OuterPath;
-            public int TargetPlanets;
-        }
-
-        public struct TableValue
-        {
-            public FInt Badness;
-            public string Value;
-            public System.Collections.Generic.Dictionary<string, string> Info;
-        }
-
-        public struct SectionKey
-        {
-            public int Symmetry;
-            public int GalaxyShape;
-        }
-        public struct SectionalMetadata
-        {
-            public System.Collections.Generic.List<(string, string)> Schema;
-            public System.Collections.Generic.List<string> Epilogue;
-        }
-
-        public static void WriteTable(
-            string gridType,
-            System.Collections.Generic.Dictionary<TableKey, TableValue> optimalCommands,
-            System.Collections.Generic.Dictionary<SectionKey, SectionalMetadata> sections
-            )
-        {
-            using (StreamWriter sw = File.CreateText($"XMLMods\\AhyangyiMaps\\_Code\\Tessellation\\Generated\\{gridType}GridTable.cs"))
+            existingTable = new System.Collections.Generic.Dictionary<string, string>();
+            generatedThisSession = new HashSet<string>();
+            using (var sw = File.OpenText($"XMLMods\\AhyangyiMaps\\ExternalConstants\\TessellationLookup.xml"))
             {
-                sw.WriteLine("namespace AhyangyiMaps.Tessellation");
-                sw.WriteLine("{");
-                sw.WriteLine($"    public class {gridType}GridTable : {gridType}Grid");
-                sw.WriteLine("    {");
-                sw.WriteLine($"        public static (FakeGalaxy, FakeGalaxy) Make{gridType}TableGalaxy(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, int dissonance, int numPlanets)");
-                sw.WriteLine("        {");
-                sw.WriteLine("            FakeGalaxy g = null, p = null;");
-
-                foreach (int symmetry in sections.Keys.Select(x => x.Symmetry).Distinct().OrderBy(x => x).ToList())
+                string line;
+                while ((line = sw.ReadLine()) != null)
                 {
-                    var symmetrySections = sections.Where(x => x.Key.Symmetry == symmetry).ToDictionary(x => x.Key, x => x.Value);
-                    var symmetryCommands = optimalCommands.Where(x => x.Key.Symmetry == symmetry).ToDictionary(x => x.Key, x => x.Value);
-                    sw.WriteLine($"            if (symmetry == {symmetry})");
-                    sw.WriteLine("            {");
-                    foreach (int galaxyShape in symmetrySections.Keys.Select(x => x.GalaxyShape).Distinct().OrderBy(x => x).ToList())
+                    if (line.StartsWith("    custom"))
                     {
-                        var section = sections[new SectionKey { Symmetry = symmetry, GalaxyShape = galaxyShape }];
-                        var galaxyShapeCommands = symmetryCommands.Where(x => x.Key.GalaxyShape == galaxyShape)
-                            .OrderBy(x => (x.Key.TargetPlanets, x.Key.Dissonance, x.Key.OuterPath, x.Key.AspectRatioIndex))
-                            .ToDictionary(x => x.Key, x => x.Value);
+                        var s = line.Split('=');
+                        var key = s[0].Substring(4);
+                        var value = s[1].Substring(1, s[1].Length - 2);
 
-                        sw.WriteLine($"                if (galaxyShape == {galaxyShape})");
-                        sw.WriteLine("                {");
-                        var namesTuple = "(" + string.Join(", ", section.Schema.Select(x => x.Item2)) + ")";
-                        sw.WriteLine($"                    var {namesTuple} = {gridType}GridTable{symmetry}.lookupTable{galaxyShape}[(numPlanets, dissonance, outerPath, aspectRatioIndex)];");
-                        foreach (var line in section.Epilogue)
-                        {
-                            sw.WriteLine($"                    {line}");
-                        }
-                        sw.WriteLine("                }");
+                        existingTable[key] = value;
                     }
-                    sw.WriteLine("            }");
-                }
-
-                sw.WriteLine("            return (g, p);");
-                sw.WriteLine("        }");
-                sw.WriteLine("    }");
-                sw.WriteLine("}");
-                sw.WriteLine("");
-
-                sw.WriteLine($"// Summary: max overall badness {optimalCommands.Values.Select(x => x.Badness).Max()}");
-            }
-
-            foreach (int symmetry in sections.Keys.Select(x => x.Symmetry).Distinct().OrderBy(x => x).ToList())
-            {
-                var symmetrySections = sections.Where(x => x.Key.Symmetry == symmetry).ToDictionary(x => x.Key, x => x.Value);
-                var symmetryCommands = optimalCommands.Where(x => x.Key.Symmetry == symmetry).ToDictionary(x => x.Key, x => x.Value);
-
-                using (StreamWriter sw = File.CreateText($"XMLMods\\AhyangyiMaps\\_Code\\Tessellation\\Generated\\{gridType}GridTable{symmetry}.cs"))
-                {
-                    sw.WriteLine("namespace AhyangyiMaps.Tessellation");
-                    sw.WriteLine("{");
-                    sw.WriteLine($"    public class {gridType}GridTable{symmetry}");
-                    sw.WriteLine("    {");
-                    foreach (int galaxyShape in symmetrySections.Keys.Select(x => x.GalaxyShape).Distinct().OrderBy(x => x).ToList())
-                    {
-                        var section = sections[new SectionKey { Symmetry = symmetry, GalaxyShape = galaxyShape }];
-                        var galaxyShapeCommands = symmetryCommands.Where(x => x.Key.GalaxyShape == galaxyShape)
-                            .OrderBy(x => (x.Key.TargetPlanets, x.Key.Dissonance, x.Key.OuterPath, x.Key.AspectRatioIndex))
-                            .ToDictionary(x => x.Key, x => x.Value);
-
-                        var valueTuple = "(" + string.Join(", ", section.Schema.Select(x => x.Item1)) + ")";
-                        var typeStr = $"System.Collections.Generic.Dictionary <(int, int, int, int), {valueTuple}>";
-                        sw.WriteLine($"        public static {typeStr} lookupTable{galaxyShape} = new {typeStr} {{");
-
-                        foreach (var kvp in galaxyShapeCommands.OrderBy(x => (x.Key.TargetPlanets, x.Key.Dissonance, x.Key.OuterPath, x.Key.AspectRatioIndex)))
-                        {
-                            sw.WriteLine($"            // Total badness: {kvp.Value.Badness}");
-                            foreach (var infoKey in kvp.Value.Info.Keys)
-                            {
-                                sw.WriteLine($"            // {infoKey}: {kvp.Value.Info[infoKey]}");
-                            }
-                            sw.WriteLine($"            {{({kvp.Key.TargetPlanets}, {kvp.Key.Dissonance}, {kvp.Key.OuterPath}, {kvp.Key.AspectRatioIndex}), ({kvp.Value.Value})}},");
-                        }
-
-                        sw.WriteLine($"        }};");
-                    }
-                    sw.WriteLine("    }");
-                    sw.WriteLine("}");
-                    sw.WriteLine("");
-                    sw.WriteLine($"// Summary: max overall badness in this file: {symmetryCommands.Values.Select(x => x.Badness).Max()}");
                 }
             }
         }
 
-        public static void Main(string[] args)
+        internal void GenerateTable()
         {
-            var planetNumbers = new System.Collections.Generic.List<int> { 40, 42, 44, 46, 48 };
-            for (int i = 50; i <= 300; i += 5) planetNumbers.Add(i);
+            if (existingTable == null)
+            {
+                LoadTable();
+            }
 
-            SquareGrid.GenerateTable(planetNumbers, "Square");
-            SquareYGrid.GenerateTable(planetNumbers, "SquareY");
+            string key = $"custom_AhyangyiTessellation_{Tessellation}_{Symmetry}_{GalaxyShape}";
+
+            if (generatedThisSession.Contains(key))
+            {
+                return;
+            }
+
+            StringBuilder s = new StringBuilder();
+            for (int i = 0; i < TABLE_SIZE; ++i)
+            {
+                for (int j = 0; j < MAX_PARAMETERS; ++j)
+                {
+                    if (j < table[i].Parameters.Count)
+                    {
+                        int value = table[i].Parameters[j];
+                        if (value == -1)
+                        {
+                            s.Append('?');
+                        }
+                        else if (value < 10)
+                        {
+                            s.Append((char)(value + '0'));
+                        }
+                        else if (value < 36)
+                        {
+                            s.Append((char)(value - 10 + 'A'));
+                        }
+                        else
+                        {
+                            s.Append((char)(value - 36 + 'a'));
+                        }
+                    }
+                    else
+                    {
+                        s.Append('_');
+                    }
+                }
+            }
+
+            existingTable[key] = s.ToString();
+            generatedThisSession.Add(key);
+
+            using (StreamWriter sw = File.CreateText("XMLMods\\AhyangyiMaps\\ExternalConstants\\TessellationLookup.xml"))
+            {
+                sw.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+                sw.WriteLine("<root");
+                sw.WriteLine("    is_partial_record=\"true\"");
+                foreach (var kvp in existingTable.OrderBy(x => x.Key))
+                {
+                    sw.WriteLine($"    {kvp.Key}=\"{kvp.Value}\"");
+                }
+                sw.WriteLine(">");
+                sw.WriteLine("</root>");
+            }
+
+            using (StreamWriter sw = File.CreateText($"XMLMods\\AhyangyiMaps\\Debug\\Debug_{Tessellation}_{Symmetry}_{GalaxyShape}.txt"))
+            {
+                for (int i = 0; i < TABLE_SIZE; ++i)
+                {
+                    if (table[i].Badness >= 25)
+                    {
+                        sw.WriteLine("-------------------------------------------------------------------------------");
+                        sw.WriteLine($"Warning for case {i}");
+                        sw.WriteLine($"Badness: {table[i].Badness}");
+
+                        sw.WriteLine();
+                        sw.WriteLine("Parameters");
+                        foreach (var par in table[i].Parameters)
+                        {
+                            sw.WriteLine($"{par}");
+                        }
+
+                            sw.WriteLine();
+                        sw.WriteLine("Badness Breakdown");
+                        foreach (var badnessReason in table[i].BadnessBreakdown)
+                        {
+                            sw.WriteLine($"{badnessReason.Key} : {badnessReason.Value}");
+                        }
+
+                        sw.WriteLine();
+                        sw.WriteLine("Extra Information");
+                        foreach (var info in table[i].Info)
+                        {
+                            sw.WriteLine($"{info.Key} : {info.Value}");
+                        }
+                    }
+                }
+           }
         }
     }
 }

@@ -26,7 +26,7 @@ namespace AhyangyiMaps
     interface GridGenerator
     {
         (FakeGalaxy, FakeGalaxy) MakeGrid(
-            int outerPath, AspectRatio aspectRatioEnum, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par);
+            int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, int dissonance, int numPlanets, ParameterService par);
     }
 
     public class TessellationTypeGenerator : IMapGenerator
@@ -61,14 +61,9 @@ namespace AhyangyiMaps
         protected void InnerGenerate(Galaxy galaxy, ArcenHostOnlySimContext Context, MapConfiguration mapConfig, PlanetType planetType, MapTypeData mapType)
         {
             int tableGen = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "TableGen").RelatedIntValue;
-            if (tableGen == 2)
-            {
-                TableGen.Main(new string[] { });
-                return;
-            }
             int numPlanets = mapConfig.GetClampedNumberOfPlanetsForMapType(mapType);
             int tessellation = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Tessellation").RelatedIntValue;
-            AspectRatio aspectRatioEnum = (AspectRatio)BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "AspectRatio").RelatedIntValue;
+            int aspectRatioIndex = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "AspectRatio").RelatedIntValue;
             int galaxyShape = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "GalaxyShape").RelatedIntValue;
             int dissonance = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Dissonance").RelatedIntValue;
             int symmetry = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Symmetry").RelatedIntValue;
@@ -78,7 +73,6 @@ namespace AhyangyiMaps
             int connectivity = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Connectivity").RelatedIntValue;
             int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
 
-            int numPlanetsToMake = numPlanets * 12 / (12 - dissonance);
             var randomNumberGenerator = Context.RandomToUse;
 
             // STEP 1 - TESSELLATION
@@ -86,7 +80,7 @@ namespace AhyangyiMaps
             // Some outerPath values or grid types might demand certain planets and links be preserved,
             //   this information is represented as the FakeGalaxy p
             FakeGalaxy g, p;
-            GenerateGrid(tableGen, numPlanets, tessellation, aspectRatioEnum, galaxyShape, dissonance, symmetry, outerPath, numPlanetsToMake, out g, out p);
+            GenerateGrid(tableGen, numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, outerPath, out g, out p);
 
             // STEP 2 - MARK OUTER PATH FOR PERSERVATION
             // Mark outer path.
@@ -163,17 +157,44 @@ namespace AhyangyiMaps
             g.Populate(galaxy, planetType, randomNumberGenerator);
         }
 
-        private static void GenerateGrid(int tableGen, int numPlanets, int tessellation, AspectRatio aspectRatioEnum, int galaxyShape, int dissonance, int symmetry, int outerPath, int numPlanetsToMake, out FakeGalaxy g, out FakeGalaxy p)
+        private static void GenerateGrid(int tableGen, int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry, int outerPath, out FakeGalaxy g, out FakeGalaxy p)
         {
             if (tableGen == 0)
             {
-                var tableName = $"custom_AhyangyiTessellation{tessellation}_{symmetry}_{galaxyShape}";
-                tableName = "custom_YYTest";
+                var tableName = $"custom_AhyangyiTessellation_{tessellation}_{symmetry}_{galaxyShape}";
                 string table = ExternalConstants.Instance.GetCustomString_Slow(tableName);
+
+                // FIXME
+                tableGen = 1;
             }
 
-            var par = new ParameterService(TableGenMode.HEURISTIC, numPlanets, dissonance, (int)aspectRatioEnum, outerPath);
-            (g, p) = GridGenerators[tessellation].MakeGrid(outerPath, aspectRatioEnum, galaxyShape, symmetry, dissonance, numPlanets, par);
+            ParameterService par = new ParameterService((TableGenMode)tableGen, tessellation, symmetry, galaxyShape, numPlanets, dissonance, aspectRatioIndex, outerPath, AspectRatioMode.NORMAL);
+
+            if (tableGen == 2)
+            {
+                do
+                {
+                    GridGenerators[tessellation].MakeGrid(outerPath, aspectRatioIndex, galaxyShape, symmetry, dissonance, numPlanets, par);
+                } while (par.Next());
+            }
+            else if (tableGen == 3)
+            {
+                for (int curOuterPath = 0; curOuterPath < OUTER_PATH_TYPES; ++curOuterPath)
+                {
+                    par.OuterPath = curOuterPath;
+                    do
+                    {
+                        GridGenerators[tessellation].MakeGrid(curOuterPath, aspectRatioIndex, galaxyShape, symmetry, dissonance, numPlanets, par);
+                    } while (par.Next());
+                }
+            }
+
+            if (tableGen == 3)
+            {
+                par.GenerateTable();
+            }
+
+            (g, p) = GridGenerators[tessellation].MakeGrid(outerPath, aspectRatioIndex, galaxyShape, symmetry, dissonance, numPlanets, par);
             g.MakeSymmetricGroups();
         }
     }
