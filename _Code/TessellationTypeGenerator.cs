@@ -201,12 +201,29 @@ namespace AhyangyiMaps
             for (int curOuterPath = 0; curOuterPath < OUTER_PATH_TYPES; ++curOuterPath)
             {
                 par.OuterPath = curOuterPath;
-                do
+
+                if (SymmetryConstants.AspectRatioModeLookup[symmetry] == SymmetryConstants.AspectRatioMode.SPECIAL)
                 {
-                    GridGenerators[tessellation].MakeGrid(curOuterPath, aspectRatioIndex, galaxyShape, symmetry, dissonance, numPlanets, par);
-                } while (par.Next());
+                    for (int aspectRatio = 0; aspectRatio < ASPECT_RATIO_TYPES; ++aspectRatio)
+                    {
+                        par.AspectRatioIndex = aspectRatio;
+                        RunTableGen2(numPlanets, tessellation, aspectRatio, galaxyShape, dissonance, symmetry, par, curOuterPath);
+                    }
+                }
+                else
+                {
+                    RunTableGen2(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, par, curOuterPath);
+                }
             }
             par.GenerateTable();
+        }
+
+        private static void RunTableGen2(int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry, ParameterService par, int curOuterPath)
+        {
+            do
+            {
+                GridGenerators[tessellation].MakeGrid(curOuterPath, aspectRatioIndex, galaxyShape, symmetry, dissonance, numPlanets, par);
+            } while (par.Next());
         }
     }
 }

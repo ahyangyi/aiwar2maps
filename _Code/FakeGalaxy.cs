@@ -250,18 +250,7 @@ namespace AhyangyiMaps
             return true;
         }
 
-        protected void RemovePlanetButDoesNotUpdateSymmetricGroups(FakePlanet planet)
-        {
-            foreach (FakePlanet other in links[planet].ToList())
-            {
-                RemoveLink(planet, other);
-            }
-
-            planets.Remove(planet);
-            locationIndex.Remove(planet.Location);
-        }
-
-        protected void RemovePlanetsButDoesNotUpdateSymmetricGroups(HashSet<FakePlanet> planetsToRemove)
+         protected void RemovePlanetsButDoesNotUpdateSymmetricGroups(HashSet<FakePlanet> planetsToRemove)
         {
             foreach (FakePlanet planet in planetsToRemove)
             {

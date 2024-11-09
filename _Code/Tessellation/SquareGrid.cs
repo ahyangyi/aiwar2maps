@@ -43,7 +43,16 @@ namespace AhyangyiMaps.Tessellation
             {
                 FInt idealR = c / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false);
                 par.AddInfo("Ideal R", idealR.ToString());
-                if (par.AddBadness("R Badness", (r - idealR).Abs())) return;
+                if (par.AddBadness("Rotational Shape", (r - idealR).Abs())) return;
+            }
+            if (symmetry == 10200)
+            {
+                if (r < c) return;
+                if (c < 2) return;
+
+                FInt aspectRatio = (FInt)c / (FInt)r;
+                FInt idealAspectRatio = ((AspectRatio)aspectRatioIndex).Value() * FInt.Create(500, false);
+                if (par.AddBadness("Y-Trunk Aspect Ratio", aspectRatio.RatioDeviance(idealAspectRatio) * 10)) return;
             }
 
             // `parts`: We divide the columns into this many parts.
@@ -139,6 +148,8 @@ namespace AhyangyiMaps.Tessellation
                 borderThickness = par.AddParameter(1, (Math.Min(r, c) - 1) / 2, 1);
             }
 
+            // `branchWidth`
+            // Only used for symmetry 10200 Y
             int branchWidth = 0;
             if (symmetry == 10200)
             {
