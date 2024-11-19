@@ -56,6 +56,7 @@ namespace AhyangyiMaps
         System.Collections.Generic.List<TableValue> table;
         FInt CurrentBadness;
         public FakeGalaxy g, p;
+        public Outline o;
         public readonly int Tessellation, Symmetry, GalaxyShape;
         public int NumPlanets, Dissonance, AspectRatioIndex, OuterPath;
         public SymmetryConstants.AspectRatioMode aspectRatioMode;
@@ -197,10 +198,11 @@ namespace AhyangyiMaps
             return CurrentBadness >= 25;
         }
 
-        internal void Commit(FakeGalaxy g, FakeGalaxy p)
+        internal void Commit(FakeGalaxy g, FakeGalaxy p, Outline o)
         {
             this.g = g;
             this.p = p;
+            this.o = o;
 
             if (mode == TableGenMode.GEN_TABLE || mode == TableGenMode.OPTIMIZE)
             {
@@ -263,7 +265,7 @@ namespace AhyangyiMaps
                 AddInfo("Planets", planets.ToString());
                 AddInfo("Irremoveable Planets", irremovablePlanets.ToString());
                 AddInfo("Equivalent Planets", postDissonancePlanets.ToString());
-                AddBadness("Planets Difference", planetDifference / dissonanceRatio);
+                AddBadness("Planets Difference", planetDifference);
 
                 int index;
                 if (mode == TableGenMode.GEN_TABLE)

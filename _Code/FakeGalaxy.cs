@@ -1412,24 +1412,29 @@ namespace AhyangyiMaps
 
             return true;
         }
-        internal void AddExtraLinks(int density, int maxIntersections, RandomGenerator rng, Outline outline)
+        internal void AddExtraLinks(int density, int maxIntersections, int maxOriginalIntersections, RandomGenerator rng, Outline outline)
         {
             FakeGalaxy extra = new FakeGalaxy(planetCollection);
             int linksToAdd = (planets.Count - 1) * density / 100;
             int retry = 0;
+            var candidates = new System.Collections.Generic.Dictionary<FakePlanet, System.Collections.Generic.List<FakePlanet>>();
 
             while (linksToAdd > 0)
             {
                 FakePlanet a = planets[rng.NextInclus(0, planets.Count - 1)];
-                var candidates = planets.Where(x => a != x &&
+                if (!candidates.ContainsKey(a))
+                {
+                    candidates[a] = planets;
+                }
+                candidates[a] = candidates[a].Where(x => a != x &&
                     !links[a].Contains(x) &&
                     !extra.links[a].Contains(x) &&
-                    CrossAtMostLinks(a, x, 0) &&
+                    CrossAtMostLinks(a, x, maxOriginalIntersections) &&
                     extra.CrossAtMostLinks(a, x, maxIntersections) &&
                     !outline.VenturesOutside(a, x)
                     ).ToList();
 
-                if (candidates.Count == 0)
+                if (candidates[a].Count == 0)
                 {
                     if (++retry == 1000)
                     {
@@ -1438,7 +1443,7 @@ namespace AhyangyiMaps
                     continue;
                 }
 
-                FakePlanet b = candidates[rng.NextInclus(0, candidates.Count - 1)];
+                FakePlanet b = candidates[a][rng.NextInclus(0, candidates[a].Count - 1)];
                 var symEdges = ListSymmetricEdges(a, b);
                 bool ok = true;
                 int newEdges = 0;
@@ -1449,7 +1454,9 @@ namespace AhyangyiMaps
                     {
                         continue;
                     }
-                    if (!CrossAtMostLinks(c, d, 0) || !extra.CrossAtMostLinks(c, d, maxIntersections) || outline.VenturesOutside(c, d))
+                    if (!CrossAtMostLinks(c, d, maxOriginalIntersections)
+                        || !extra.CrossAtMostLinks(c, d, maxIntersections)
+                        || outline.VenturesOutside(c, d))
                     {
                         // This link group isn't actually valid, rolling back
                         for (int j = 0; j < i; ++j)

@@ -80,7 +80,8 @@ namespace AhyangyiMaps
             // Some outerPath values or grid types might demand certain planets and links be preserved,
             //   this information is represented as the FakeGalaxy p
             FakeGalaxy g, p;
-            GenerateGrid(tableGen, numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, outerPath, out g, out p);
+            Outline outline;
+            GenerateGrid(tableGen, numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, outerPath, out g, out p, out outline);
 
             // STEP 2 - MARK OUTER PATH FOR PERSERVATION
             // Mark outer path.
@@ -91,7 +92,6 @@ namespace AhyangyiMaps
             // STEP 3 - DISSONANCE
             // Remove planets randomly, respecting symmetry and stick bits.
             // Also, preserve outline for Step 5
-            var outline = new Outline(g.FindOutline());
             if (dissonance > 0)
             {
                 int retry = 0;
@@ -116,27 +116,27 @@ namespace AhyangyiMaps
             // Make extra links available
             if (additionalConnections == 1)
             {
-                g.AddExtraLinks(33, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(33, 0, 0, randomNumberGenerator, outline);
             }
             else if (additionalConnections == 2)
             {
-                g.AddExtraLinks(67, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(67, 0, 0, randomNumberGenerator, outline);
             }
             else if (additionalConnections == 3)
             {
-                g.AddExtraLinks(200, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(200, 0, 0, randomNumberGenerator, outline);
             }
             else if (additionalConnections == 4)
             {
-                g.AddExtraLinks(133, 1, randomNumberGenerator, outline);
+                g.AddExtraLinks(133, 1, 0, randomNumberGenerator, outline);
             }
             else if (additionalConnections == 5)
             {
-                g.AddExtraLinks(400, 1, randomNumberGenerator, outline);
+                g.AddExtraLinks(400, 1, 0, randomNumberGenerator, outline);
             }
             else if (additionalConnections == 6)
             {
-                g.AddExtraLinks(2000, 5, randomNumberGenerator, outline);
+                g.AddExtraLinks(2000, 5, 1, randomNumberGenerator, outline);
             }
 
             // STEP 6 - SKELETON
@@ -157,7 +157,8 @@ namespace AhyangyiMaps
             g.Populate(galaxy, planetType, randomNumberGenerator);
         }
 
-        private static void GenerateGrid(int tableGen, int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry, int outerPath, out FakeGalaxy g, out FakeGalaxy p)
+        private static void GenerateGrid(int tableGen, int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry, int outerPath,
+            out FakeGalaxy g, out FakeGalaxy p, out Outline o)
         {
             if (tableGen == 3)
             {
@@ -180,6 +181,7 @@ namespace AhyangyiMaps
 
             g = par.g;
             p = par.p;
+            o = par.o;
 
             g.MakeSymmetricGroups();
         }

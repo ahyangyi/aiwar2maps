@@ -94,6 +94,7 @@ namespace AhyangyiMaps.Tessellation
             }
 
             FakeGalaxy p;
+            var outline = new Outline(g.FindOutline());
             if (outerPath == 0)
             {
                 p = new FakeGalaxy();
@@ -107,7 +108,7 @@ namespace AhyangyiMaps.Tessellation
                 p = g.MakeBeltWay();
             }
 
-            par.Commit(g, p);
+            par.Commit(g, p, outline);
         }
 
         private static FakeGalaxy MakeGrid(int rows, int columns, bool flip)

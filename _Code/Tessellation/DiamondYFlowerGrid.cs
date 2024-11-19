@@ -21,8 +21,8 @@ namespace AhyangyiMaps.Tessellation
         public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
         {
             // `rows` & `columns`: The base grid size
-            int rows = par.AddParameter("rows", 1, 55, 7);
-            int columns = par.AddParameter("columns", 3, 55, 11);
+            int rows = par.AddParameter("rows", 3, 35, 5);
+            int columns = par.AddParameter("columns", 3, 35, 7);
 
             if (rows % 2 == 0 || columns % 2 == 0) return;
             if (symmetry == 150 && columns % 4 == 1) return;
@@ -67,6 +67,7 @@ namespace AhyangyiMaps.Tessellation
             }
 
             FakeGalaxy p;
+            var outline = new Outline(g.FindOutline());
             if (outerPath == 0)
             {
                 p = new FakeGalaxy();
@@ -80,7 +81,7 @@ namespace AhyangyiMaps.Tessellation
                 p = g.MakeBeltWay();
             }
 
-            par.Commit(g, p);
+            par.Commit(g, p, outline);
         }
 
         private static FakeGalaxy MakeGrid(int rows, int columns)
