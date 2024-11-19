@@ -6,6 +6,12 @@ This is a tessellation-based map generator. Pick a tessellation type, and use th
 
 # Options
 ## Tessellation Type
+You can choose from a long list of different tessellation types as the basis of the map.
+
+![Squares](Tessellation Types/1.jpg)
+![Hexxagons](Tessellation Types/2.jpg)
+![Square Y](Tessellation Types/101.jpg)
+
 ## Symmetry
 ## Galaxy Shape
 ## Outer Path
