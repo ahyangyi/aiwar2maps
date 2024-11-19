@@ -8,9 +8,9 @@ This is a tessellation-based map generator. Pick a tessellation type, and use th
 ## Tessellation Type
 You can choose from a long list of different tessellation types as the basis of the map.
 
-![Squares](Tessellation%20Types/1.jpg?raw=true | height=200)
-![Hexagons](Tessellation%20Types/2.jpg?raw=true | height=200)
-![Square Y](Tessellation%20Types/101.jpg?raw=true | height=200)
+| <img src="Tessellation%20Types/1.jpg?raw=true" alt="Squares" height=200> | <img src="Tessellation%20Types/2.jpg?raw=true" alt="Hexagons" height=200> |<img src="Tessellation%20Types/101.jpg?raw=true" alt="Square Y" height=200> |
+|:--:|:--:|:--:|
+| Squares | Hexagons | Square Y |
 
 ## Symmetry
 ## Galaxy Shape
