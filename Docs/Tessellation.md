@@ -13,6 +13,15 @@ You can choose from a long list of different tessellation types as the basis of 
 | Squares | Hexagons | Square Y |
 
 ## Symmetry
+In this mod, the term “symmetry” is used in a broad sense, and covers many different ways to make parts of the galaxy look like other parts of it.
+
+| <img src="Symmetries/100.jpg?raw=true" alt="Asymmetrical" height=200> | <img src="Symmetries/150.jpg?raw=true" alt="Bilateral" height=200> |<img src="Symmetries/200.jpg?raw=true" alt="Rotational" height=200> |<img src="Symmetries/250.jpg?raw=true" alt="Dihedral" height=200> |
+|:--:|:--:|:--:|:--:|
+| Asymmetrical | Bilateral | Rotational | Dihedral |
+
+| <img src="Symmetries/100000.jpg?raw=true" alt="Juxtaposition" height=200> |
+|:--:|
+| Juxtaposition |
 
 ## Galaxy Shape
 
