@@ -42,6 +42,7 @@ namespace AhyangyiMaps
                 { 0, new SquareGrid() },
                 { 1, new HexagonGrid() },
                 { 2, new TriangleGrid() },
+                { 3, new CairoGrid() },
                 { 100, new SquareYGrid() },
                 { 101, new SquareYMirrorGrid() },
                 { 102, new DiamondYGrid() },
@@ -81,7 +82,8 @@ namespace AhyangyiMaps
             //   this information is represented as the FakeGalaxy p
             FakeGalaxy g, p;
             Outline outline;
-            GenerateGrid(tableGen, numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, outerPath, out g, out p, out outline);
+            GenerateGrid(tableGen, numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, outerPath,
+                out g, out p, out outline);
 
             // STEP 2 - MARK OUTER PATH FOR PERSERVATION
             // Mark outer path.

@@ -24,10 +24,11 @@
       <choice_value id="0" display_name="Square" description="A square grid" related_int_value="0" />
       <choice_value id="1" display_name="Hexagon" description="Homeycomb-like grid." related_int_value="1" />
       <choice_value id="2" display_name="Triangle" description="Triangluar grid." related_int_value="2" />
-      <choice_value id="3" display_name="Square Y" description="Squares with Y-shaped divisions." related_int_value="100" />
-      <choice_value id="4" display_name="Square Y Alternative" description="Squares with Y-shaped divisions, mirrored." related_int_value="101" />
-      <choice_value id="5" display_name="Diamond Y" description="Diamonds with Y-shaped divisions." related_int_value="102" />
-      <choice_value id="6" display_name="Diamond Y Alternative" description="Diamonds with Y-shaped divisions, rotated." related_int_value="103" />
+      <choice_value id="3" display_name="Cairo" description="Pentagonal grid." related_int_value="3" />
+      <choice_value id="4" display_name="Square Y" description="Squares with Y-shaped divisions." related_int_value="100" />
+      <choice_value id="5" display_name="Square Y Alternative" description="Squares with Y-shaped divisions, mirrored." related_int_value="101" />
+      <choice_value id="6" display_name="Diamond Y" description="Diamonds with Y-shaped divisions." related_int_value="102" />
+      <choice_value id="7" display_name="Diamond Y Alternative" description="Diamonds with Y-shaped divisions, rotated." related_int_value="103" />
     </map_option>
     <map_option name="AspectRatio" display_name="Aspect Ratio"
       description="What is the aspect ratio of the map?" default_id="0">

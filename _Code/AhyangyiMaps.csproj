@@ -33,6 +33,7 @@
     <Compile Include="Tessellation\SquareGrid.cs" />
     <Compile Include="Tessellation\HexagonGrid.cs" />
     <Compile Include="Tessellation\TriangleGrid.cs" />
+    <Compile Include="Tessellation\CairoGrid.cs" />
     <Compile Include="Tessellation\SquareYGrid.cs" />
     <Compile Include="Tessellation\SquareYMirrorGrid.cs" />
     <Compile Include="Tessellation\DiamondYGrid.cs" />
