@@ -141,19 +141,13 @@ namespace AhyangyiMaps.Tessellation
             if (offset == 0) return;
 
             // `borderThickness`
-            // Only used for symmetry 10100 Duplex Barrier
+            // Only used for symmetry 10100 Duplex Barrier, but affects MakeGrid so has to be put here
             int borderThickness = 0;
             if (symmetry == 10100)
             {
                 borderThickness = par.AddParameter("border_thickness", 1, (Math.Min(rows, columns) - 1) / 2, 1);
-            }
-
-            // `branchWidth`
-            // Only used for symmetry 10200 Y
-            int branchWidth = 0;
-            if (symmetry == 10200)
-            {
-                branchWidth = par.AddParameter("branch_width", (columns + 1) / 2, columns - 1, (columns * 4 + 3) / 5);
+                FInt idealThickness = Math.Min(rows, columns) / FInt.Create(3000, false);
+                if (par.AddBadness("Border Thickness", (rows - idealThickness).Abs())) return;
             }
 
             FakeGalaxy g = null;
@@ -209,6 +203,7 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry == 10200)
             {
+                int branchWidth = par.AddParameter("branch_width", (columns + 1) / 2, columns - 1, (columns * 4 + 3) / 5);
                 g.MakeY((AspectRatio)aspectRatioIndex, unit, unit * branchWidth);
             }
 

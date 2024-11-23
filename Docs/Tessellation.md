@@ -19,7 +19,7 @@ In this mod, the term “symmetry” is used in a broad sense, and covers many d
 |:--:|:--:|:--:|:--:|
 | Asymmetrical | Bilateral | Rotational | Dihedral |
 
-| <img src="Symmetries/100000.jpg?raw=true" alt="Juxtaposition" height=200> |
+| <img src="Symmetries/10000.jpg?raw=true" alt="Juxtaposition" height=200> |
 |:--:|
 | Juxtaposition |
 
