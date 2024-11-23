@@ -75,6 +75,15 @@ namespace AhyangyiMaps
             int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
 
             var randomNumberGenerator = Context.RandomToUse;
+            // FIXME: making separated rngs doesn't work for some reason
+            /*
+            var siteRNG = new MersenneTwister(randomNumberGenerator.NextInclus(0, int.MaxValue));
+            var linkRNG = new MersenneTwister(randomNumberGenerator.NextInclus(0, int.MaxValue));
+            var wobbleRNG = new MersenneTwister(randomNumberGenerator.NextInclus(0, int.MaxValue));
+            */
+            var siteRNG = randomNumberGenerator;
+            var linkRNG = randomNumberGenerator;
+            var wobbleRNG = randomNumberGenerator;
 
             // STEP 1 - TESSELLATION
             // Generate a base grid
@@ -84,6 +93,7 @@ namespace AhyangyiMaps
             Outline outline;
             GenerateGrid(tableGen, numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, outerPath,
                 out g, out p, out outline);
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 1 finished", Verbosity.DoNotShow);
 
             // STEP 2 - MARK OUTER PATH FOR PERSERVATION
             // Mark outer path.
@@ -99,7 +109,7 @@ namespace AhyangyiMaps
                 int retry = 0;
                 while (g.planets.Count > numPlanets)
                 {
-                    SymmetricGroup s = g.symmetricGroups[randomNumberGenerator.NextInclus(0, g.symmetricGroups.Count - 1)];
+                    SymmetricGroup s = g.symmetricGroups[siteRNG.NextInclus(0, g.symmetricGroups.Count - 1)];
                     if (keptGroups.Contains(s))
                     {
                         if (++retry == 1000) break;
@@ -109,50 +119,56 @@ namespace AhyangyiMaps
                     retry = 0;
                 }
             }
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 3 finished", Verbosity.DoNotShow);
 
             // STEP 4 - CONNNECT
             // In case we cut off the graph, connect it back
             g.EnsureConnectivity();
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 4 finished", Verbosity.DoNotShow);
 
             // STEP 5 - EXTRA LINKS
             // Make extra links available
             if (additionalConnections == 1)
             {
-                g.AddExtraLinks(33, 0, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(33, 0, 0, linkRNG, outline);
             }
             else if (additionalConnections == 2)
             {
-                g.AddExtraLinks(67, 0, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(67, 0, 0, linkRNG, outline);
             }
             else if (additionalConnections == 3)
             {
-                g.AddExtraLinks(200, 0, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(200, 0, 0, linkRNG, outline);
             }
             else if (additionalConnections == 4)
             {
-                g.AddExtraLinks(133, 1, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(133, 1, 0, linkRNG, outline);
             }
             else if (additionalConnections == 5)
             {
-                g.AddExtraLinks(400, 1, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(400, 1, 0, linkRNG, outline);
             }
             else if (additionalConnections == 6)
             {
-                g.AddExtraLinks(2000, 5, 1, randomNumberGenerator, outline);
+                g.AddExtraLinks(2000, 5, 1, linkRNG, outline);
             }
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 5 finished", Verbosity.DoNotShow);
 
             // STEP 6 - SKELETON
             // Select a subset of edges that'll be in the game
-            var spanningGraph = g.MakeSpanningGraph(traversability, randomNumberGenerator, p);
+            var spanningGraph = g.MakeSpanningGraph(traversability, linkRNG, p);
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 6 finished", Verbosity.DoNotShow);
 
             // STEP 7 - FILL
             // Add edges until the desired density is reached
-            g.AddEdges(spanningGraph, connectivity, traversability, randomNumberGenerator);
+            g.AddEdges(spanningGraph, connectivity, traversability, linkRNG);
             g = spanningGraph;
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 7 finished", Verbosity.DoNotShow);
 
             // STEP 8 - WOBBLE
             // Add random offsets to each planet, respecting symmetry
-            g.Wobble(planetType, wobble, randomNumberGenerator);
+            g.Wobble(planetType, wobble, wobbleRNG);
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 8 finished", Verbosity.DoNotShow);
 
             // STEP 9 - POPULATE
             // Translate our information into Arcenverse

@@ -43,7 +43,7 @@
       <choice_value id="2" display_name="Pointy" description="A triangluar, pyramid or otherwise pointy galaxy." related_int_value="2" />
     </map_option>
     <map_option name="Symmetry" display_name="Symmetry"
-      description="What symmetry should the map have?" default_id="0">
+      description="What symmetry should the map have?" default_id="1">
       <choice_value id="0" display_name="Asymmetric" description="No symmetry enforced." related_int_value="100" />
       <choice_value id="1" display_name="Bilateral" description="Two halves of the map are mirror-images of each other." related_int_value="150" />
       <choice_value id="2" display_name="2-fold Rotational" description="." related_int_value="200" />

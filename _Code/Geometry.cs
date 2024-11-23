@@ -1,5 +1,6 @@
 using Arcen.Universal;
 using System;
+using System.Linq;
 
 namespace AhyangyiMaps
 {
@@ -18,11 +19,95 @@ namespace AhyangyiMaps
         {
             return Math.Atan2(a.Y, a.X);
         }
-
+        public static int SquareNorm(this ArcenPoint a)
+        {
+            return a.X * a.X + a.Y * a.Y;
+        }
+        public static double AccurateNorm(this ArcenPoint a)
+        {
+            return Math.Sqrt(a.SquareNorm());
+        }
         public static double AccurateDistanceTo(this ArcenPoint a, ArcenPoint b)
         {
-            var c = a - b;
-            return Math.Sqrt(c.X * c.X + c.Y * c.Y);
+            return (a - b).AccurateNorm();
+        }
+
+        public static ArcenPoint TurnLeft(this ArcenPoint a)
+        {
+            return ArcenPoint.Create(-a.Y, a.X);
+        }
+
+        public static ArcenPoint TurnRight(this ArcenPoint a)
+        {
+            return ArcenPoint.Create(a.Y, -a.X);
+        }
+
+        public static bool OnSegment(this ArcenPoint s, ArcenPoint a, ArcenPoint b)
+        {
+            return (s - a).CrossProduct(a - b) == 0 && (s - b).CrossProduct(a - b) == 0
+                && (s - a).DotProduct(b - a) >= 0 && (s - b).DotProduct(a - b) >= 0;
+        }
+
+        public static bool XRayIntersectsSegment(this ArcenPoint s, ArcenPoint a, ArcenPoint b)
+        {
+            if (s.Y > a.Y && s.Y > b.Y)
+            {
+                return false;
+            }
+            if (s.Y < a.Y && s.Y < b.Y)
+            {
+                return false;
+            }
+            if (s.Y == a.Y && s.Y == b.Y)
+            {
+                return false;
+            }
+            if (a.Y > b.Y)
+            {
+                (a, b) = (b, a);
+            }
+
+            if ((s - a).CrossProduct(b - a) < 0)
+                return false;
+
+            if (s.Y == a.Y)
+            {
+                return b.Y < s.Y;
+            }
+            if (s.Y == b.Y)
+            {
+                return a.Y < s.Y;
+            }
+
+            return true;
+        }
+
+        /*
+         * Checks whether the polygon a (clockwise) contains the point b
+         */
+        public static bool ContainsPoint(this System.Collections.Generic.List<ArcenPoint> a, ArcenPoint b)
+        {
+            int maxX = a.Max(x => x.X) + 1;
+            int intersectionCount = 0;
+
+            for (int i = 0; i < a.Count; ++i)
+            {
+                int j = (i + 1) % a.Count;
+                if (b.OnSegment(a[i], a[j]))
+                {
+                    return true;
+                }
+                if ((b - a[i]).CrossProduct(a[j] - a[i]) == 0)
+                {
+                    continue;
+                }
+                if (b.XRayIntersectsSegment(a[i], a[j]))
+                {
+                    ++intersectionCount;
+                }
+            }
+
+            return intersectionCount % 2 == 1;
         }
     }
 

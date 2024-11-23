@@ -1045,25 +1045,25 @@ namespace AhyangyiMaps
             // Create polygons
             // Will be part of the extracted interface
             var center = ArcenPoint.Create(maxX / 2, maxY / 2);
-            var innerAnnulusInnerCircle = new System.Collections.Generic.List<ArcenPoint> {
+            var circle1 = new System.Collections.Generic.List<ArcenPoint> {
                 ArcenPoint.Create(xWidth, yWidth),
                 ArcenPoint.Create(maxX - xWidth, yWidth),
                 ArcenPoint.Create(maxX - xWidth, maxY - yWidth),
                 ArcenPoint.Create(xWidth, maxY - yWidth),
             };
-            var innerAnnulusOuterCircle = new System.Collections.Generic.List<ArcenPoint> {
+            var circle2 = new System.Collections.Generic.List<ArcenPoint> {
                 ArcenPoint.Create(0, 0),
                 ArcenPoint.Create(maxX, 0),
                 ArcenPoint.Create(maxX, maxY),
                 ArcenPoint.Create(0, maxY),
             };
-            var outerAnnulusInnerCircle = new System.Collections.Generic.List<ArcenPoint> {
+            var circle3 = new System.Collections.Generic.List<ArcenPoint> {
                 ArcenPoint.Create(-unit, -unit),
                 ArcenPoint.Create(maxX+unit, -unit),
                 ArcenPoint.Create(maxX+unit, maxY+unit),
                 ArcenPoint.Create(-unit, maxY+unit),
             };
-            var outerAnnulusOuterCircle = new System.Collections.Generic.List<ArcenPoint> {
+            var circle4 = new System.Collections.Generic.List<ArcenPoint> {
                 ArcenPoint.Create(-unit-xWidth, -unit-yWidth),
                 ArcenPoint.Create(maxX+unit+xWidth, -unit-yWidth),
                 ArcenPoint.Create(maxX+unit+xWidth, maxY+unit+yWidth),
@@ -1073,31 +1073,62 @@ namespace AhyangyiMaps
             // Create "reflections"
             foreach (FakePlanet planet in planetsBackup)
             {
-                double psi = (planet.Location - center).AccurateAngleInRadian();
-                double cosPsi = Math.Cos(psi);
-                double sinPsi = Math.Sin(psi);
-                double oldRho1 = FindIntersection(psi, center, innerAnnulusInnerCircle).AccurateDistanceTo(center);
-                double oldRho2 = FindIntersection(psi, center, innerAnnulusOuterCircle).AccurateDistanceTo(center);
-                double newRho1 = FindIntersection(psi, center, outerAnnulusInnerCircle).AccurateDistanceTo(center);
-                double newRho2 = FindIntersection(psi, center, outerAnnulusOuterCircle).AccurateDistanceTo(center);
-                double lengthRatio = (newRho2 - newRho1) / (oldRho2 - oldRho1);
-                double rho = planet.Location.AccurateDistanceTo(center);
-                double reflectedRho = (oldRho2 - rho) * lengthRatio + newRho1;
-                var newLocation = ArcenPoint.Create(
-                    (int)Math.Round(center.X + cosPsi * reflectedRho),
-                    (int)Math.Round(center.Y + sinPsi * reflectedRho)
-                    );
+                for (int i = 0; i < circle1.Count; ++i)
+                {
+                    int j = (i + 1) % circle1.Count;
+                    var trapezoid1 = new System.Collections.Generic.List<ArcenPoint> {
+                        circle1[i], circle1[j], circle2[j], circle2[i]
+                    };
+                    if (trapezoid1.ContainsPoint(planet.Location))
+                    {
+                        var l1 = circle1[j] - circle1[i];
+                        var x = (planet.Location - circle1[i]).DotProduct(l1) / (double)l1.SquareNorm();
+                        var x1 = (circle2[i] - circle1[i]).DotProduct(l1) / (double)l1.SquareNorm();
+                        var x2 = (circle2[j] - circle1[i]).DotProduct(l1) / (double)l1.SquareNorm();
+                        var l2 = l1.TurnRight();
+                        var y = (planet.Location - circle1[i]).DotProduct(l2) / (double)l2.SquareNorm();
+                        var y1 = (circle2[i] - circle1[i]).DotProduct(l2) / (double)l2.SquareNorm();
+                        y /= y1;
+                        x1 = x1 * y;
+                        x2 = x2 * y + (1 - y);
+                        double debug_x = x;
+                        x = (x - x1) / (x2 - x1);
 
-                FakePlanet other = AddPlanetAt(newLocation);
+                        var trapezoid2 = new System.Collections.Generic.List<ArcenPoint> {
+                            circle4[i], circle4[j], circle3[j], circle3[i]
+                        };
 
-                Matrix2x2 reflectedWobble = new Matrix2x2(
-                    FInt.Create((int)Math.Round(-lengthRatio * cosPsi * cosPsi + sinPsi * sinPsi) * 1000, false),
-                    FInt.Create((int)Math.Round((lengthRatio + 1) * sinPsi * cosPsi) * 1000, false),
-                    FInt.Create((int)Math.Round((lengthRatio + 1) * sinPsi * cosPsi) * 1000, false),
-                    FInt.Create((int)Math.Round(-lengthRatio * sinPsi * sinPsi + cosPsi * cosPsi) * 1000, false)
-                    );
-                other.WobbleMatrix = reflectedWobble * planet.WobbleMatrix;
-                planet.SetReflect(other);
+                        var l3 = circle4[j] - circle4[i];
+                        var l4 = l3.TurnLeft();
+                        var y2 = (circle3[i] - circle4[i]).DotProduct(l4) / (double)l4.SquareNorm();
+                        var x3 = (circle3[i] - circle4[i]).DotProduct(l3) / (double)l3.SquareNorm();
+                        var x4 = (circle3[j] - circle4[i]).DotProduct(l3) / (double)l3.SquareNorm();
+                        x3 = x3 * y;
+                        x4 = x4 * y + (1 - y);
+                        x = x3 + x * (x4 - x3);
+
+                        var newLocation = ArcenPoint.Create(
+                            (int)Math.Round(circle4[i].X + l3.X * x + l4.X * y * y2),
+                            (int)Math.Round(circle4[i].Y + l3.Y * x + l4.Y * y * y2)
+                            );
+
+                        FakePlanet other = AddPlanetAt(newLocation);
+
+                        double cosPsi = l4.X / l4.AccurateNorm();
+                        double sinPsi = l4.Y / l4.AccurateNorm();
+                        double xScale = (x4 - x3) / (x2 - x1);
+
+                        Matrix2x2 reflectedWobble = new Matrix2x2(
+                            FInt.Create((int)Math.Round(-cosPsi * cosPsi + xScale * sinPsi * sinPsi) * 1000, false),
+                            FInt.Create((int)Math.Round((1 + xScale) * sinPsi * cosPsi) * 1000, false),
+                            FInt.Create((int)Math.Round((1 + xScale) * sinPsi * cosPsi) * 1000, false),
+                            FInt.Create((int)Math.Round(-sinPsi * sinPsi + xScale * cosPsi * cosPsi) * 1000, false)
+                            );
+                        other.WobbleMatrix = reflectedWobble * planet.WobbleMatrix;
+                        planet.SetReflect(other);
+                        break;
+                    }
+                }
             }
 
             // Add edges
