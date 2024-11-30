@@ -115,7 +115,14 @@ namespace AhyangyiMaps
                         if (++retry == 1000) break;
                         continue;
                     }
-                    g.RemoveSymmetricGroup(s);
+                    if ((g.planets.Count - numPlanets) * 2 > s.planets.Count)
+                    {
+                        g.RemoveSymmetricGroup(s);
+                    }
+                    else
+                    {
+                        break;
+                    }
                     retry = 0;
                 }
             }
@@ -180,11 +187,15 @@ namespace AhyangyiMaps
         {
             if (tableGen == 3)
             {
-                RunTableGen(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry);
+                RunTableGen(tessellation, galaxyShape, symmetry);
             }
             else if (tableGen == 4)
             {
-                RunTableGenGrande(numPlanets, tessellation, aspectRatioIndex, dissonance, symmetry);
+                RunTableGenGrande(tessellation, symmetry);
+            }
+            else if (tableGen == 5)
+            {
+                RunTableGenVenti(tessellation);
             }
 
             ParameterService par = new ParameterService((TableGenMode)(tableGen >= 3 ? 0 : tableGen),
@@ -192,7 +203,8 @@ namespace AhyangyiMaps
 
             if (tableGen == 2)
             {
-                RunTableGen2(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, par, outerPath);
+                // FIXME Not implemented
+                // RunTableGen2(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, par, outerPath);
             }
 
             GridGenerators[tessellation].MakeGrid(outerPath, aspectRatioIndex, galaxyShape, symmetry, par);
@@ -203,19 +215,25 @@ namespace AhyangyiMaps
 
             g.MakeSymmetricGroups();
         }
-
-        private static void RunTableGenGrande(int numPlanets, int tessellation, int aspectRatioIndex, int dissonance, int symmetry)
+        private static void RunTableGenVenti(int tessellation)
+        {
+            foreach (int symmetry in SymmetryConstants.AspectRatioModeLookup.Keys)
+            {
+                RunTableGenGrande(tessellation, symmetry);
+            }
+        }
+        private static void RunTableGenGrande(int tessellation, int symmetry)
         {
             for (int i = 0; i < GALAXY_SHAPE_TYPES; ++i)
             {
-                RunTableGen(numPlanets, tessellation, aspectRatioIndex, i, dissonance, symmetry);
+                RunTableGen(tessellation, i, symmetry);
             }
         }
 
-        private static void RunTableGen(int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry)
+        private static void RunTableGen(int tessellation, int galaxyShape, int symmetry)
         {
             ParameterService par = new ParameterService((TableGenMode)3,
-                tessellation, symmetry, galaxyShape, numPlanets, dissonance, aspectRatioIndex, 0);
+                tessellation, symmetry, galaxyShape, 80, 0, 0, 0);
             if (par.alreadyDone())
             {
                 return;
@@ -229,18 +247,18 @@ namespace AhyangyiMaps
                     for (int aspectRatio = 0; aspectRatio < ASPECT_RATIO_TYPES; ++aspectRatio)
                     {
                         par.AspectRatioIndex = aspectRatio;
-                        RunTableGen2(numPlanets, tessellation, aspectRatio, galaxyShape, dissonance, symmetry, par, curOuterPath);
+                        RunTableGen2(tessellation, aspectRatio, galaxyShape, symmetry, par, curOuterPath);
                     }
                 }
                 else
                 {
-                    RunTableGen2(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, par, curOuterPath);
+                    RunTableGen2(tessellation, 0, galaxyShape, symmetry, par, curOuterPath);
                 }
             }
             par.GenerateTable();
         }
 
-        private static void RunTableGen2(int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry, ParameterService par, int curOuterPath)
+        private static void RunTableGen2(int tessellation, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par, int curOuterPath)
         {
             do
             {

@@ -688,6 +688,7 @@ namespace AhyangyiMaps
             FInt sectorSlope = SymmetryConstants.Rotational[n].sectorSlope;
             FInt distanceCoefficient = SymmetryConstants.Rotational[n].distanceCoefficient;
             FInt mergeMargin = d * distanceCoefficient * FInt.Create(400, false);
+            FInt mergeMarginOutside = d * distanceCoefficient * FInt.Create(99, false);
             bool hasCenter = false;
 
             if (autoAdvance)
@@ -707,7 +708,7 @@ namespace AhyangyiMaps
                     continue;
                 }
 
-                if (xdiff > -ydiff * sectorSlope || xdiff < ydiff * sectorSlope)
+                if (xdiff > -ydiff * sectorSlope + mergeMarginOutside || xdiff < ydiff * sectorSlope - mergeMarginOutside)
                 {
                     // planet way out of the sector, removing
 

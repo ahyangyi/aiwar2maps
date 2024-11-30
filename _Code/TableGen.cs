@@ -78,7 +78,7 @@ namespace AhyangyiMaps
             Dissonance = dissonance;
             AspectRatioIndex = aspectRatioIndex;
             OuterPath = outerPath;
-            this.aspectRatioMode = SymmetryConstants.AspectRatioModeLookup[symmetry];
+            aspectRatioMode = SymmetryConstants.AspectRatioModeLookup[symmetry];
 
             CurrentBadness = FInt.Zero;
             history = new System.Collections.Generic.List<ParameterRange>();
@@ -195,7 +195,7 @@ namespace AhyangyiMaps
             }
             badnessInfo[key] = (badness, isWarning);
             CurrentBadness += badness;
-            return CurrentBadness >= 25;
+            return CurrentBadness >= 100;
         }
 
         internal void Commit(FakeGalaxy g, FakeGalaxy p, Outline o)
@@ -313,11 +313,14 @@ namespace AhyangyiMaps
         {
             // General clean-up
             CurrentBadness = FInt.Zero;
-            historyRevisited = 0;
             info.Clear();
             badnessInfo.Clear();
 
             // Rewind history...
+            while (history.Count > historyRevisited)
+            {
+                history.PopLast();
+            }
             while (history.Count > 0)
             {
                 int i = history.Count - 1;
@@ -329,6 +332,7 @@ namespace AhyangyiMaps
                 history.PopLast();
             }
 
+            historyRevisited = 0;
             return history.Count > 0;
         }
 

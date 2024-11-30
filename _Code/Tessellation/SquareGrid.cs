@@ -23,29 +23,165 @@ namespace AhyangyiMaps.Tessellation
             square.AddLink(p2, p3);
             square.AddLink(p3, p0);
         }
+        enum RotationalStyle
+        {
+            POLYGON,
+            EXTENDED,
+        };
+
+        private void MakeRotationalGrid(int outerPath, int galaxyShape, int symmetry, ParameterService par)
+        {
+            // parse the symmetry value
+            int n = symmetry / 100;
+            bool dihedral = symmetry % 50 == 50;
+            FInt sectorSlope = SymmetryConstants.Rotational[n].sectorSlope;
+
+            // `rows` & `columns`: The base grid size
+            int rows = par.AddParameter("rows", 1, 45, 7);
+            int columns = par.AddParameter("columns", 1, 45, 10);
+            bool advance = columns % 2 == 1;
+
+            int actualColumns;
+            if (advance)
+            {
+                actualColumns = columns - 1;
+            }
+            else
+            {
+                actualColumns = columns;
+            }
+
+            FakeGalaxy g;
+            if (n == 3)
+            {
+                if (galaxyShape == 0)
+                {
+                    FInt leastR = actualColumns / sectorSlope * FInt.Create(750, false);
+                    FInt idealR = actualColumns / sectorSlope * FInt.Create(750, false);
+                    if (rows <= leastR)
+                    {
+                        return;
+                    }
+                    par.AddInfo("Ideal rows", idealR.ToString());
+                    if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return;
+                    g = MakeGrid(rows, columns);
+                }
+                else if (galaxyShape == 1)
+                {
+                    // Legacy case here
+                    FInt idealR = actualColumns / sectorSlope * FInt.Create(750, false);
+                    par.AddInfo("Ideal R", idealR.ToString());
+                    if (par.AddBadness("Rotational Shape", (rows - idealR).Abs())) return;
+                    g = MakeGrid(rows, columns);
+                }
+                else
+                {
+                    // Pointy 3-fold symmetry: a equilateral triangle
+                    FInt idealR = actualColumns / sectorSlope / 2;
+                    if (rows > idealR)
+                    {
+                        return;
+                    }
+                    g = MakeGrid(rows, columns);
+                }
+            }
+            else if (n == 4)
+            {
+                if (galaxyShape == 0)
+                {
+                    // Normal 4 fold symmetry ==> always a square shape
+                    FInt idealC = rows * sectorSlope * 2;
+                    if (actualColumns < idealC || actualColumns > idealC + 2)
+                    {
+                        return;
+                    }
+                    g = MakeGrid(rows, columns);
+                }
+                else
+                {
+                    // FIXME: explain what I'm doing here
+                    FInt idealR = actualColumns / sectorSlope * FInt.Create(500, false);
+                    if (rows > idealR)
+                    {
+                        return;
+                    }
+                    g = MakeGrid(rows, columns);
+                }
+            }
+            else
+            {
+                if (galaxyShape == 0)
+                {
+                    FInt leastR = actualColumns / sectorSlope * FInt.Create(750, false);
+                    FInt idealR = actualColumns / sectorSlope * FInt.Create(750, false);
+                    if (rows <= leastR)
+                    {
+                        return;
+                    }
+                    par.AddInfo("Ideal rows", idealR.ToString());
+                    if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return;
+                    g = MakeGrid(rows, columns);
+                }
+                else if (galaxyShape == 1)
+                {
+                    FInt idealR = actualColumns / sectorSlope / 2;
+                    if (rows > idealR)
+                    {
+                        return;
+                    }
+                    g = MakeGrid(rows, columns);
+                }
+                else
+                {
+                    // Legacy case here
+                    FInt idealR = actualColumns / sectorSlope * FInt.Create(750, false);
+                    par.AddInfo("Ideal R", idealR.ToString());
+                    if (par.AddBadness("Rotational Shape", (rows - idealR).Abs())) return;
+                    g = MakeGrid(rows, columns);
+                }
+            }
+
+            g.MakeRotationalGeneric(unit * columns / 2, unit * rows, unit, n, dihedral, advance);
+
+            FakeGalaxy p;
+            var outline = new Outline(g.FindOutline());
+            if (outerPath == 0)
+            {
+                p = new FakeGalaxy();
+            }
+            else if (outerPath == 1)
+            {
+                p = g.MarkOutline();
+            }
+            else
+            {
+                p = g.MakeBeltWay();
+            }
+
+            par.Commit(g, p, outline);
+        }
 
         public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
         {
+            if (symmetry >= 300 && symmetry < 10000)
+            {
+                MakeRotationalGrid(outerPath, galaxyShape, symmetry, par);
+                return;
+            }
+
             // `rows` & `columns`: The base grid size
             int rows = par.AddParameter("rows", 1, 45, 7);
             int columns = par.AddParameter("columns", 1, 45, 10);
 
             if (galaxyShape != 2 && (rows > 35 || columns > 35)) return;
             if (galaxyShape != 0 && (rows < 3 || columns < 3)) return;
-
-            if (symmetry >= 300 && symmetry < 10000)
-            {
-                FInt idealR = columns / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false);
-                par.AddInfo("Ideal R", idealR.ToString());
-                if (par.AddBadness("Rotational Shape", (rows - idealR).Abs())) return;
-            }
             if (symmetry == 10100)
             {
                 // FIXME, should support all combinations
                 galaxyShape = 0;
                 if (rows < 3 || columns < 3) return;
             }
-            if (symmetry == 10200)
+            else if (symmetry == 10200)
             {
                 if (rows < columns) return;
                 if (columns < 2) return;
@@ -77,11 +213,17 @@ namespace AhyangyiMaps.Tessellation
             int sp = 0;
             if (galaxyShape == 1)
             {
-                sp = par.AddParameter("bevel", (Math.Min(rows, columns) + 12) / 15, (Math.Min(rows, columns) * 2 + 2) / 3, (Math.Min(rows, columns / parts) + 3) / 4);
+                sp = par.AddParameter("bevel",
+                    (Math.Min(rows, columns) + 12) / 15,
+                    (Math.Min(rows, columns) * 2 + 2) / 3,
+                    (Math.Min(rows, columns / parts) + 3) / 4);
             }
             else if (galaxyShape == 2)
             {
-                sp = par.AddParameter("cross_width", (Math.Min(rows, columns) + 12) / 15, (Math.Min(rows, columns) - 1) / 2, (Math.Min(rows, columns / parts) + 2) / 3 | (rows % 2));
+                sp = par.AddParameter("cross_width",
+                    (Math.Min(rows, columns) + 12) / 15,
+                    (Math.Min(rows, columns) - 1) / 2,
+                    (Math.Min(rows, columns / parts) + 2) / 3 | (rows % 2));
             }
             if (galaxyShape == 1 && rows <= sp * 2) return;
             if (galaxyShape == 2 && ((rows + sp) % 2 != 0 || rows < sp + 2)) return;
@@ -176,10 +318,6 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry == 250)
             {
                 g.MakeRotational2Bilateral();
-            }
-            else if (symmetry >= 300 && symmetry < 10000)
-            {
-                g.MakeRotationalGeneric(unit * columns / 2, unit * rows, unit, symmetry / 100, symmetry % 100 == 50, columns % 2 == 1);
             }
             else if (symmetry == 10000)
             {
