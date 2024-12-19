@@ -2,8 +2,6 @@ using AhyangyiMaps.Tessellation;
 using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AhyangyiMaps
 {
@@ -90,16 +88,15 @@ namespace AhyangyiMaps
             // Some outerPath values or grid types might demand certain planets and links be preserved,
             //   this information is represented as the FakeGalaxy p
             FakeGalaxy g, p;
-            Outline outline;
             GenerateGrid(tableGen, numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, outerPath,
-                out g, out p, out outline);
+                out g, out p, out Outline outline);
             ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 1 finished", Verbosity.DoNotShow);
 
             // STEP 2 - MARK OUTER PATH FOR PERSERVATION
             // Mark outer path.
             // The marked planets would be prevented from any consideration in STEP 3.
             // And the links would be always included in STEP 6.
-            var keptGroups = new HashSet<SymmetricGroup>(g.symmetricGroups.Where(x => x.planets.Any(planet => p.planetCollection.planets.Contains(planet))).ToList());
+            var keptGroups = g.FindPreservedGroups(p);
 
             // STEP 3 - DISSONANCE
             // Remove planets randomly, respecting symmetry and stick bits.

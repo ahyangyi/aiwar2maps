@@ -235,7 +235,7 @@ namespace AhyangyiMaps
         private void EvaluateStep1(FakeGalaxy g, FakeGalaxy p, int aspectRatioIndex)
         {
             int planets = g.planets.Count;
-            int irremovablePlanets = p.planets.Count;
+            int irremovablePlanets = g.FindPreservedGroups(p).Sum(group => group.planets.Count);
 
             FInt percolationThreshold = FInt.Create(593, false);
 

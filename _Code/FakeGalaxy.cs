@@ -1759,6 +1759,11 @@ namespace AhyangyiMaps
         {
             return planetCollection.AspectRatio();
         }
+
+        internal HashSet<SymmetricGroup> FindPreservedGroups(FakeGalaxy p)
+        {
+            return new HashSet<SymmetricGroup>(symmetricGroups.Where(x => x.planets.Any(planet => p.planetCollection.planets.Contains(planet))).ToList());
+        }
     }
 
     public class FakePattern : FakeGalaxy
