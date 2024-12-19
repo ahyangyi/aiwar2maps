@@ -2,8 +2,6 @@ using AhyangyiMaps.Tessellation;
 using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AhyangyiMaps
 {
@@ -75,21 +73,30 @@ namespace AhyangyiMaps
             int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
 
             var randomNumberGenerator = Context.RandomToUse;
+            // FIXME: making separated rngs doesn't work for some reason
+            /*
+            var siteRNG = new MersenneTwister(randomNumberGenerator.NextInclus(0, int.MaxValue));
+            var linkRNG = new MersenneTwister(randomNumberGenerator.NextInclus(0, int.MaxValue));
+            var wobbleRNG = new MersenneTwister(randomNumberGenerator.NextInclus(0, int.MaxValue));
+            */
+            var siteRNG = randomNumberGenerator;
+            var linkRNG = randomNumberGenerator;
+            var wobbleRNG = randomNumberGenerator;
 
             // STEP 1 - TESSELLATION
             // Generate a base grid
             // Some outerPath values or grid types might demand certain planets and links be preserved,
             //   this information is represented as the FakeGalaxy p
             FakeGalaxy g, p;
-            Outline outline;
             GenerateGrid(tableGen, numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, outerPath,
-                out g, out p, out outline);
+                out g, out p, out Outline outline);
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 1 finished", Verbosity.DoNotShow);
 
             // STEP 2 - MARK OUTER PATH FOR PERSERVATION
             // Mark outer path.
             // The marked planets would be prevented from any consideration in STEP 3.
             // And the links would be always included in STEP 6.
-            var keptGroups = new HashSet<SymmetricGroup>(g.symmetricGroups.Where(x => x.planets.Any(planet => p.planetCollection.planets.Contains(planet))).ToList());
+            var keptGroups = g.FindPreservedGroups(p);
 
             // STEP 3 - DISSONANCE
             // Remove planets randomly, respecting symmetry and stick bits.
@@ -99,60 +106,73 @@ namespace AhyangyiMaps
                 int retry = 0;
                 while (g.planets.Count > numPlanets)
                 {
-                    SymmetricGroup s = g.symmetricGroups[randomNumberGenerator.NextInclus(0, g.symmetricGroups.Count - 1)];
+                    SymmetricGroup s = g.symmetricGroups[siteRNG.NextInclus(0, g.symmetricGroups.Count - 1)];
                     if (keptGroups.Contains(s))
                     {
                         if (++retry == 1000) break;
                         continue;
                     }
-                    g.RemoveSymmetricGroup(s);
+                    if ((g.planets.Count - numPlanets) * 2 > s.planets.Count)
+                    {
+                        g.RemoveSymmetricGroup(s);
+                    }
+                    else
+                    {
+                        break;
+                    }
                     retry = 0;
                 }
             }
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 3 finished", Verbosity.DoNotShow);
 
             // STEP 4 - CONNNECT
             // In case we cut off the graph, connect it back
             g.EnsureConnectivity();
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 4 finished", Verbosity.DoNotShow);
 
             // STEP 5 - EXTRA LINKS
             // Make extra links available
             if (additionalConnections == 1)
             {
-                g.AddExtraLinks(33, 0, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(33, 0, 0, linkRNG, outline);
             }
             else if (additionalConnections == 2)
             {
-                g.AddExtraLinks(67, 0, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(67, 0, 0, linkRNG, outline);
             }
             else if (additionalConnections == 3)
             {
-                g.AddExtraLinks(200, 0, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(200, 0, 0, linkRNG, outline);
             }
             else if (additionalConnections == 4)
             {
-                g.AddExtraLinks(133, 1, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(133, 1, 0, linkRNG, outline);
             }
             else if (additionalConnections == 5)
             {
-                g.AddExtraLinks(400, 1, 0, randomNumberGenerator, outline);
+                g.AddExtraLinks(400, 1, 0, linkRNG, outline);
             }
             else if (additionalConnections == 6)
             {
-                g.AddExtraLinks(2000, 5, 1, randomNumberGenerator, outline);
+                g.AddExtraLinks(2000, 5, 1, linkRNG, outline);
             }
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 5 finished", Verbosity.DoNotShow);
 
             // STEP 6 - SKELETON
             // Select a subset of edges that'll be in the game
-            var spanningGraph = g.MakeSpanningGraph(traversability, randomNumberGenerator, p);
+            var spanningGraph = g.MakeSpanningGraph(traversability, linkRNG, p);
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 6 finished", Verbosity.DoNotShow);
 
             // STEP 7 - FILL
             // Add edges until the desired density is reached
-            g.AddEdges(spanningGraph, connectivity, traversability, randomNumberGenerator);
+            g.AddEdges(spanningGraph, connectivity, traversability, linkRNG);
             g = spanningGraph;
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 7 finished", Verbosity.DoNotShow);
 
             // STEP 8 - WOBBLE
             // Add random offsets to each planet, respecting symmetry
-            g.Wobble(planetType, wobble, randomNumberGenerator);
+            g.Wobble(planetType, wobble, wobbleRNG);
+            ArcenDebugging.ArcenDebugLogSingleLine("Tessellation step 8 finished", Verbosity.DoNotShow);
 
             // STEP 9 - POPULATE
             // Translate our information into Arcenverse
@@ -164,11 +184,15 @@ namespace AhyangyiMaps
         {
             if (tableGen == 3)
             {
-                RunTableGen(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry);
+                RunTableGen(tessellation, galaxyShape, symmetry);
             }
             else if (tableGen == 4)
             {
-                RunTableGenGrande(numPlanets, tessellation, aspectRatioIndex, dissonance, symmetry);
+                RunTableGenGrande(tessellation, symmetry);
+            }
+            else if (tableGen == 5)
+            {
+                RunTableGenVenti(tessellation);
             }
 
             ParameterService par = new ParameterService((TableGenMode)(tableGen >= 3 ? 0 : tableGen),
@@ -176,7 +200,8 @@ namespace AhyangyiMaps
 
             if (tableGen == 2)
             {
-                RunTableGen2(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, par, outerPath);
+                // FIXME Not implemented
+                // RunTableGen2(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, par, outerPath);
             }
 
             GridGenerators[tessellation].MakeGrid(outerPath, aspectRatioIndex, galaxyShape, symmetry, par);
@@ -187,19 +212,25 @@ namespace AhyangyiMaps
 
             g.MakeSymmetricGroups();
         }
-
-        private static void RunTableGenGrande(int numPlanets, int tessellation, int aspectRatioIndex, int dissonance, int symmetry)
+        private static void RunTableGenVenti(int tessellation)
+        {
+            foreach (int symmetry in SymmetryConstants.AspectRatioModeLookup.Keys)
+            {
+                RunTableGenGrande(tessellation, symmetry);
+            }
+        }
+        private static void RunTableGenGrande(int tessellation, int symmetry)
         {
             for (int i = 0; i < GALAXY_SHAPE_TYPES; ++i)
             {
-                RunTableGen(numPlanets, tessellation, aspectRatioIndex, i, dissonance, symmetry);
+                RunTableGen(tessellation, i, symmetry);
             }
         }
 
-        private static void RunTableGen(int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry)
+        private static void RunTableGen(int tessellation, int galaxyShape, int symmetry)
         {
             ParameterService par = new ParameterService((TableGenMode)3,
-                tessellation, symmetry, galaxyShape, numPlanets, dissonance, aspectRatioIndex, 0);
+                tessellation, symmetry, galaxyShape, 80, 0, 0, 0);
             if (par.alreadyDone())
             {
                 return;
@@ -213,18 +244,18 @@ namespace AhyangyiMaps
                     for (int aspectRatio = 0; aspectRatio < ASPECT_RATIO_TYPES; ++aspectRatio)
                     {
                         par.AspectRatioIndex = aspectRatio;
-                        RunTableGen2(numPlanets, tessellation, aspectRatio, galaxyShape, dissonance, symmetry, par, curOuterPath);
+                        RunTableGen2(tessellation, aspectRatio, galaxyShape, symmetry, par, curOuterPath);
                     }
                 }
                 else
                 {
-                    RunTableGen2(numPlanets, tessellation, aspectRatioIndex, galaxyShape, dissonance, symmetry, par, curOuterPath);
+                    RunTableGen2(tessellation, 0, galaxyShape, symmetry, par, curOuterPath);
                 }
             }
             par.GenerateTable();
         }
 
-        private static void RunTableGen2(int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry, ParameterService par, int curOuterPath)
+        private static void RunTableGen2(int tessellation, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par, int curOuterPath)
         {
             do
             {
