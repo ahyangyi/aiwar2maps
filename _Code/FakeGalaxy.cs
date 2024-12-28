@@ -541,6 +541,35 @@ namespace AhyangyiMaps
             return marked;
         }
 
+        public FakeGalaxy MakeBeltWay(System.Collections.Generic.List<ArcenPoint> beltway, bool autoConnect = false)
+        {
+            var p = new FakeGalaxy();
+
+            for (int i = 0; i < beltway.Count; ++i)
+            {
+                var planet = AddPlanetAt(beltway[i]);
+                planet.WobbleMatrix = Matrix2x2.Zero;
+                p.ImportPlanet(planet);
+            }
+
+            for (int i = 0; i < beltway.Count; ++i)
+            {
+                int j = (i + 1) % beltway.Count;
+                AddLink(p.planets[i], p.planets[j]);
+                p.AddLink(p.planets[i], p.planets[j]);
+            }
+
+            if (autoConnect)
+            {
+                for (int i = 0; i < beltway.Count; ++i)
+                {
+                    ConnectToNearestPlanet(p.planets[i]);
+                }
+            }
+
+            return p;
+        }
+
         public FakeGalaxy MakeBeltWay()
         {
             var p = new FakeGalaxy();
@@ -550,37 +579,13 @@ namespace AhyangyiMaps
             int minY = planets.Min(planet => planet.Y);
             int maxY = planets.Max(planet => planet.Y);
 
-            var p0 = AddPlanetAt(ArcenPoint.Create(minX - 320, minY - 320));
-            var p1 = AddPlanetAt(ArcenPoint.Create(maxX + 320, minY - 320));
-            var p2 = AddPlanetAt(ArcenPoint.Create(maxX + 320, maxY + 320));
-            var p3 = AddPlanetAt(ArcenPoint.Create(minX - 320, maxY + 320));
-
-            p0.WobbleMatrix = Matrix2x2.Zero;
-            p1.WobbleMatrix = Matrix2x2.Zero;
-            p2.WobbleMatrix = Matrix2x2.Zero;
-            p3.WobbleMatrix = Matrix2x2.Zero;
-
-            AddLink(p0, p1);
-            AddLink(p1, p2);
-            AddLink(p2, p3);
-            AddLink(p3, p0);
-
-            p.ImportPlanet(p0);
-            p.ImportPlanet(p1);
-            p.ImportPlanet(p2);
-            p.ImportPlanet(p3);
-
-            p.AddLink(p0, p1);
-            p.AddLink(p1, p2);
-            p.AddLink(p2, p3);
-            p.AddLink(p3, p0);
-
-            ConnectToNearestPlanet(p0);
-            ConnectToNearestPlanet(p1);
-            ConnectToNearestPlanet(p2);
-            ConnectToNearestPlanet(p3);
-
-            return p;
+            return MakeBeltWay(new System.Collections.Generic.List<ArcenPoint>
+            {
+                ArcenPoint.Create(minX - 320, minY - 320),
+                ArcenPoint.Create(maxX + 320, minY - 320),
+                ArcenPoint.Create(maxX + 320, maxY + 320),
+                ArcenPoint.Create(minX - 320, maxY + 320),
+            }, true);
         }
 
         private void ConnectToNearestPlanet(FakePlanet p0)
