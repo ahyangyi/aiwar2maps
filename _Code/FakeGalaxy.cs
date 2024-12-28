@@ -575,7 +575,31 @@ namespace AhyangyiMaps
             p.AddLink(p2, p3);
             p.AddLink(p3, p0);
 
+            ConnectToNearestPlanet(p0);
+            ConnectToNearestPlanet(p1);
+            ConnectToNearestPlanet(p2);
+            ConnectToNearestPlanet(p3);
+
             return p;
+        }
+
+        private void ConnectToNearestPlanet(FakePlanet p0)
+        {
+            FakePlanet nearest = null;
+            foreach (FakePlanet planet in planets)
+            {
+                if (planet == p0) continue;
+                if (links[p0].Contains(planet)) continue;
+                if (nearest == null || planet.Location.GetDistanceTo(p0.Location, false) < nearest.Location.GetDistanceTo(p0.Location, false))
+                {
+                    nearest = planet;
+                }
+            }
+
+            if (nearest != null)
+            {
+                AddLink(p0, nearest);
+            }
         }
 
         public void MakeBilateral()
