@@ -31,8 +31,9 @@ namespace AhyangyiMaps.Tessellation
         public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
         {
             // `rows` & `columns`: The base grid size
-            int rows = par.AddParameter("rows", 1, 35, 7);
-            int columns = par.AddParameter("columns", 1, 35, 10);
+            int rows = par.AddParameter("rows", 2, 35, 7);
+            int columns = par.AddParameter("columns", 2, 35, 10);
+            int oddity = par.AddParameter("oddity", 0, 1, 0);
 
             if (symmetry == 150 && columns % 2 == 0) return;
             if (symmetry == 200 && (rows + columns) % 2 == 1) return;
@@ -49,7 +50,7 @@ namespace AhyangyiMaps.Tessellation
                 if (par.AddBadness("Rotational Shape", (rows - idealR).Abs())) return;
             }
 
-            FakeGalaxy g = MakeGrid(rows, columns);
+            FakeGalaxy g = MakeGrid(rows, columns, oddity);
             if (symmetry == 150)
             {
                 g.MakeBilateral();
@@ -86,7 +87,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 columns = (columns + 3) / 4;
                 rows = (rows * 4 / 3) / 2 * 2 + columns % 2;
-                g = MakeGrid(rows, columns);
+                g = MakeGrid(rows, columns, oddity);
                 g.MakeY((AspectRatio)aspectRatioIndex, dunit, (columns + 1) * xunit);
             }
 
@@ -108,12 +109,12 @@ namespace AhyangyiMaps.Tessellation
             par.Commit(g, p, outline);
         }
 
-        private static FakeGalaxy MakeGrid(int rows, int columns)
+        private static FakeGalaxy MakeGrid(int rows, int columns, int oddity)
         {
             FakeGalaxy g = new FakeGalaxy();
             for (int i = 0; i < rows; ++i)
                 for (int j = 0; j < columns; ++j)
-                    if ((i + j) % 2 == 0)
+                    if ((i + j) % 2 == oddity)
                         hexagon.Imprint(g, ArcenPoint.Create(j * xunit, i * yunit * 3));
 
             return g;
