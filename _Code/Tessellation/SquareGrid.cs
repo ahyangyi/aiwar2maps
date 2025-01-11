@@ -33,7 +33,7 @@ namespace AhyangyiMaps.Tessellation
         {
             // parse the symmetry value
             int n = symmetry / 100;
-            bool dihedral = symmetry % 50 == 50;
+            bool dihedral = symmetry % 100 == 50;
             FInt sectorSlope = SymmetryConstants.Rotational[n].sectorSlope;
 
             // `rows` & `columns`: The base grid size
@@ -58,7 +58,7 @@ namespace AhyangyiMaps.Tessellation
                 {
                     FInt leastR = actualColumns / sectorSlope * FInt.Create(750, false);
                     FInt idealR = actualColumns / sectorSlope * FInt.Create(750, false);
-                    if (rows <= leastR)
+                    if (rows < leastR)
                     {
                         return;
                     }
@@ -68,11 +68,26 @@ namespace AhyangyiMaps.Tessellation
                 }
                 else if (galaxyShape == 1)
                 {
-                    // Legacy case here
-                    FInt idealR = actualColumns / sectorSlope * FInt.Create(750, false);
-                    par.AddInfo("Ideal R", idealR.ToString());
-                    if (par.AddBadness("Rotational Shape", (rows - idealR).Abs())) return;
-                    g = MakeGrid(rows, columns);
+                    if (columns < 3)
+                    {
+                        return;
+                    }
+                    // FIXME: not actually finished
+                    int bevel = par.AddParameter("bevel",
+                        Math.Max(columns / 5, 1),
+                        Math.Max(columns / 3, 1),
+                        Math.Max(columns / 4, 1));
+                    FInt idealBevel = columns / FInt.Create(4000, false);
+                    FInt idealR = actualColumns / sectorSlope * FInt.Create(500, false) + bevel;
+                    if (rows <= idealR - 1 || rows >= idealR + 1)
+                    {
+                        return;
+                    }
+                    par.AddInfo("Ideal rows", idealR.ToString());
+                    if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return;
+                    par.AddInfo("Ideal bevel", idealBevel.ToString());
+                    if (par.AddBadness("Bevel Difference", (bevel - idealBevel).Abs() * 10)) return;
+                    g = MakeGridOctagonal(rows, columns, bevel, true);
                 }
                 else
                 {
@@ -300,7 +315,7 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (galaxyShape == 1)
             {
-                g = MakeGridOctagonal(rows, columns, sp, f, offset);
+                g = MakeGridOctagonal(rows, columns, sp, false, f, offset);
             }
             else
             {
@@ -377,7 +392,7 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        protected static FakeGalaxy MakeGridOctagonal(int rows, int columns, int octagonalSideLength, int sectionColumns = 0, int sectionOffset = 0)
+        protected static FakeGalaxy MakeGridOctagonal(int rows, int columns, int octagonalSideLength, bool half = false, int sectionColumns = 0, int sectionOffset = 0)
         {
             FakeGalaxy g = new FakeGalaxy();
             if (sectionColumns == 0)
@@ -390,8 +405,11 @@ namespace AhyangyiMaps.Tessellation
                     int k = j % sectionOffset % sectionColumns;
                     if ((i + k) < octagonalSideLength) continue;
                     if ((i + sectionColumns - 1 - k) < octagonalSideLength) continue;
-                    if ((rows - 1 - i + k) < octagonalSideLength) continue;
-                    if ((rows - 1 - i + sectionColumns - 1 - k) < octagonalSideLength) continue;
+                    if (!half)
+                    {
+                        if ((rows - 1 - i + k) < octagonalSideLength) continue;
+                        if ((rows - 1 - i + sectionColumns - 1 - k) < octagonalSideLength) continue;
+                    }
                     square.Imprint(g, ArcenPoint.Create(j * unit, i * unit));
                 }
 
