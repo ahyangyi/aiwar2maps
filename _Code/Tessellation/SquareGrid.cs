@@ -72,7 +72,6 @@ namespace AhyangyiMaps.Tessellation
                     {
                         return;
                     }
-                    // FIXME: not actually finished
                     int bevel = par.AddParameter("bevel",
                         Math.Max(columns / 5, 1),
                         Math.Max(columns / 3, 1),
@@ -111,6 +110,28 @@ namespace AhyangyiMaps.Tessellation
                         return;
                     }
                     g = MakeGrid(rows, columns);
+                }
+                else if (galaxyShape == 1)
+                {
+                    if (columns < 3)
+                    {
+                        return;
+                    }
+                    int bevel = par.AddParameter("bevel",
+                        Math.Max(columns / 6, 1),
+                        Math.Max(columns / 4, 1),
+                        Math.Max(columns / 5, 1));
+                    FInt idealBevel = columns / FInt.Create(4828, false);
+                    FInt idealR = actualColumns / sectorSlope * FInt.Create(500, false) + bevel;
+                    if (rows <= idealR - 1 || rows >= idealR + 1)
+                    {
+                        return;
+                    }
+                    par.AddInfo("Ideal rows", idealR.ToString());
+                    if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return;
+                    par.AddInfo("Ideal bevel", idealBevel.ToString());
+                    if (par.AddBadness("Bevel Difference", (bevel - idealBevel).Abs() * 10)) return;
+                    g = MakeGridOctagonal(rows, columns, bevel, true);
                 }
                 else
                 {
