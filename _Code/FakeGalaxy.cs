@@ -700,7 +700,7 @@ namespace AhyangyiMaps
                 }
             }
         }
-        public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional, bool autoAdvance = false)
+        public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional, bool autoAdvance = false, int connectThreshold = 0)
         {
             var planetsToRemove = new HashSet<FakePlanet>();
             var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
@@ -870,6 +870,10 @@ namespace AhyangyiMaps
                     continue;
                 }
                 if (mergeLeftToRight.ContainsKey(planet))
+                {
+                    continue;
+                }
+                if (planet.Y < connectThreshold)
                 {
                     continue;
                 }

@@ -23,11 +23,6 @@ namespace AhyangyiMaps.Tessellation
             square.AddLink(p2, p3);
             square.AddLink(p3, p0);
         }
-        enum RotationalStyle
-        {
-            POLYGON,
-            EXTENDED,
-        };
 
         private void MakeRotationalGrid(int outerPath, int galaxyShape, int symmetry, ParameterService par)
         {
@@ -40,6 +35,7 @@ namespace AhyangyiMaps.Tessellation
             int rows = par.AddParameter("rows", 1, 45, 7);
             int columns = par.AddParameter("columns", 1, 45, 10);
             bool advance = columns % 2 == 1;
+            int connectThreshold = 0;
 
             int actualColumns;
             if (advance)
@@ -56,47 +52,16 @@ namespace AhyangyiMaps.Tessellation
             {
                 if (galaxyShape == 0)
                 {
-                    FInt leastR = actualColumns / sectorSlope * FInt.Create(750, false);
-                    FInt idealR = actualColumns / sectorSlope * FInt.Create(750, false);
-                    if (rows < leastR)
-                    {
-                        return;
-                    }
-                    par.AddInfo("Ideal rows", idealR.ToString());
-                    if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return;
-                    g = MakeGrid(rows, columns);
+                    g = ExtendedStyle(par, sectorSlope, rows, columns, actualColumns);
                 }
                 else if (galaxyShape == 1)
                 {
-                    if (columns < 3)
-                    {
-                        return;
-                    }
-                    int bevel = par.AddParameter("bevel",
-                        Math.Max(columns / 5, 1),
-                        Math.Max(columns / 3, 1),
-                        Math.Max(columns / 4, 1));
-                    FInt idealBevel = columns / FInt.Create(4000, false);
-                    FInt idealR = actualColumns / sectorSlope * FInt.Create(500, false) + bevel;
-                    if (rows <= idealR - 1 || rows >= idealR + 1)
-                    {
-                        return;
-                    }
-                    par.AddInfo("Ideal rows", idealR.ToString());
-                    if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return;
-                    par.AddInfo("Ideal bevel", idealBevel.ToString());
-                    if (par.AddBadness("Bevel Difference", (bevel - idealBevel).Abs() * 10)) return;
-                    g = MakeGridOctagonal(rows, columns, bevel, true);
+                    g = NonagonalStyle(par, sectorSlope, rows, columns, actualColumns);
                 }
                 else
                 {
                     // Pointy 3-fold symmetry: a equilateral triangle
-                    FInt idealR = actualColumns / sectorSlope / 2;
-                    if (rows > idealR)
-                    {
-                        return;
-                    }
-                    g = MakeGrid(rows, columns);
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
                 }
             }
             else if (n == 4)
@@ -104,80 +69,40 @@ namespace AhyangyiMaps.Tessellation
                 if (galaxyShape == 0)
                 {
                     // Normal 4 fold symmetry ==> always a square shape
-                    FInt idealC = rows * sectorSlope * 2;
-                    if (actualColumns < idealC || actualColumns > idealC + 2)
-                    {
-                        return;
-                    }
-                    g = MakeGrid(rows, columns);
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
                 }
                 else if (galaxyShape == 1)
                 {
-                    if (columns < 3)
-                    {
-                        return;
-                    }
-                    int bevel = par.AddParameter("bevel",
-                        Math.Max(columns / 6, 1),
-                        Math.Max(columns / 4, 1),
-                        Math.Max(columns / 5, 1));
-                    FInt idealBevel = columns / FInt.Create(4828, false);
-                    FInt idealR = actualColumns / sectorSlope * FInt.Create(500, false) + bevel;
-                    if (rows <= idealR - 1 || rows >= idealR + 1)
-                    {
-                        return;
-                    }
-                    par.AddInfo("Ideal rows", idealR.ToString());
-                    if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return;
-                    par.AddInfo("Ideal bevel", idealBevel.ToString());
-                    if (par.AddBadness("Bevel Difference", (bevel - idealBevel).Abs() * 10)) return;
-                    g = MakeGridOctagonal(rows, columns, bevel, true);
+                    g = OctagonalStyle(par, sectorSlope, rows, columns, actualColumns);
                 }
                 else
                 {
-                    // FIXME: explain what I'm doing here
-                    FInt idealR = actualColumns / sectorSlope * FInt.Create(500, false);
-                    if (rows > idealR)
-                    {
-                        return;
-                    }
-                    g = MakeGrid(rows, columns);
+                    // A cross, where each part is just a 3:2 rectangle
+                    g = AsteriskStyle(par, sectorSlope, rows, columns, ref connectThreshold, actualColumns);
                 }
             }
             else
             {
                 if (galaxyShape == 0)
                 {
-                    FInt leastR = actualColumns / sectorSlope * FInt.Create(750, false);
-                    FInt idealR = actualColumns / sectorSlope * FInt.Create(750, false);
-                    if (rows <= leastR)
-                    {
-                        return;
-                    }
-                    par.AddInfo("Ideal rows", idealR.ToString());
-                    if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return;
-                    g = MakeGrid(rows, columns);
+                    g = ExtendedStyle(par, sectorSlope, rows, columns, actualColumns);
                 }
                 else if (galaxyShape == 1)
                 {
-                    FInt idealR = actualColumns / sectorSlope / 2;
-                    if (rows > idealR)
-                    {
-                        return;
-                    }
-                    g = MakeGrid(rows, columns);
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
                 }
                 else
                 {
-                    // Legacy case here
-                    FInt idealR = actualColumns / sectorSlope * FInt.Create(750, false);
-                    par.AddInfo("Ideal R", idealR.ToString());
-                    if (par.AddBadness("Rotational Shape", (rows - idealR).Abs())) return;
-                    g = MakeGrid(rows, columns);
+                    g = AsteriskStyle(par, sectorSlope, rows, columns, ref connectThreshold, actualColumns);
                 }
             }
 
-            g.MakeRotationalGeneric(unit * columns / 2, unit * rows, unit, n, dihedral, advance);
+            if (g == null)
+            {
+                return;
+            }
+
+            g.MakeRotationalGeneric(unit * columns / 2, unit * rows, unit, n, dihedral, advance, connectThreshold);
 
             FakeGalaxy p;
             var outline = new Outline(g.FindOutline());
@@ -195,6 +120,89 @@ namespace AhyangyiMaps.Tessellation
             }
 
             par.Commit(g, p, outline);
+        }
+
+        private static FakeGalaxy OctagonalStyle(ParameterService par, FInt sectorSlope, int rows, int columns, int actualColumns)
+        {
+            if (columns < 3)
+            {
+                return null;
+            }
+            int bevel = par.AddParameter("bevel",
+                Math.Max(columns / 6, 1),
+                Math.Max(columns / 4, 1),
+                Math.Max(columns / 5, 1));
+            FInt idealBevel = columns / FInt.Create(4828, false);
+            FInt idealR = actualColumns / (sectorSlope * 2) + bevel;
+            if (rows <= idealR - 1 || rows >= idealR + 1)
+            {
+                return null;
+            }
+            par.AddInfo("Ideal rows", idealR.ToString());
+            if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
+            par.AddInfo("Ideal bevel", idealBevel.ToString());
+            if (par.AddBadness("Bevel Difference", (bevel - idealBevel).Abs() * 10)) return null;
+            return MakeGridOctagonal(rows, columns, bevel, true);
+        }
+
+        private static FakeGalaxy NonagonalStyle(ParameterService par, FInt sectorSlope, int rows, int columns, int actualColumns)
+        {
+            if (columns < 3)
+            {
+                return null;
+            }
+            int bevel = par.AddParameter("bevel",
+                Math.Max(columns / 5, 1),
+                Math.Max(columns / 3, 1),
+                Math.Max(columns / 4, 1));
+            FInt idealBevel = columns / FInt.Create(4000, false);
+            FInt idealR = actualColumns / (sectorSlope * 2) + bevel;
+            if (rows <= idealR - 1 || rows >= idealR + 1)
+            {
+                return null;
+            }
+            par.AddInfo("Ideal rows", idealR.ToString());
+            if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
+            par.AddInfo("Ideal bevel", idealBevel.ToString());
+            if (par.AddBadness("Bevel Difference", (bevel - idealBevel).Abs() * 10)) return null;
+            return MakeGridOctagonal(rows, columns, bevel, true);
+        }
+
+        private static FakeGalaxy AsteriskStyle(ParameterService par, FInt sectorSlope, int rows, int columns, ref int connectThreshold, int actualColumns)
+        {
+            // We reuse the formula for the cross case, but for an asterisk
+            FInt idealR = columns + actualColumns / (sectorSlope * 2);
+            if (rows <= idealR - 1 || rows >= idealR + 1)
+            {
+                return null;
+            }
+            par.AddInfo("Ideal rows", idealR.ToString());
+            if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
+            connectThreshold = unit * columns;
+            return MakeGrid(rows, columns);
+        }
+
+        private static FakeGalaxy PolygonStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
+        {
+            FInt idealR = actualColumns / sectorSlope / 2;
+            if (rows > idealR)
+            {
+                return null;
+            }
+            return MakeGrid(rows, columns);
+        }
+
+        private static FakeGalaxy ExtendedStyle(ParameterService par, FInt sectorSlope, int rows, int columns, int actualColumns)
+        {
+            FInt leastR = actualColumns / (sectorSlope * 4 / 3);
+            FInt idealR = actualColumns / (sectorSlope * 4 / 3);
+            if (rows < leastR)
+            {
+                return null;
+            }
+            par.AddInfo("Ideal rows", idealR.ToString());
+            if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
+            return MakeGrid(rows, columns);
         }
 
         public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
