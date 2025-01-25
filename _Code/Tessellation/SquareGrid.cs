@@ -179,7 +179,7 @@ namespace AhyangyiMaps.Tessellation
             par.AddInfo("Ideal rows", idealR.ToString());
             if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
             connectThreshold = unit * columns;
-            return MakeGrid(rows, columns);
+            return MakeGridRectangular(rows, columns);
         }
 
         private static FakeGalaxy PolygonStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
@@ -189,7 +189,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 return null;
             }
-            return MakeGrid(rows, columns);
+            return MakeGridRectangular(rows, columns);
         }
 
         private static FakeGalaxy ExtendedStyle(ParameterService par, FInt sectorSlope, int rows, int columns, int actualColumns)
@@ -202,7 +202,7 @@ namespace AhyangyiMaps.Tessellation
             }
             par.AddInfo("Ideal rows", idealR.ToString());
             if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
-            return MakeGrid(rows, columns);
+            return MakeGridRectangular(rows, columns);
         }
 
         public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
@@ -340,7 +340,7 @@ namespace AhyangyiMaps.Tessellation
 
             if (galaxyShape == 0)
             {
-                g = MakeGrid(rows, columns, borderThickness);
+                g = MakeGridRectangular(rows, columns, borderThickness);
             }
             else if (galaxyShape == 1)
             {
@@ -407,7 +407,7 @@ namespace AhyangyiMaps.Tessellation
             par.Commit(g, p, outline);
         }
 
-        protected static FakeGalaxy MakeGrid(int rows, int columns, int borderWidth = 0)
+        protected static FakeGalaxy MakeGridRectangular(int rows, int columns, int borderWidth = 0)
         {
             FakeGalaxy g = new FakeGalaxy();
             for (int i = 0; i < rows; ++i)

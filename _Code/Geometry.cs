@@ -234,32 +234,34 @@ namespace AhyangyiMaps
             NORMAL = 0,
             IGNORE = 1,
             SPECIAL = 2,
+            BOTH = 3,
         }
-        public static System.Collections.Generic.Dictionary<int, AspectRatioMode> AspectRatioModeLookup;
+        public static System.Collections.Generic.List<int> Symmetries;
 
         static SymmetryConstants()
         {
-            AspectRatioModeLookup = new System.Collections.Generic.Dictionary<int, AspectRatioMode> {
-                { 100, AspectRatioMode.NORMAL},
-                { 150, AspectRatioMode.NORMAL},
-                { 200, AspectRatioMode.NORMAL},
-                { 250, AspectRatioMode.NORMAL},
-                { 300, AspectRatioMode.IGNORE},
-                { 350, AspectRatioMode.IGNORE},
-                { 400, AspectRatioMode.IGNORE},
-                { 450, AspectRatioMode.IGNORE},
-                { 500, AspectRatioMode.IGNORE},
-                { 600, AspectRatioMode.IGNORE},
-                { 700, AspectRatioMode.IGNORE},
-                { 800, AspectRatioMode.IGNORE},
-                { 10000, AspectRatioMode.NORMAL},
-                { 10001, AspectRatioMode.NORMAL},
-                { 10002, AspectRatioMode.NORMAL},
-                { 10100, AspectRatioMode.NORMAL},
-                { 10101, AspectRatioMode.SPECIAL},
-                { 10200, AspectRatioMode.SPECIAL},
+            Symmetries = new System.Collections.Generic.List<int> {
+                100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800,
+                10000, 10001, 10002, 10100, 10101, 12000
             };
         }
+        public static AspectRatioMode GetAspectRatioMode(int symmetry, int tessellation)
+        {
+            if (symmetry >= 300 && symmetry < 10000)
+            {
+                return AspectRatioMode.IGNORE;
+            }
+            if (symmetry == 10101 || symmetry == 10200)
+            {
+                return AspectRatioMode.SPECIAL;
+            }
+            if (tessellation == 1 && symmetry < 300)
+            {
+                return AspectRatioMode.BOTH;
+            }
+            return AspectRatioMode.NORMAL;
+        }
+
         public SymmetryConstants(FInt sectorSlope, FInt distanceCoefficient)
         {
             this.sectorSlope = sectorSlope;

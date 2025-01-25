@@ -207,7 +207,7 @@ namespace AhyangyiMaps
         }
         private static void RunTableGenVenti(int tessellation)
         {
-            foreach (int symmetry in SymmetryConstants.AspectRatioModeLookup.Keys)
+            foreach (int symmetry in SymmetryConstants.Symmetries)
             {
                 RunTableGenGrande(tessellation, symmetry);
             }
@@ -232,7 +232,8 @@ namespace AhyangyiMaps
             {
                 par.OuterPath = curOuterPath;
 
-                if (SymmetryConstants.AspectRatioModeLookup[symmetry] == SymmetryConstants.AspectRatioMode.SPECIAL)
+                if (SymmetryConstants.GetAspectRatioMode(symmetry, tessellation) == SymmetryConstants.AspectRatioMode.SPECIAL ||
+                    SymmetryConstants.GetAspectRatioMode(symmetry, tessellation) == SymmetryConstants.AspectRatioMode.BOTH)
                 {
                     for (int aspectRatio = 0; aspectRatio < ASPECT_RATIO_TYPES; ++aspectRatio)
                     {

@@ -18,6 +18,8 @@ namespace AhyangyiMaps
 
     public class ParameterService
     {
+        private static readonly int MAX_BADNESS = 1000;
+
         public const int MAX_PARAMETERS = 6;
         public static System.Collections.Generic.List<int> PlanetNumbers;
         public static System.Collections.Generic.Dictionary<int, int> PlanetIndex;
@@ -78,7 +80,7 @@ namespace AhyangyiMaps
             Dissonance = dissonance;
             AspectRatioIndex = aspectRatioIndex;
             OuterPath = outerPath;
-            aspectRatioMode = SymmetryConstants.AspectRatioModeLookup[symmetry];
+            aspectRatioMode = SymmetryConstants.GetAspectRatioMode(symmetry, tessellation);
 
             CurrentBadness = FInt.Zero;
             history = new System.Collections.Generic.List<ParameterRange>();
@@ -195,7 +197,7 @@ namespace AhyangyiMaps
             }
             badnessInfo[key] = (badness, isWarning);
             CurrentBadness += badness;
-            return CurrentBadness >= 100;
+            return CurrentBadness >= MAX_BADNESS;
         }
 
         internal void Commit(FakeGalaxy g, FakeGalaxy p, Outline o)
@@ -206,12 +208,12 @@ namespace AhyangyiMaps
 
             if (mode == TableGenMode.GEN_TABLE || mode == TableGenMode.OPTIMIZE)
             {
-                if (aspectRatioMode == SymmetryConstants.AspectRatioMode.NORMAL)
+                if (aspectRatioMode == SymmetryConstants.AspectRatioMode.NORMAL || aspectRatioMode == SymmetryConstants.AspectRatioMode.BOTH)
                 {
                     FInt aspectRatio = g.AspectRatio();
                     AddInfo("AspectRatio", aspectRatio.ToString());
 
-                    if (mode == TableGenMode.GEN_TABLE)
+                    if (mode == TableGenMode.GEN_TABLE && aspectRatioMode == SymmetryConstants.AspectRatioMode.NORMAL)
                     {
                         for (int aspectRatioIndex = 0; aspectRatioIndex < TessellationTypeGenerator.ASPECT_RATIO_TYPES; ++aspectRatioIndex)
                         {
@@ -291,10 +293,10 @@ namespace AhyangyiMaps
             }
         }
 
-        public static int CalculateIndex(int symmetry, int targetPlanetIndex, int aspectRatioIndex, int dissonanceType, int outerPath)
+        public int CalculateIndex(int symmetry, int targetPlanetIndex, int aspectRatioIndex, int dissonanceType, int outerPath)
         {
             int index;
-            if (SymmetryConstants.AspectRatioModeLookup[symmetry] == SymmetryConstants.AspectRatioMode.IGNORE)
+            if (SymmetryConstants.GetAspectRatioMode(symmetry, Tessellation) == SymmetryConstants.AspectRatioMode.IGNORE)
             {
                 index = (targetPlanetIndex * TessellationTypeGenerator.DISSONANCE_TYPES + dissonanceType)
                     * TessellationTypeGenerator.OUTER_PATH_TYPES + outerPath;
