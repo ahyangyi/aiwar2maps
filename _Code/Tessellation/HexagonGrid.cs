@@ -39,21 +39,21 @@ namespace AhyangyiMaps.Tessellation
                 oddity = par.AddParameter("oddity", 0, 1, 0);
             }
 
-            if (galaxyShape == 1)
+            if (galaxyShape >= 1)
             {
                 if (rows % 2 == 0 || columns % 2 == 0)
                 {
                     return;
                 }
-                if (aspectRatioIndex == 0 && columns <= rows * 2 - 1)
+                if (aspectRatioIndex == 0 && columns <= rows * 2 + 1 - 2 * galaxyShape)
                 {
                     return;
                 }
-                if (aspectRatioIndex == 1 && columns != rows * 2 - 1)
+                if (aspectRatioIndex == 1 && columns != rows * 2 + 1 - 2 * galaxyShape)
                 {
                     return;
                 }
-                if (aspectRatioIndex == 2 && (columns >= rows * 2 - 1 || columns % 4 != 1))
+                if (aspectRatioIndex == 2 && (columns >= rows * 2 + 1 - 2 * galaxyShape || columns % 4 != 1))
                 {
                     return;
                 }
@@ -93,7 +93,14 @@ namespace AhyangyiMaps.Tessellation
             }
             else
             {
-                g = MakeGridRectangular(rows, columns, 0);
+                if (aspectRatioIndex <= 1)
+                {
+                    g = MakeGridConcave(rows, columns, rows / 2);
+                }
+                else
+                {
+                    g = MakeGridConcave(rows, columns, columns / 4);
+                }
             }
 
             if (symmetry == 150)
@@ -176,6 +183,22 @@ namespace AhyangyiMaps.Tessellation
                         if ((i + columns - 1 - j) < bevel) continue;
                         if ((rows - 1 - i + j) < bevel) continue;
                         if ((rows - 1 - i + columns - 1 - j) < bevel) continue;
+                        hexagon.Imprint(g, ArcenPoint.Create(j * xunit, i * yunit * 3));
+                    }
+
+            return g;
+        }
+
+        private static FakeGalaxy MakeGridConcave(int rows, int columns, int bevel)
+        {
+            FakeGalaxy g = new FakeGalaxy();
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
+                    if ((i + j) % 2 == 0)
+                    {
+                        if (j < i && j < rows - 1 - i && j < bevel) continue;
+                        int k = columns - 1 - j;
+                        if (k < i && k < rows - 1 - i && k < bevel) continue;
                         hexagon.Imprint(g, ArcenPoint.Create(j * xunit, i * yunit * 3));
                     }
 
