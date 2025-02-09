@@ -28,8 +28,133 @@ namespace AhyangyiMaps.Tessellation
             hexagon.AddLink(p4, p5);
             hexagon.AddLink(p5, p0);
         }
+
+        private void MakeRotationalGrid(int outerPath, int galaxyShape, int symmetry, ParameterService par)
+        {
+            // parse the symmetry value
+            int n = symmetry / 100;
+            bool dihedral = symmetry % 100 == 50;
+            FInt sectorSlope = SymmetryConstants.Rotational[n].sectorSlope;
+
+            // `rows` & `columns`: The base grid size
+            int rows = par.AddParameter("rows", 1, 45, 7);
+            int columns = par.AddParameter("columns", 1, 45, 10);
+
+            if (columns % 2 == 0)
+            {
+                return;
+            }
+
+            bool advance = true;
+            int connectThreshold = 0;
+
+            int actualColumns;
+            if (advance)
+            {
+                actualColumns = columns - 1;
+            }
+            else
+            {
+                actualColumns = columns;
+            }
+
+            FakeGalaxy g;
+            if (n == 3)
+            {
+                if (galaxyShape == 0)
+                {
+                    // FIXME
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                }
+                else if (galaxyShape == 1)
+                {
+                    // FIXME
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                }
+                else
+                {
+                    // Pointy 3-fold symmetry: a equilateral triangle
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                }
+            }
+            else if (n == 4)
+            {
+                if (galaxyShape == 0)
+                {
+                    // Normal 4 fold symmetry ==> always a square shape
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                }
+                else if (galaxyShape == 1)
+                {
+                    // FIXME
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                }
+                else
+                {
+                    // FIXME
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                }
+            }
+            else
+            {
+                if (galaxyShape == 0)
+                {
+                    // FIXME
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                }
+                else if (galaxyShape == 1)
+                {
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                }
+                else
+                {
+                    // FIXME
+                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                }
+            }
+
+            if (g == null)
+            {
+                return;
+            }
+            g.MakeRotationalGeneric((columns + 1) * xunit / 2, (rows * 3 + 1) * yunit, dunit, n, dihedral, advance, connectThreshold);
+
+            FakeGalaxy p;
+            var outline = new Outline(g.FindOutline());
+            if (outerPath == 0)
+            {
+                p = new FakeGalaxy();
+            }
+            else if (outerPath == 1)
+            {
+                p = g.MarkOutline();
+            }
+            else
+            {
+                p = g.MakeBeltWay();
+            }
+
+            par.Commit(g, p, outline);
+        }
+
+        private static FakeGalaxy PolygonStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
+        {
+            FInt idealR = actualColumns / sectorSlope / 2;
+            if (rows > idealR)
+            {
+                return null;
+            }
+            return MakeGridRectangular(rows, columns, 0);
+        }
+
         public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
         {
+            if (symmetry >= 300 && symmetry < 10000)
+            {
+                MakeRotationalGrid(outerPath, galaxyShape, symmetry, par);
+                return;
+            }
+
             // `rows` & `columns`: The base grid size
             int rows = par.AddParameter("rows", 2, 35, 7);
             int columns = par.AddParameter("columns", 2, 60, 10);
@@ -67,13 +192,6 @@ namespace AhyangyiMaps.Tessellation
             if (symmetry == 10001 && columns % 3 != 2) return;
             if (symmetry == 10002 && ((rows + columns) % 2 == 1 || columns % 4 == 1 || columns % 4 == 2)) return;
             if (symmetry == 10101 && columns % 2 != 1) return;
-
-            if (symmetry >= 300 && symmetry < 10000)
-            {
-                FInt idealR = ((columns + 1) * xunit / SymmetryConstants.Rotational[symmetry / 100].sectorSlope * FInt.Create(750, false) / yunit - 1) / 3;
-                par.AddInfo("Ideal R", idealR.ToString());
-                if (par.AddBadness("Rotational Shape", (rows - idealR).Abs())) return;
-            }
 
             FakeGalaxy g;
 
@@ -115,10 +233,6 @@ namespace AhyangyiMaps.Tessellation
             else if (symmetry == 250)
             {
                 g.MakeRotational2Bilateral();
-            }
-            else if (symmetry >= 300 && symmetry < 10000)
-            {
-                g.MakeRotationalGeneric((columns + 1) * xunit / 2, (rows * 3 + 1) * yunit, dunit, symmetry / 100, symmetry % 100 == 50, true);
             }
             else if (symmetry == 10000)
             {
