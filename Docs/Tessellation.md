@@ -28,6 +28,10 @@ This option interacts with about all other options in this map generator: the sy
 ## Galaxy Shape
 This option offers a way to control the general shape of the galaxy. Due to complex interactions with tessellation types and symmetries, we do not offer concrete shapes. Instead, the three options are general ideas that with clear gameplay consequences.
 
+| <img src="Symmetries/150.jpg?raw=true" alt="Default" height=200> |<img src="Galaxy%20Shapes/2.jpg?raw=true" alt="Rounded" height=200> |<img src="Galaxy%20Shapes/3.jpg?raw=true" alt="Pointy" height=200> |
+|:--:|:--:|:--:|
+| Default | Rounded | Pointy |
+
 ## Outer Path
 Are you a fan of Dismiss's Generator mod and the "outer path" option? Are you a fan of RadiantMaps and their "beltway" option? I am, and hence I offer my interpretation of these options.
 
