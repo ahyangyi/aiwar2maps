@@ -28,6 +28,8 @@ This option interacts with about all other options in this map generator: the sy
 ## Galaxy Shape
 This option offers a way to control the general shape of the galaxy. Due to complex interactions with tessellation types and symmetries, we do not offer concrete shapes. Instead, the three options are general ideas that with clear gameplay consequences.
 
+`Default` typically attempts to fill in a rectangular area, unless the symmetry enforces a different one. `Rounded` usually cuts corners and makes it easier to reach from the farthest pair of planets. `Pointy` does the opposite, creates more chances of long paths and potential chokepoints.
+
 | <img src="Symmetries/150.jpg?raw=true" alt="Default" height=200> |<img src="Galaxy%20Shapes/2.jpg?raw=true" alt="Rounded" height=200> |<img src="Galaxy%20Shapes/3.jpg?raw=true" alt="Pointy" height=200> |
 |:--:|:--:|:--:|
 | Default | Rounded | Pointy |
