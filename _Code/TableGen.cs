@@ -1,6 +1,7 @@
 using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -411,7 +412,7 @@ namespace AhyangyiMaps
                 sw.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
                 sw.WriteLine("<root");
                 sw.WriteLine("    is_partial_record=\"true\"");
-                foreach (var kvp in existingTable.OrderBy(x => x.Key))
+                foreach (var kvp in existingTable.OrderBy(x => (Int32.Parse(x.Key.Split('_')[2]), Int32.Parse(x.Key.Split('_')[3]), Int32.Parse(x.Key.Split('_')[4]))))
                 {
                     sw.WriteLine($"    {kvp.Key}=\"{kvp.Value}\"");
                 }

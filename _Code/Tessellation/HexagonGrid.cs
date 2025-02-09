@@ -45,15 +45,16 @@ namespace AhyangyiMaps.Tessellation
                 {
                     return;
                 }
-                if (aspectRatioIndex == 0 && columns <= rows * 2 + 1 - 2 * galaxyShape)
+                int columnsThreshold = rows * 2 + 1 - 2 * galaxyShape;
+                if (aspectRatioIndex == 0 && columns <= columnsThreshold)
                 {
                     return;
                 }
-                if (aspectRatioIndex == 1 && columns != rows * 2 + 1 - 2 * galaxyShape)
+                if (aspectRatioIndex == 1 && columns != columnsThreshold)
                 {
                     return;
                 }
-                if (aspectRatioIndex == 2 && (columns >= rows * 2 + 1 - 2 * galaxyShape || columns % 4 != 1))
+                if (aspectRatioIndex == 2 && (columns >= columnsThreshold || columns % 4 != 1))
                 {
                     return;
                 }
