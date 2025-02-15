@@ -121,7 +121,6 @@ namespace AhyangyiMaps.Tessellation
 
             par.Commit(g, p, outline);
         }
-
         private static FakeGalaxy OctagonalStyle(ParameterService par, FInt sectorSlope, int rows, int columns, int actualColumns)
         {
             if (columns < 3)

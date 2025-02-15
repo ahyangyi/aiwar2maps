@@ -1,5 +1,6 @@
 ﻿using Arcen.AIW2.Core;
 using Arcen.Universal;
+using System;
 
 namespace AhyangyiMaps.Tessellation
 {
@@ -61,13 +62,11 @@ namespace AhyangyiMaps.Tessellation
             {
                 if (galaxyShape == 0)
                 {
-                    // FIXME
-                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                    g = ExtendedStyle(par, sectorSlope, rows, columns, actualColumns);
                 }
                 else if (galaxyShape == 1)
                 {
-                    // FIXME
-                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                    g = NonagonalStyle(par, sectorSlope, rows, columns, actualColumns);
                 }
                 else
                 {
@@ -84,21 +83,19 @@ namespace AhyangyiMaps.Tessellation
                 }
                 else if (galaxyShape == 1)
                 {
-                    // FIXME
-                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                    g = OctagonalStyle(par, sectorSlope, rows, columns, actualColumns);
                 }
                 else
                 {
-                    // FIXME
-                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                    // A cross, where each part is just a 3:2 rectangle
+                    g = AsteriskStyle(par, sectorSlope, rows, columns, ref connectThreshold, actualColumns);
                 }
             }
             else
             {
                 if (galaxyShape == 0)
                 {
-                    // FIXME
-                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                    g = ExtendedStyle(par, sectorSlope, rows, columns, actualColumns);
                 }
                 else if (galaxyShape == 1)
                 {
@@ -106,8 +103,7 @@ namespace AhyangyiMaps.Tessellation
                 }
                 else
                 {
-                    // FIXME
-                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                    g = AsteriskStyle(par, sectorSlope, rows, columns, ref connectThreshold, actualColumns);
                 }
             }
 
@@ -134,6 +130,66 @@ namespace AhyangyiMaps.Tessellation
 
             par.Commit(g, p, outline);
         }
+        private static FakeGalaxy OctagonalStyle(ParameterService par, FInt sectorSlope, int rows, int columns, int actualColumns)
+        {
+            if (columns < 3)
+            {
+                return null;
+            }
+            int bevel = par.AddParameter("bevel",
+                Math.Max(columns / 6, 1),
+                Math.Max(columns / 4, 1),
+                Math.Max(columns / 5, 1));
+            FInt idealBevel = columns / FInt.Create(4828, false);
+            FInt idealR = actualColumns / (sectorSlope * 2) + bevel;
+            if (rows <= idealR - 1 || rows >= idealR + 1)
+            {
+                return null;
+            }
+            par.AddInfo("Ideal rows", idealR.ToString());
+            if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
+            par.AddInfo("Ideal bevel", idealBevel.ToString());
+            if (par.AddBadness("Bevel Difference", (bevel - idealBevel).Abs() * 10)) return null;
+            return MakeGridSemioctagonal(rows, columns, bevel);
+        }
+
+        private static FakeGalaxy NonagonalStyle(ParameterService par, FInt sectorSlope, int rows, int columns, int actualColumns)
+        {
+            if (columns < 3)
+            {
+                return null;
+            }
+            int bevel = par.AddParameter("bevel",
+                Math.Max(columns / 5, 1),
+                Math.Max(columns / 3, 1),
+                Math.Max(columns / 4, 1));
+            FInt idealBevel = columns / FInt.Create(4000, false);
+            FInt idealR = actualColumns / (sectorSlope * 2) + bevel;
+            if (rows <= idealR - 1 || rows >= idealR + 1)
+            {
+                return null;
+            }
+            par.AddInfo("Ideal rows", idealR.ToString());
+            if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
+            par.AddInfo("Ideal bevel", idealBevel.ToString());
+            if (par.AddBadness("Bevel Difference", (bevel - idealBevel).Abs() * 10)) return null;
+            return MakeGridSemioctagonal(rows, columns, bevel);
+        }
+
+        private static FakeGalaxy AsteriskStyle(ParameterService par, FInt sectorSlope, int rows, int columns, ref int connectThreshold, int actualColumns)
+        {
+            // We reuse the formula for the cross case, but for an asterisk
+            FInt idealR = columns + actualColumns / (sectorSlope * 2);
+            if (rows <= idealR - 1 || rows >= idealR + 1)
+            {
+                return null;
+            }
+            par.AddInfo("Ideal rows", idealR.ToString());
+            if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
+            connectThreshold = unit * columns;
+            return MakeGridRectangular(rows, columns, 2);
+        }
+
         private static FakeGalaxy PolygonStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
         {
             FInt idealR = actualColumns / sectorSlope / 2;
@@ -141,6 +197,18 @@ namespace AhyangyiMaps.Tessellation
             {
                 return null;
             }
+            return MakeGridRectangular(rows, columns, 2);
+        }
+        private static FakeGalaxy ExtendedStyle(ParameterService par, FInt sectorSlope, int rows, int columns, int actualColumns)
+        {
+            FInt leastR = actualColumns / (sectorSlope * 4 / 3);
+            FInt idealR = actualColumns / (sectorSlope * 4 / 3);
+            if (rows < leastR)
+            {
+                return null;
+            }
+            par.AddInfo("Ideal rows", idealR.ToString());
+            if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
             return MakeGridRectangular(rows, columns, 2);
         }
 
@@ -227,9 +295,20 @@ namespace AhyangyiMaps.Tessellation
 
             return g;
         }
-        public static void GenerateTable(System.Collections.Generic.List<int> planetNumbers, string gridType)
-        {
 
+        protected static FakeGalaxy MakeGridSemioctagonal(int rows, int columns, int octagonalSideLength)
+        {
+            FakeGalaxy g = new FakeGalaxy();
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
+                {
+                    int k = j % columns;
+                    if ((i + k) < octagonalSideLength) continue;
+                    if ((i + columns - 1 - k) < octagonalSideLength) continue;
+                    squareY.Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
+                }
+
+            return g;
         }
     }
 }
