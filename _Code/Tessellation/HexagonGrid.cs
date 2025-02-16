@@ -185,12 +185,60 @@ namespace AhyangyiMaps.Tessellation
                 }
             }
 
+            // `parts`: We divide the columns into this many parts.
+            int parts;
+            if (symmetry == 10000 || symmetry == 10002)
+            {
+                parts = 2;
+            }
+            else if (symmetry == 10001)
+            {
+                parts = 3;
+            }
+            else
+            {
+                parts = 1;
+            }
+
+            // `overlap`, fine control how multi-part galaxies look like
+            int overlap;
+            if (parts == 1)
+                overlap = 0;
+            else
+                overlap = par.AddParameter("overlap", -4, 4, parts == 2 ? 1 : 0);
+            int d = overlap * (parts - 1);
+            if ((columns + d) % parts != 0) return;
+
+            if (parts == 2)
+            {
+                if (overlap < -2)
+                {
+                    if (par.AddBadness("Two-part Galaxies too faraway", (FInt)(-1 - overlap * 2), true)) return;
+                }
+                else if (overlap >= -1)
+                {
+                    if (par.AddBadness("Two-part Galaxies too close", (FInt)9 + overlap * 2, true)) return;
+                }
+            }
+            else if (parts == 3)
+            {
+                if (overlap < 0)
+                {
+                    if (par.AddBadness("Three-part Galaxies not touching", (FInt)12, true)) return;
+                }
+                else if (overlap > 0)
+                {
+                    if (par.AddBadness("Three-part Galaxies overlapping", (FInt)7, true)) return;
+                }
+            }
+
+            // `f`: the actual number of columns per part
+            int f = (columns + d) / parts;
+            if ((symmetry == 10000 || symmetry == 10001) && (f + overlap) % 2 == 1) return;
+
             if (symmetry == 150 && columns % 2 == 0) return;
             if (symmetry == 200 && (rows + columns) % 2 == 1) return;
             if (symmetry == 250 && (rows % 2 == 0 || columns % 2 == 0)) return;
-            if (symmetry == 10000 && (columns % 4 == 1 || columns % 4 == 2)) return;
-            if (symmetry == 10001 && columns % 3 != 2) return;
-            if (symmetry == 10002 && ((rows + columns) % 2 == 1 || columns % 4 == 1 || columns % 4 == 2)) return;
             if (symmetry == 10101 && columns % 2 != 1) return;
 
             FakeGalaxy g;

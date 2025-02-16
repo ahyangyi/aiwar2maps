@@ -271,7 +271,7 @@ namespace AhyangyiMaps.Tessellation
             if (galaxyShape == 1 && rows <= sp * 2) return;
             if (galaxyShape == 2 && ((rows + sp) % 2 != 0 || rows < sp + 2)) return;
 
-            // `overlap`
+            // `overlap`, fine control how multi-part galaxies look like
             int overlap;
             if (parts == 1)
                 overlap = 0;
@@ -303,7 +303,7 @@ namespace AhyangyiMaps.Tessellation
                 }
             }
 
-            // `f`
+            // `f`: the actual number of columns per part
             int f = (columns + d) / parts;
             if (galaxyShape == 1 && f <= sp * 2) return;
             if (galaxyShape == 2 && ((f + sp) % 2 != 0 || f < sp + 2)) return;
