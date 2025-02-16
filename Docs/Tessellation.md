@@ -45,6 +45,11 @@ The heart of many good map generators, dissonance simply decides how many planet
 ## Connectivity
 Controls the number of links between the planets. The lowest option only places as many links as needed to keep the galaxy connected, while the highest option tries to add as many links as allowed by other options.
 
+## Wobble
+Every map generator has this option, but with different names. Radiant calls this "wibble".
+
+Whatever it is called, all it does is to randomly displace planets a bit, causing a controllable chaotic disruption to the sometimes overly ordered patterns.
+
 # Inspiration
 This map generator is inspired by many existing map types, and in particular, the ones below:
 
