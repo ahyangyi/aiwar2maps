@@ -227,7 +227,7 @@ namespace AhyangyiMaps.Tessellation
             if ((symmetry == 200 || symmetry == 250) && rows % 2 == 1) return;
             if (symmetry == 10001 && columns == 1) return;
 
-            FakeGalaxy g = MakeGridRectangular(rows, columns, symmetry >= 200 && symmetry <= 250 ? 1 : 0);
+            FakeGalaxy g = MakeGridRectangular(rows, columns, (symmetry >= 200 && symmetry <= 250 || symmetry == 10002) ? 1 : 0);
 
             if (symmetry == 150)
             {
@@ -259,6 +259,10 @@ namespace AhyangyiMaps.Tessellation
                 {
                     g.MakeTriptych((columns * 2 - 1) * unit / 3, (columns * 4 + 1) * unit / 3);
                 }
+            }
+            else if (symmetry == 10002)
+            {
+                g.MakeDualGalaxy(unit * 2 * ((columns + 1) / 2));
             }
             else if (symmetry == 10101)
             {
