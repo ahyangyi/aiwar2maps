@@ -116,7 +116,7 @@ namespace AhyangyiMaps.Tessellation
             }
             else
             {
-                p = g.MakeBeltWay();
+                p = g.MakeBeltWayPolygonal(n, -unit, columns * unit / 2, rows * unit + (advance ? unit / 2 : 0));
             }
 
             par.Commit(g, p, outline);
@@ -400,7 +400,36 @@ namespace AhyangyiMaps.Tessellation
             }
             else
             {
-                p = g.MakeBeltWay();
+                if (galaxyShape == 0)
+                {
+                    p = g.MakeBeltWay();
+                }
+                else if (galaxyShape == 1)
+                {
+                    p = g.MakeBeltWayOctogonal(
+                        -unit,
+                        sp * unit - unit / 2,
+                        (columns - sp) * unit + unit / 2,
+                        columns * unit + unit,
+                        -unit,
+                        sp * unit - unit / 2,
+                        (rows - sp) * unit + unit / 2,
+                        rows * unit + unit
+                        );
+                }
+                else
+                {
+                    p = g.MakeBeltWayOctogonal(
+                        -unit,
+                        (f - sp) / 2 * unit - unit / 2,
+                        (columns - (f - sp) / 2) * unit + unit / 2,
+                        columns * unit + unit,
+                        -unit,
+                        (rows - sp) / 2 * unit - unit / 2,
+                        (rows + sp) / 2 * unit + unit / 2,
+                        rows * unit + unit
+                        );
+                }
             }
 
             par.Commit(g, p, outline);

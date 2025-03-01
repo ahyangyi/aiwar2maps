@@ -541,7 +541,7 @@ namespace AhyangyiMaps
             return marked;
         }
 
-        public FakeGalaxy MakeBeltWay(System.Collections.Generic.List<ArcenPoint> beltway, bool autoConnect = false)
+        public FakeGalaxy MakeBeltWay(System.Collections.Generic.List<ArcenPoint> beltway, bool autoConnect = true)
         {
             var p = new FakeGalaxy();
 
@@ -572,8 +572,6 @@ namespace AhyangyiMaps
 
         public FakeGalaxy MakeBeltWay()
         {
-            var p = new FakeGalaxy();
-
             int minX = planets.Min(planet => planet.X);
             int maxX = planets.Max(planet => planet.X);
             int minY = planets.Min(planet => planet.Y);
@@ -585,7 +583,34 @@ namespace AhyangyiMaps
                 ArcenPoint.Create(maxX + 320, minY - 320),
                 ArcenPoint.Create(maxX + 320, maxY + 320),
                 ArcenPoint.Create(minX - 320, maxY + 320),
-            }, true);
+            });
+        }
+        public FakeGalaxy MakeBeltWayOctogonal(int x0, int x1, int x2, int x3, int y0, int y1, int y2, int y3)
+        {
+            return MakeBeltWay(new System.Collections.Generic.List<ArcenPoint>
+            {
+                ArcenPoint.Create(x1, y0),
+                ArcenPoint.Create(x2, y0),
+                ArcenPoint.Create(x3, y1),
+                ArcenPoint.Create(x3, y2),
+                ArcenPoint.Create(x2, y3),
+                ArcenPoint.Create(x1, y3),
+                ArcenPoint.Create(x0, y2),
+                ArcenPoint.Create(x0, y1),
+            });
+        }
+        public FakeGalaxy MakeBeltWayPolygonal(int n, int y0, int cx, int cy)
+        {
+            var rotations = Matrix2x2.Rotations[n];
+            FInt sectorSlope = SymmetryConstants.Rotational[n].sectorSlope;
+            var beltway = new System.Collections.Generic.List<ArcenPoint>();
+
+            for (int i = 0; i < n; ++i)
+            {
+                beltway.Add(rotations[i].Apply(ArcenPoint.Create(cx, cy), -(sectorSlope * (cy - y0)).GetNearestIntPreferringHigher(), y0 - cy));
+            }
+
+            return MakeBeltWay(beltway);
         }
 
         private void ConnectToNearestPlanet(FakePlanet p0)
