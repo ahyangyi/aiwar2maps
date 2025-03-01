@@ -111,22 +111,8 @@ namespace AhyangyiMaps.Tessellation
             {
                 return;
             }
-            g.MakeRotationalGeneric(columns * unit, rows * 2 * unit, unit, n, dihedral, advance, connectThreshold);
-
-            FakeGalaxy p;
-            var outline = new Outline(g.FindOutline());
-            if (outerPath == 0)
-            {
-                p = new FakeGalaxy();
-            }
-            else if (outerPath == 1)
-            {
-                p = g.MarkOutline();
-            }
-            else
-            {
-                p = g.MakeBeltWay();
-            }
+            g.MakeRotationalGeneric(columns * unit, rows * 2 * unit, unit, n, dihedral,
+                outerPath, out FakeGalaxy p, out Outline outline, advance, connectThreshold);
 
             par.Commit(g, p, outline);
         }

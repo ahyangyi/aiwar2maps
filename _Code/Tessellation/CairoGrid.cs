@@ -185,7 +185,8 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry >= 300 && symmetry < 10000)
             {
-                g.MakeRotationalGeneric(unit * columns / 2, unit * rows, unit, symmetry / 100, symmetry % 100 == 50, columns % 2 == 1);
+                // FIXME: need refactor
+                // g.MakeRotationalGeneric(unit * columns / 2, unit * rows, unit, symmetry / 100, symmetry % 100 == 50, columns % 2 == 1);
             }
             else if (symmetry == 10000)
             {

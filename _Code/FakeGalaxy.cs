@@ -725,7 +725,8 @@ namespace AhyangyiMaps
                 }
             }
         }
-        public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional, bool autoAdvance = false, int connectThreshold = 0)
+        public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional, int outerPath, out FakeGalaxy p,
+            out Outline outline, bool autoAdvance = false, int connectThreshold = 0)
         {
             var planetsToRemove = new HashSet<FakePlanet>();
             var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
@@ -991,6 +992,20 @@ namespace AhyangyiMaps
                         AddLink(centerPlanet, neighborGroup[i]);
                     }
                 }
+            }
+
+            outline = new Outline(this.FindOutline());
+            if (outerPath == 0)
+            {
+                p = new FakeGalaxy();
+            }
+            else if (outerPath == 1)
+            {
+                p = this.MarkOutline();
+            }
+            else
+            {
+                p = this.MakeBeltWayPolygonal(n, -d, cx, cy);
             }
         }
         public void MakeTranslational2(int xDiff)
