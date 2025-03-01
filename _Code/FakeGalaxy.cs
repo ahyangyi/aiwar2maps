@@ -167,6 +167,11 @@ namespace AhyangyiMaps
             return planet;
         }
 
+        public FakePlanet GetPlanetAt(ArcenPoint location)
+        {
+            return locationIndex[location];
+        }
+
         public void ImportPlanet(FakePlanet planet)
         {
             planets.Add(planet);
@@ -610,7 +615,12 @@ namespace AhyangyiMaps
                 beltway.Add(rotations[i].Apply(ArcenPoint.Create(cx, cy), -(sectorSlope * (cy - y0)).GetNearestIntPreferringHigher(), y0 - cy));
             }
 
-            return MakeBeltWay(beltway);
+            var ret = MakeBeltWay(beltway, false);
+            ConnectRotatedPlanets(beltway.Select(x => planetCollection.GetPlanetAt(x)).ToList());
+
+            ConnectToNearestPlanet(planetCollection.GetPlanetAt(beltway[0]));
+
+            return ret;
         }
 
         private void ConnectToNearestPlanet(FakePlanet p0)
@@ -620,7 +630,7 @@ namespace AhyangyiMaps
             {
                 if (planet == p0) continue;
                 if (links[p0].Contains(planet)) continue;
-                if (nearest == null || planet.Location.GetDistanceTo(p0.Location, false) < nearest.Location.GetDistanceTo(p0.Location, false))
+                if (nearest == null || planet.Location.GetSquareDistanceTo(p0.Location) < nearest.Location.GetSquareDistanceTo(p0.Location))
                 {
                     nearest = planet;
                 }
@@ -628,7 +638,10 @@ namespace AhyangyiMaps
 
             if (nearest != null)
             {
-                AddLink(p0, nearest);
+                foreach (var (a0, b0) in ListSymmetricEdges(p0, nearest))
+                {
+                    AddLink(a0, b0);
+                }
             }
         }
 
