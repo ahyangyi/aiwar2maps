@@ -12,6 +12,7 @@ namespace AhyangyiMaps
 
         public Matrix2x2 WobbleMatrix = Matrix2x2.Identity;
         public FakePlanet Rotate, Reflect, TranslatePrevious, TranslateNext;
+        public bool Beltway;
 
         public int X { get => Location.X; set => Location.X = value; }
         public int Y { get => Location.Y; set => Location.Y = value; }
@@ -23,6 +24,7 @@ namespace AhyangyiMaps
             Reflect = null;
             TranslatePrevious = null;
             TranslateNext = null;
+            Beltway = false;
         }
 
         public void Wobble(int wobble, FInt dx, FInt dy)
@@ -553,6 +555,7 @@ namespace AhyangyiMaps
             for (int i = 0; i < beltway.Count; ++i)
             {
                 var planet = AddPlanetAt(beltway[i]);
+                planet.Beltway = true;
                 planet.WobbleMatrix = Matrix2x2.Zero;
                 p.ImportPlanet(planet);
             }
@@ -1557,7 +1560,7 @@ namespace AhyangyiMaps
                     !extra.links[a].Contains(x) &&
                     CrossAtMostLinks(a, x, maxOriginalIntersections) &&
                     extra.CrossAtMostLinks(a, x, maxIntersections) &&
-                    !outline.VenturesOutside(a, x)
+                    (!outline.VenturesOutside(a, x) || (a.Beltway ^ x.Beltway))
                     ).ToList();
 
                 if (candidates[a].Count == 0)
@@ -1582,7 +1585,7 @@ namespace AhyangyiMaps
                     }
                     if (!CrossAtMostLinks(c, d, maxOriginalIntersections)
                         || !extra.CrossAtMostLinks(c, d, maxIntersections)
-                        || outline.VenturesOutside(c, d))
+                        || (outline.VenturesOutside(c, d) && !(c.Beltway ^ d.Beltway)))
                     {
                         // This link group isn't actually valid, rolling back
                         for (int j = 0; j < i; ++j)
