@@ -604,7 +604,7 @@ namespace AhyangyiMaps
                 ArcenPoint.Create(x0, y1),
             });
         }
-        public FakeGalaxy MakeBeltWayPolygonal(int n, int y0, int cx, int cy)
+        public FakeGalaxy MakeBeltWayPolygonal(int n, int y0, int cx, int cy, bool reflectional)
         {
             var rotations = Matrix2x2.Rotations[n];
             FInt sectorSlope = SymmetryConstants.Rotational[n].sectorSlope;
@@ -617,6 +617,14 @@ namespace AhyangyiMaps
 
             var ret = MakeBeltWay(beltway, false);
             ConnectRotatedPlanets(beltway.Select(x => planetCollection.GetPlanetAt(x)).ToList());
+
+            if (reflectional)
+            {
+                for (int i = 0; i < n; ++i)
+                {
+                    planetCollection.GetPlanetAt(beltway[i]).SetReflect(planetCollection.GetPlanetAt(beltway[(n + 1 - i) % n]));
+                }
+            }
 
             ConnectToNearestPlanet(planetCollection.GetPlanetAt(beltway[0]));
 
@@ -1018,7 +1026,7 @@ namespace AhyangyiMaps
             }
             else
             {
-                p = this.MakeBeltWayPolygonal(n, -d, cx, cy);
+                p = this.MakeBeltWayPolygonal(n, -d, cx, cy, reflectional);
             }
         }
         public void MakeTranslational2(int xDiff)
