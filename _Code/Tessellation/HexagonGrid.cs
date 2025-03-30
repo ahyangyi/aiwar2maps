@@ -68,8 +68,7 @@ namespace AhyangyiMaps.Tessellation
                 }
                 else if (galaxyShape == 1)
                 {
-                    // FIXME
-                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                    g = FloretStyle(sectorSlope, rows, columns, actualColumns);
                 }
                 else
                 {
@@ -86,20 +85,18 @@ namespace AhyangyiMaps.Tessellation
                 }
                 else if (galaxyShape == 1)
                 {
-                    // FIXME
-                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                    g = FloretStyle(sectorSlope, rows, columns, actualColumns);
                 }
                 else
                 {
-                    g = FloretStyle(sectorSlope, rows, columns, actualColumns);
+                    g = StarStyle(sectorSlope, rows, columns, actualColumns);
                 }
             }
             else
             {
                 if (galaxyShape == 0)
                 {
-                    // FIXME
-                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                    g = FloretStyle(sectorSlope, rows, columns, actualColumns);
                 }
                 else if (galaxyShape == 1)
                 {
@@ -107,8 +104,7 @@ namespace AhyangyiMaps.Tessellation
                 }
                 else
                 {
-                    // FIXME
-                    g = FloretStyle(sectorSlope, rows, columns, actualColumns);
+                    g = StarStyle(sectorSlope, rows, columns, actualColumns);
                 }
             }
 
@@ -135,12 +131,22 @@ namespace AhyangyiMaps.Tessellation
 
         private static FakeGalaxy FloretStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
         {
+            FInt idealR = ((actualColumns + 1) * xunit / yunit / sectorSlope / 2 - 1) / 3 + columns / 4;
+            if (rows <= idealR - 1 || rows > idealR || columns < 5 || columns % 4 != 1)
+            {
+                return null;
+            }
+            return MakeGridOctagonal(rows, columns, columns / 4, true);
+        }
+
+        private static FakeGalaxy StarStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
+        {
             FInt idealR = ((actualColumns + 1) * xunit / yunit / sectorSlope / 2 - 1) / 3 + columns / 2;
             if (rows <= idealR - 1 || rows > idealR || columns < 3)
             {
                 return null;
             }
-            return MakeGridFloret(rows, columns);
+            return MakeGridOctagonal(rows, columns, columns / 2, true);
         }
 
         public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
@@ -331,7 +337,7 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        private static FakeGalaxy MakeGridOctagonal(int rows, int columns, int bevel)
+        private static FakeGalaxy MakeGridOctagonal(int rows, int columns, int bevel, bool bottomHalf = false)
         {
             FakeGalaxy g = new FakeGalaxy();
             for (int i = 0; i < rows; ++i)
@@ -340,8 +346,11 @@ namespace AhyangyiMaps.Tessellation
                     {
                         if ((i + j) < bevel) continue;
                         if ((i + columns - 1 - j) < bevel) continue;
-                        if ((rows - 1 - i + j) < bevel) continue;
-                        if ((rows - 1 - i + columns - 1 - j) < bevel) continue;
+                        if (!bottomHalf)
+                        {
+                            if ((rows - 1 - i + j) < bevel) continue;
+                            if ((rows - 1 - i + columns - 1 - j) < bevel) continue;
+                        }
                         hexagon.Imprint(g, ArcenPoint.Create(j * xunit, i * yunit * 3));
                     }
 
@@ -358,20 +367,6 @@ namespace AhyangyiMaps.Tessellation
                         if (j < i && j < rows - 1 - i && j < bevel) continue;
                         int k = columns - 1 - j;
                         if (k < i && k < rows - 1 - i && k < bevel) continue;
-                        hexagon.Imprint(g, ArcenPoint.Create(j * xunit, i * yunit * 3));
-                    }
-
-            return g;
-        }
-        private static FakeGalaxy MakeGridFloret(int rows, int columns)
-        {
-            FakeGalaxy g = new FakeGalaxy();
-            for (int i = 0; i < rows; ++i)
-                for (int j = 0; j < columns; ++j)
-                    if ((i + j) % 2 == columns / 2 % 2)
-                    {
-                        if ((i + j) < columns / 2) continue;
-                        if ((i + columns - 1 - j) < columns / 2) continue;
                         hexagon.Imprint(g, ArcenPoint.Create(j * xunit, i * yunit * 3));
                     }
 
