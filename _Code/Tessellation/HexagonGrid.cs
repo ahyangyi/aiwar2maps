@@ -63,8 +63,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 if (galaxyShape == 0)
                 {
-                    // FIXME
-                    g = PolygonStyle(sectorSlope, rows, columns, actualColumns);
+                    g = SemifloretStyle(sectorSlope, rows, columns, actualColumns);
                 }
                 else if (galaxyShape == 1)
                 {
@@ -128,15 +127,24 @@ namespace AhyangyiMaps.Tessellation
             }
             return MakeGridRectangular(rows, columns, 0);
         }
-
-        private static FakeGalaxy FloretStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
+        private static FakeGalaxy SemifloretStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
         {
-            FInt idealR = ((actualColumns + 1) * xunit / yunit / sectorSlope / 2 - 1) / 3 + columns / 4;
-            if (rows <= idealR - 1 || rows > idealR || columns < 5 || columns % 4 != 1)
+            FInt idealR = ((actualColumns + 1) * xunit / yunit / sectorSlope / 2 - 1) / 3 + columns / 8;
+            if (rows <= idealR - 1 || rows > idealR || columns < 9 || columns % 8 != 1)
             {
                 return null;
             }
-            return MakeGridOctagonal(rows, columns, columns / 4, true);
+            return MakeGridOctagonal(rows, columns, columns / 8, true);
+        }
+
+        private static FakeGalaxy FloretStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
+        {
+            FInt idealR = ((actualColumns + 1) * xunit / yunit / sectorSlope / 2 - 1) / 3 + columns / 6;
+            if (rows <= idealR - 1 || rows > idealR || columns < 7 || columns % 6 != 1)
+            {
+                return null;
+            }
+            return MakeGridOctagonal(rows, columns, columns / 6, true);
         }
 
         private static FakeGalaxy StarStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
