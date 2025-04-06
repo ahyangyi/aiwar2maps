@@ -134,7 +134,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 return null;
             }
-            return MakeGridOctagonal(rows, columns, columns / 8, true);
+            return MakeGridOctagonal(rows, columns, columns / 8, 0, true);
         }
 
         private static FakeGalaxy FloretStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
@@ -144,7 +144,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 return null;
             }
-            return MakeGridOctagonal(rows, columns, columns / 6, true);
+            return MakeGridOctagonal(rows, columns, columns / 6, 0, true);
         }
 
         private static FakeGalaxy StarStyle(FInt sectorSlope, int rows, int columns, int actualColumns)
@@ -154,7 +154,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 return null;
             }
-            return MakeGridOctagonal(rows, columns, columns / 2, true);
+            return MakeGridOctagonal(rows, columns, columns / 2, 0, true);
         }
 
         public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
@@ -174,7 +174,7 @@ namespace AhyangyiMaps.Tessellation
                 oddity = par.AddParameter("oddity", 0, 1, 0);
             }
 
-            if (galaxyShape >= 1)
+            if (galaxyShape == 1)
             {
                 if (rows % 2 == 0 || columns % 2 == 0)
                 {
@@ -190,6 +190,17 @@ namespace AhyangyiMaps.Tessellation
                     return;
                 }
                 if (aspectRatioIndex == 2 && (columns >= columnsThreshold || columns % 4 != 1))
+                {
+                    return;
+                }
+            }
+            if (galaxyShape == 2)
+            {
+                if (rows % 2 == 0 || columns % 2 == 0)
+                {
+                    return;
+                }
+                if (aspectRatioIndex == 2 && columns != rows)
                 {
                     return;
                 }
@@ -261,22 +272,26 @@ namespace AhyangyiMaps.Tessellation
             {
                 if (aspectRatioIndex <= 1)
                 {
-                    g = MakeGridOctagonal(rows, columns, rows / 2);
+                    g = MakeGridOctagonal(rows, columns, rows / 2, 0);
                 }
                 else
                 {
-                    g = MakeGridOctagonal(rows, columns, columns / 4);
+                    g = MakeGridOctagonal(rows, columns, columns / 4, 0);
                 }
             }
             else
             {
-                if (aspectRatioIndex <= 1)
+                if (aspectRatioIndex == 0)
+                {
+                    g = MakeGridConcave(rows, columns, rows / 2);
+                }
+                else if (aspectRatioIndex == 1)
                 {
                     g = MakeGridConcave(rows, columns, rows / 2);
                 }
                 else
                 {
-                    g = MakeGridConcave(rows, columns, columns / 4);
+                    g = MakeGridOctagonal(rows, columns, columns / 2, 0);
                 }
             }
 
@@ -345,7 +360,7 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        private static FakeGalaxy MakeGridOctagonal(int rows, int columns, int bevel, bool bottomHalf = false)
+        private static FakeGalaxy MakeGridOctagonal(int rows, int columns, int bevel, int batmanness, bool bottomHalf = false)
         {
             FakeGalaxy g = new FakeGalaxy();
             for (int i = 0; i < rows; ++i)
