@@ -230,7 +230,7 @@ namespace AhyangyiMaps.Tessellation
             if (parts == 1)
                 overlap = 0;
             else
-                overlap = par.AddParameter("overlap", -4, 4, parts == 2 ? 1 : 0);
+                overlap = par.AddParameter("overlap", 0, 8, parts == 2 ? 1 : 0);
             int d = overlap * (parts - 1);
             if ((columns + d) % parts != 0) return;
 
@@ -360,24 +360,29 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        private static FakeGalaxy MakeGridOctagonal(int rows, int columns, int bevel, int batmanness, bool bottomHalf = false)
+        private static FakeGalaxy MakeGridOctagonal(int rows, int columns, int bevel, int batmanness, bool bottomHalf = false, int sectionColumns = 0, int sectionOffset = 0)
         {
             FakeGalaxy g = new FakeGalaxy();
+            if (sectionColumns == 0)
+            {
+                sectionColumns = sectionOffset = columns;
+            }
             for (int i = 0; i < rows; ++i)
                 for (int j = 0; j < columns; ++j)
                     if ((i + j) % 2 == bevel % 2)
                     {
-                        if ((i + j) < bevel) continue;
-                        if ((i + columns - 1 - j) < bevel) continue;
+                        int k = j % sectionOffset % sectionColumns;
+                        if ((i + k) < bevel) continue;
+                        if ((i + sectionColumns - 1 - k) < bevel) continue;
                         if (!bottomHalf)
                         {
-                            if ((rows - 1 - i + j) < bevel) continue;
-                            if ((rows - 1 - i + columns - 1 - j) < bevel) continue;
+                            if ((rows - 1 - i + k) < bevel) continue;
+                            if ((rows - 1 - i + sectionColumns - 1 - k) < bevel) continue;
                         }
-                        if (j > bevel && j < columns - 1 - bevel)
+                        if (k > bevel && k < sectionColumns - 1 - bevel)
                         {
-                            if (i + j > rows - 1 + bevel && i + columns - 1 - j > rows - 1 + bevel && rows - 1 - i < batmanness) continue;
-                            if (rows - 1 - i + j > rows - 1 + bevel && rows - 1 - i + columns - 1 - j > rows - 1 + bevel && i < batmanness) continue;
+                            if (i + k > rows - 1 + bevel && i + sectionColumns - 1 - k > rows - 1 + bevel && rows - 1 - i < batmanness) continue;
+                            if (rows - 1 - i + k > rows - 1 + bevel && rows - 1 - i + sectionColumns - 1 - k > rows - 1 + bevel && i < batmanness) continue;
                         }
                         hexagon.Imprint(g, ArcenPoint.Create(j * xunit, i * yunit * 3));
                     }

@@ -109,7 +109,19 @@ namespace AhyangyiMaps
                 {
                     char c = table[index * MAX_PARAMETERS + i];
                     int value;
-                    if (c == '-')
+                    if (c == '<')
+                    {
+                        value = -4;
+                    }
+                    else if (c == '=')
+                    {
+                        value = -3;
+                    }
+                    else if (c == '~')
+                    {
+                        value = -2;
+                    }
+                    else if (c == '-')
                     {
                         value = -1;
                     }
@@ -380,7 +392,19 @@ namespace AhyangyiMaps
                     if (j < table[i].Parameters.Count)
                     {
                         int value = table[i].Parameters[j].Current;
-                        if (value == -1)
+                        if (value == -4)
+                        {
+                            s.Append('<');
+                        }
+                        else if (value == -3)
+                        {
+                            s.Append('=');
+                        }
+                        else if (value == -2)
+                        {
+                            s.Append('~');
+                        }
+                        else if (value == -1)
                         {
                             s.Append('-');
                         }
