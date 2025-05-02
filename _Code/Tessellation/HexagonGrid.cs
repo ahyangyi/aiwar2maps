@@ -168,47 +168,6 @@ namespace AhyangyiMaps.Tessellation
             // `rows` & `columns`: The base grid size
             int rows = par.AddParameter("rows", 2, 35, 7);
             int columns = par.AddParameter("columns", 2, 60, 10);
-            int oddity = 0;
-            if (galaxyShape == 0)
-            {
-                oddity = par.AddParameter("oddity", 0, 1, 0);
-            }
-
-            if (galaxyShape == 1)
-            {
-                if (rows % 2 == 0 || columns % 2 == 0)
-                {
-                    return;
-                }
-                int columnsThreshold = rows * 2 + 1 - 2 * galaxyShape;
-                if (aspectRatioIndex == 0 && columns <= columnsThreshold)
-                {
-                    return;
-                }
-                if (aspectRatioIndex == 1 && columns != columnsThreshold)
-                {
-                    return;
-                }
-                if (aspectRatioIndex == 2 && (columns >= columnsThreshold || columns % 4 != 1))
-                {
-                    return;
-                }
-            }
-            if (galaxyShape == 2)
-            {
-                if (rows % 2 == 0 || columns % 2 == 0 || rows < 3)
-                {
-                    return;
-                }
-                if (aspectRatioIndex <= 1 && columns <= rows)
-                {
-                    return;
-                }
-                if (aspectRatioIndex == 2 && columns != rows)
-                {
-                    return;
-                }
-            }
 
             // `parts`: We divide the columns into this many parts.
             int parts;
@@ -234,15 +193,34 @@ namespace AhyangyiMaps.Tessellation
             int d = overlap * (parts - 1);
             if ((columns + d) % parts != 0) return;
 
+            if (parts > 1 && overlap < 0)
+            {
+                return;
+            }
+
             if (parts == 2)
             {
-                if (overlap < -2)
+                if (galaxyShape == 0)
                 {
-                    if (par.AddBadness("Two-part Galaxies too faraway", (FInt)(-1 - overlap * 2), true)) return;
+                    if (overlap < -2)
+                    {
+                        if (par.AddBadness("Two-part Galaxies too faraway", (FInt)(-1 - overlap * 2), true)) return;
+                    }
+                    else if (overlap >= -1)
+                    {
+                        if (par.AddBadness("Two-part Galaxies too close", (FInt)9 + overlap * 2, true)) return;
+                    }
                 }
-                else if (overlap >= -1)
+                else
                 {
-                    if (par.AddBadness("Two-part Galaxies too close", (FInt)9 + overlap * 2, true)) return;
+                    if (overlap < -1)
+                    {
+                        if (par.AddBadness("Two-part Galaxies too faraway", (FInt)(10 - overlap * 2), true)) return;
+                    }
+                    else if (overlap >= 2)
+                    {
+                        if (par.AddBadness("Two-part Galaxies too close", (FInt)overlap * 2, true)) return;
+                    }
                 }
             }
             else if (parts == 3)
@@ -259,7 +237,64 @@ namespace AhyangyiMaps.Tessellation
 
             // `f`: the actual number of columns per part
             int f = (columns + d) / parts;
-            if ((symmetry == 10000 || symmetry == 10001) && (f + overlap) % 2 == 1) return;
+            if (f == 0)
+            {
+                return;
+            }
+
+            // `offset`
+            int offset = parts == 1 ? columns : (columns - f) / (parts - 1);
+            if (offset <= 0)
+            {
+                return;
+            }
+
+            // oddity, and other galaxyShape-specific limitations
+            int oddity = 0;
+
+            if (galaxyShape == 0)
+            {
+                oddity = par.AddParameter("oddity", 0, 1, 0);
+            }
+            else if (galaxyShape == 1)
+            {
+                if (rows % 2 == 0 || f % 2 == 0)
+                {
+                    return;
+                }
+                int style = parts == 1 ? aspectRatioIndex : 2;
+                int columnsThreshold = rows * 2 + 1 - 2 * galaxyShape;
+                if (style == 0 && f <= columnsThreshold)
+                {
+                    return;
+                }
+                if (style == 1 && f != columnsThreshold)
+                {
+                    return;
+                }
+                if (style == 2 && (f >= columnsThreshold || f % 4 != 1))
+                {
+                    return;
+                }
+            }
+            else if (galaxyShape == 2)
+            {
+                if (rows % 2 == 0 || columns % 2 == 0 || rows < 3)
+                {
+                    return;
+                }
+                if (aspectRatioIndex <= 1 && columns <= rows)
+                {
+                    return;
+                }
+                if (aspectRatioIndex == 2 && columns != rows)
+                {
+                    return;
+                }
+            }
+
+            // symmetry-specific conditions
+            if ((symmetry == 10000 || symmetry == 10001) && offset % 2 == 1) return;
 
             if (symmetry == 150 && columns % 2 == 0) return;
             if (symmetry == 200 && (rows + columns) % 2 == 1) return;
@@ -274,13 +309,13 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (galaxyShape == 1)
             {
-                if (aspectRatioIndex <= 1)
+                if (aspectRatioIndex <= 1 && parts == 1)
                 {
                     g = MakeGridOctagonal(rows, columns, rows / 2, 0);
                 }
                 else
                 {
-                    g = MakeGridOctagonal(rows, columns, columns / 4, 0);
+                    g = MakeGridOctagonal(rows, columns, f / 4, 0, false, f, offset);
                 }
             }
             else
@@ -309,15 +344,15 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry == 10000)
             {
-                g.MakeTranslational2((columns + 3) / 4 * 2 * xunit);
+                g.MakeTranslational2(offset * xunit);
             }
             else if (symmetry == 10001)
             {
-                g.MakeTriptych((columns + 1) / 3 * xunit);
+                g.MakeTriptych(offset * xunit);
             }
             else if (symmetry == 10002)
             {
-                g.MakeDualGalaxy((columns + 3) / 4 * 2 * xunit);
+                g.MakeDualGalaxy(offset * xunit);
             }
             else if (symmetry == 10101)
             {
@@ -371,7 +406,15 @@ namespace AhyangyiMaps.Tessellation
                 for (int j = 0; j < columns; ++j)
                     if ((i + j) % 2 == bevel % 2)
                     {
-                        int k = j % sectionOffset % sectionColumns;
+                        int k = j;
+                        if (j >= columns - sectionOffset)
+                        {
+                            while (k >= sectionColumns) k -= sectionOffset;
+                        }
+                        else if (j >= sectionOffset)
+                        {
+                            while (k >= (sectionColumns + sectionOffset) / 2) k -= sectionOffset;
+                        }
                         if ((i + k) < bevel) continue;
                         if ((i + sectionColumns - 1 - k) < bevel) continue;
                         if (!bottomHalf)
