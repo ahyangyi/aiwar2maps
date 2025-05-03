@@ -279,15 +279,20 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (galaxyShape == 2)
             {
-                if (rows % 2 == 0 || columns % 2 == 0 || rows < 3)
+                int style = parts == 1 ? aspectRatioIndex : 3;
+                if (rows % 2 == 0 || f % 2 == 0 || rows < 3)
                 {
                     return;
                 }
-                if (aspectRatioIndex <= 1 && columns <= rows)
+                if (style <= 1 && f <= rows)
                 {
                     return;
                 }
-                if (aspectRatioIndex == 2 && columns != rows)
+                if (style == 2 && f != rows)
+                {
+                    return;
+                }
+                if (style == 3 && f > rows)
                 {
                     return;
                 }
@@ -320,13 +325,13 @@ namespace AhyangyiMaps.Tessellation
             }
             else
             {
-                if (aspectRatioIndex <= 1)
+                if (aspectRatioIndex <= 1 && parts == 1)
                 {
                     g = MakeGridOctagonal(rows, columns, rows / 2, (rows + 1) / 3);
                 }
                 else
                 {
-                    g = MakeGridOctagonal(rows, columns, columns / 2, 0);
+                    g = MakeGridOctagonal(rows, columns, f / 2, 0, false, f, offset);
                 }
             }
 
