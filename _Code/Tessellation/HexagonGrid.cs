@@ -184,21 +184,33 @@ namespace AhyangyiMaps.Tessellation
                 parts = 1;
             }
 
+            // `dibatman`: a special case where a batman-like galaxy is reinterpret as two galaxies
+            bool dibatman = parts == 2 && galaxyShape == 2 && aspectRatioIndex == 0;
+
             // `overlap`, fine control how multi-part galaxies look like
             int overlap;
             if (parts == 1)
                 overlap = 0;
+            else if (dibatman)
+            {
+                overlap = rows * 2 - columns;
+                if (overlap > 0)
+                {
+                    return;
+                }
+            }
             else
-                overlap = par.AddParameter("overlap", 0, 8, parts == 2 ? 1 : 0);
+                overlap = par.AddParameter("overlap", -4, 4, parts == 2 ? 1 : 0);
+
             int d = overlap * (parts - 1);
             if ((columns + d) % parts != 0) return;
 
-            if (parts > 1 && overlap < 0)
+            if (parts > 1 && overlap < 0 && !dibatman)
             {
                 return;
             }
 
-            if (parts == 2)
+            if (parts == 2 && !dibatman)
             {
                 if (galaxyShape == 0)
                 {
@@ -244,7 +256,7 @@ namespace AhyangyiMaps.Tessellation
 
             // `offset`
             int offset = parts == 1 ? columns : (columns - f) / (parts - 1);
-            if (offset <= 0)
+            if (parts > 1 && offset <= 0)
             {
                 return;
             }
@@ -279,22 +291,21 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (galaxyShape == 2)
             {
-                int style = parts == 1 ? aspectRatioIndex : 3;
                 if (rows % 2 == 0 || f % 2 == 0 || rows < 3)
                 {
                     return;
                 }
-                if (style <= 1 && f <= rows)
+                if (parts == 1 && aspectRatioIndex <= 1 || dibatman)
                 {
-                    return;
+                    if (columns <= rows) return;
                 }
-                if (style == 2 && f != rows)
+                else if (parts == 1 && aspectRatioIndex == 2)
                 {
-                    return;
+                    if (f != rows) return;
                 }
-                if (style == 3 && f > rows)
+                else if (parts > 1)
                 {
-                    return;
+                    if (f > rows) return;
                 }
             }
 
@@ -325,7 +336,7 @@ namespace AhyangyiMaps.Tessellation
             }
             else
             {
-                if (aspectRatioIndex <= 1 && parts == 1)
+                if (dibatman || aspectRatioIndex <= 1 && parts == 1)
                 {
                     g = MakeGridOctagonal(rows, columns, rows / 2, (rows + 1) / 3);
                 }
