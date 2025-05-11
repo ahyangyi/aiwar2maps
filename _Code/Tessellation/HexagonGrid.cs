@@ -364,7 +364,7 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry == 10001)
             {
-                g.MakeTriptych(offset * xunit);
+                g.MakeTriptych((f + offset + 1) * xunit / 2, (f + offset * 3 + 1) * xunit / 2);
             }
             else if (symmetry == 10002)
             {
