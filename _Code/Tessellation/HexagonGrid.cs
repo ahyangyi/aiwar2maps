@@ -200,7 +200,9 @@ namespace AhyangyiMaps.Tessellation
                 }
             }
             else
+            {
                 overlap = par.AddParameter("overlap", -4, 4, parts == 2 ? 1 : 0);
+            }
 
             int d = overlap * (parts - 1);
             if ((columns + d) % parts != 0) return;
@@ -257,6 +259,10 @@ namespace AhyangyiMaps.Tessellation
             // `offset`
             int offset = parts == 1 ? columns : (columns - f) / (parts - 1);
             if (parts > 1 && offset <= 0)
+            {
+                return;
+            }
+            if (parts > 1 && (f + offset + 1) % 2 != 0)
             {
                 return;
             }
@@ -364,7 +370,7 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry == 10001)
             {
-                g.MakeTriptych((f + offset + 1) * xunit / 2, (f + offset * 3 + 1) * xunit / 2);
+                g.MakeTriptych((f + offset + 1) / 2 * xunit, (f + offset * 3 + 1) / 2 * xunit);
             }
             else if (symmetry == 10002)
             {
