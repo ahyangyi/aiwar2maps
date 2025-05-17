@@ -1,6 +1,7 @@
 using Arcen.AIW2.Core;
 using Arcen.AIW2.External;
 using Arcen.Universal;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -18,6 +19,8 @@ namespace AhyangyiMaps
 
     public class ParameterService
     {
+        private static readonly int MAX_BADNESS = 1000;
+
         public const int MAX_PARAMETERS = 6;
         public static System.Collections.Generic.List<int> PlanetNumbers;
         public static System.Collections.Generic.Dictionary<int, int> PlanetIndex;
@@ -78,7 +81,7 @@ namespace AhyangyiMaps
             Dissonance = dissonance;
             AspectRatioIndex = aspectRatioIndex;
             OuterPath = outerPath;
-            aspectRatioMode = SymmetryConstants.AspectRatioModeLookup[symmetry];
+            aspectRatioMode = SymmetryConstants.GetAspectRatioMode(symmetry, tessellation);
 
             CurrentBadness = FInt.Zero;
             history = new System.Collections.Generic.List<ParameterRange>();
@@ -106,7 +109,19 @@ namespace AhyangyiMaps
                 {
                     char c = table[index * MAX_PARAMETERS + i];
                     int value;
-                    if (c == '-')
+                    if (c == '<')
+                    {
+                        value = -4;
+                    }
+                    else if (c == '=')
+                    {
+                        value = -3;
+                    }
+                    else if (c == '~')
+                    {
+                        value = -2;
+                    }
+                    else if (c == '-')
                     {
                         value = -1;
                     }
@@ -195,7 +210,7 @@ namespace AhyangyiMaps
             }
             badnessInfo[key] = (badness, isWarning);
             CurrentBadness += badness;
-            return CurrentBadness >= 100;
+            return CurrentBadness >= MAX_BADNESS;
         }
 
         internal void Commit(FakeGalaxy g, FakeGalaxy p, Outline o)
@@ -206,12 +221,12 @@ namespace AhyangyiMaps
 
             if (mode == TableGenMode.GEN_TABLE || mode == TableGenMode.OPTIMIZE)
             {
-                if (aspectRatioMode == SymmetryConstants.AspectRatioMode.NORMAL)
+                if (aspectRatioMode == SymmetryConstants.AspectRatioMode.NORMAL || aspectRatioMode == SymmetryConstants.AspectRatioMode.BOTH)
                 {
                     FInt aspectRatio = g.AspectRatio();
                     AddInfo("AspectRatio", aspectRatio.ToString());
 
-                    if (mode == TableGenMode.GEN_TABLE)
+                    if (mode == TableGenMode.GEN_TABLE && aspectRatioMode == SymmetryConstants.AspectRatioMode.NORMAL)
                     {
                         for (int aspectRatioIndex = 0; aspectRatioIndex < TessellationTypeGenerator.ASPECT_RATIO_TYPES; ++aspectRatioIndex)
                         {
@@ -291,10 +306,10 @@ namespace AhyangyiMaps
             }
         }
 
-        public static int CalculateIndex(int symmetry, int targetPlanetIndex, int aspectRatioIndex, int dissonanceType, int outerPath)
+        public int CalculateIndex(int symmetry, int targetPlanetIndex, int aspectRatioIndex, int dissonanceType, int outerPath)
         {
             int index;
-            if (SymmetryConstants.AspectRatioModeLookup[symmetry] == SymmetryConstants.AspectRatioMode.IGNORE)
+            if (SymmetryConstants.GetAspectRatioMode(symmetry, Tessellation) == SymmetryConstants.AspectRatioMode.IGNORE)
             {
                 index = (targetPlanetIndex * TessellationTypeGenerator.DISSONANCE_TYPES + dissonanceType)
                     * TessellationTypeGenerator.OUTER_PATH_TYPES + outerPath;
@@ -377,7 +392,19 @@ namespace AhyangyiMaps
                     if (j < table[i].Parameters.Count)
                     {
                         int value = table[i].Parameters[j].Current;
-                        if (value == -1)
+                        if (value == -4)
+                        {
+                            s.Append('<');
+                        }
+                        else if (value == -3)
+                        {
+                            s.Append('=');
+                        }
+                        else if (value == -2)
+                        {
+                            s.Append('~');
+                        }
+                        else if (value == -1)
                         {
                             s.Append('-');
                         }
@@ -409,7 +436,7 @@ namespace AhyangyiMaps
                 sw.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
                 sw.WriteLine("<root");
                 sw.WriteLine("    is_partial_record=\"true\"");
-                foreach (var kvp in existingTable.OrderBy(x => x.Key))
+                foreach (var kvp in existingTable.OrderBy(x => (Int32.Parse(x.Key.Split('_')[2]), Int32.Parse(x.Key.Split('_')[3]), Int32.Parse(x.Key.Split('_')[4]))))
                 {
                     sw.WriteLine($"    {kvp.Key}=\"{kvp.Value}\"");
                 }

@@ -72,16 +72,9 @@ namespace AhyangyiMaps
             int connectivity = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Connectivity").RelatedIntValue;
             int wobble = BadgerUtilityMethods.getSettingValueMapSettingOptionChoice_Expensive(mapConfig, "Wobble").RelatedIntValue;
 
-            var randomNumberGenerator = Context.RandomToUse;
-            // FIXME: making separated rngs doesn't work for some reason
-            /*
-            var siteRNG = new MersenneTwister(randomNumberGenerator.NextInclus(0, int.MaxValue));
-            var linkRNG = new MersenneTwister(randomNumberGenerator.NextInclus(0, int.MaxValue));
-            var wobbleRNG = new MersenneTwister(randomNumberGenerator.NextInclus(0, int.MaxValue));
-            */
-            var siteRNG = randomNumberGenerator;
-            var linkRNG = randomNumberGenerator;
-            var wobbleRNG = randomNumberGenerator;
+            var siteRNG = new MersenneTwister(Context.RandomToUse.Next());
+            var linkRNG = new MersenneTwister(Context.RandomToUse.Next());
+            var wobbleRNG = new MersenneTwister(Context.RandomToUse.Next());
 
             // STEP 1 - TESSELLATION
             // Generate a base grid
@@ -176,7 +169,7 @@ namespace AhyangyiMaps
 
             // STEP 9 - POPULATE
             // Translate our information into Arcenverse
-            g.Populate(galaxy, planetType, randomNumberGenerator);
+            g.Populate(galaxy, planetType, Context.RandomToUse);
         }
 
         private static void GenerateGrid(int tableGen, int numPlanets, int tessellation, int aspectRatioIndex, int galaxyShape, int dissonance, int symmetry, int outerPath,
@@ -214,7 +207,7 @@ namespace AhyangyiMaps
         }
         private static void RunTableGenVenti(int tessellation)
         {
-            foreach (int symmetry in SymmetryConstants.AspectRatioModeLookup.Keys)
+            foreach (int symmetry in SymmetryConstants.Symmetries)
             {
                 RunTableGenGrande(tessellation, symmetry);
             }
@@ -239,7 +232,8 @@ namespace AhyangyiMaps
             {
                 par.OuterPath = curOuterPath;
 
-                if (SymmetryConstants.AspectRatioModeLookup[symmetry] == SymmetryConstants.AspectRatioMode.SPECIAL)
+                if (SymmetryConstants.GetAspectRatioMode(symmetry, tessellation) == SymmetryConstants.AspectRatioMode.SPECIAL ||
+                    SymmetryConstants.GetAspectRatioMode(symmetry, tessellation) == SymmetryConstants.AspectRatioMode.BOTH)
                 {
                     for (int aspectRatio = 0; aspectRatio < ASPECT_RATIO_TYPES; ++aspectRatio)
                     {

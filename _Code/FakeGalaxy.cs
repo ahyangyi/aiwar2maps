@@ -12,6 +12,7 @@ namespace AhyangyiMaps
 
         public Matrix2x2 WobbleMatrix = Matrix2x2.Identity;
         public FakePlanet Rotate, Reflect, TranslatePrevious, TranslateNext;
+        public bool Beltway;
 
         public int X { get => Location.X; set => Location.X = value; }
         public int Y { get => Location.Y; set => Location.Y = value; }
@@ -23,6 +24,7 @@ namespace AhyangyiMaps
             Reflect = null;
             TranslatePrevious = null;
             TranslateNext = null;
+            Beltway = false;
         }
 
         public void Wobble(int wobble, FInt dx, FInt dy)
@@ -165,6 +167,11 @@ namespace AhyangyiMaps
             planets.Add(planet);
             locationIndex[planet.Location] = planet;
             return planet;
+        }
+
+        public FakePlanet GetPlanetAt(ArcenPoint location)
+        {
+            return locationIndex[location];
         }
 
         public void ImportPlanet(FakePlanet planet)
@@ -541,41 +548,112 @@ namespace AhyangyiMaps
             return marked;
         }
 
-        public FakeGalaxy MakeBeltWay()
+        public FakeGalaxy MakeBeltWay(System.Collections.Generic.List<ArcenPoint> beltway, bool autoConnect = true)
         {
             var p = new FakeGalaxy();
 
+            for (int i = 0; i < beltway.Count; ++i)
+            {
+                var planet = AddPlanetAt(beltway[i]);
+                planet.Beltway = true;
+                planet.WobbleMatrix = Matrix2x2.Zero;
+                p.ImportPlanet(planet);
+            }
+
+            for (int i = 0; i < beltway.Count; ++i)
+            {
+                int j = (i + 1) % beltway.Count;
+                AddLink(p.planets[i], p.planets[j]);
+                p.AddLink(p.planets[i], p.planets[j]);
+            }
+
+            if (autoConnect)
+            {
+                for (int i = 0; i < beltway.Count; ++i)
+                {
+                    ConnectToNearestPlanet(p.planets[i]);
+                }
+            }
+
+            return p;
+        }
+
+        public FakeGalaxy MakeBeltWay()
+        {
             int minX = planets.Min(planet => planet.X);
             int maxX = planets.Max(planet => planet.X);
             int minY = planets.Min(planet => planet.Y);
             int maxY = planets.Max(planet => planet.Y);
 
-            var p0 = AddPlanetAt(ArcenPoint.Create(minX - 320, minY - 320));
-            var p1 = AddPlanetAt(ArcenPoint.Create(maxX + 320, minY - 320));
-            var p2 = AddPlanetAt(ArcenPoint.Create(maxX + 320, maxY + 320));
-            var p3 = AddPlanetAt(ArcenPoint.Create(minX - 320, maxY + 320));
+            return MakeBeltWay(new System.Collections.Generic.List<ArcenPoint>
+            {
+                ArcenPoint.Create(minX - 320, minY - 320),
+                ArcenPoint.Create(maxX + 320, minY - 320),
+                ArcenPoint.Create(maxX + 320, maxY + 320),
+                ArcenPoint.Create(minX - 320, maxY + 320),
+            });
+        }
+        public FakeGalaxy MakeBeltWayOctogonal(int x0, int x1, int x2, int x3, int y0, int y1, int y2, int y3)
+        {
+            return MakeBeltWay(new System.Collections.Generic.List<ArcenPoint>
+            {
+                ArcenPoint.Create(x1, y0),
+                ArcenPoint.Create(x2, y0),
+                ArcenPoint.Create(x3, y1),
+                ArcenPoint.Create(x3, y2),
+                ArcenPoint.Create(x2, y3),
+                ArcenPoint.Create(x1, y3),
+                ArcenPoint.Create(x0, y2),
+                ArcenPoint.Create(x0, y1),
+            });
+        }
+        public FakeGalaxy MakeBeltWayPolygonal(int n, int y0, int cx, int cy, bool reflectional)
+        {
+            var rotations = Matrix2x2.Rotations[n];
+            FInt sectorSlope = SymmetryConstants.Rotational[n].sectorSlope;
+            var beltway = new System.Collections.Generic.List<ArcenPoint>();
 
-            p0.WobbleMatrix = Matrix2x2.Zero;
-            p1.WobbleMatrix = Matrix2x2.Zero;
-            p2.WobbleMatrix = Matrix2x2.Zero;
-            p3.WobbleMatrix = Matrix2x2.Zero;
+            for (int i = 0; i < n; ++i)
+            {
+                beltway.Add(rotations[i].Apply(ArcenPoint.Create(cx, cy), -(sectorSlope * (cy - y0)).GetNearestIntPreferringHigher(), y0 - cy));
+            }
 
-            AddLink(p0, p1);
-            AddLink(p1, p2);
-            AddLink(p2, p3);
-            AddLink(p3, p0);
+            var ret = MakeBeltWay(beltway, false);
+            ConnectRotatedPlanets(beltway.Select(x => planetCollection.GetPlanetAt(x)).ToList());
 
-            p.ImportPlanet(p0);
-            p.ImportPlanet(p1);
-            p.ImportPlanet(p2);
-            p.ImportPlanet(p3);
+            if (reflectional)
+            {
+                for (int i = 0; i < n; ++i)
+                {
+                    planetCollection.GetPlanetAt(beltway[i]).SetReflect(planetCollection.GetPlanetAt(beltway[(n + 1 - i) % n]));
+                }
+            }
 
-            p.AddLink(p0, p1);
-            p.AddLink(p1, p2);
-            p.AddLink(p2, p3);
-            p.AddLink(p3, p0);
+            ConnectToNearestPlanet(planetCollection.GetPlanetAt(beltway[0]));
 
-            return p;
+            return ret;
+        }
+
+        private void ConnectToNearestPlanet(FakePlanet p0)
+        {
+            FakePlanet nearest = null;
+            foreach (FakePlanet planet in planets)
+            {
+                if (planet == p0) continue;
+                if (links[p0].Contains(planet)) continue;
+                if (nearest == null || planet.Location.GetSquareDistanceTo(p0.Location) < nearest.Location.GetSquareDistanceTo(p0.Location))
+                {
+                    nearest = planet;
+                }
+            }
+
+            if (nearest != null)
+            {
+                foreach (var (a0, b0) in ListSymmetricEdges(p0, nearest))
+                {
+                    AddLink(a0, b0);
+                }
+            }
         }
 
         public void MakeBilateral()
@@ -671,7 +749,8 @@ namespace AhyangyiMaps
                 }
             }
         }
-        public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional, bool autoAdvance = false)
+        public void MakeRotationalGeneric(int cx, int cy, int d, int n, bool reflectional, int outerPath, out FakeGalaxy p,
+            out Outline outline, bool autoAdvance = false, int connectThreshold = 0)
         {
             var planetsToRemove = new HashSet<FakePlanet>();
             var planetsBackup = new System.Collections.Generic.List<FakePlanet>(planets);
@@ -844,6 +923,10 @@ namespace AhyangyiMaps
                 {
                     continue;
                 }
+                if (planet.Y < connectThreshold)
+                {
+                    continue;
+                }
                 int xdiff = planet.X - cx;
                 int ydiff = planet.Y - cy;
                 var symPoint = ArcenPoint.Create(cx * 2 - planet.X, planet.Y);
@@ -933,6 +1016,20 @@ namespace AhyangyiMaps
                         AddLink(centerPlanet, neighborGroup[i]);
                     }
                 }
+            }
+
+            outline = new Outline(this.FindOutline());
+            if (outerPath == 0)
+            {
+                p = new FakeGalaxy();
+            }
+            else if (outerPath == 1)
+            {
+                p = this.MarkOutline();
+            }
+            else
+            {
+                p = this.MakeBeltWayPolygonal(n, -d, cx, cy, reflectional);
             }
         }
         public void MakeTranslational2(int xDiff)
@@ -1463,7 +1560,7 @@ namespace AhyangyiMaps
                     !extra.links[a].Contains(x) &&
                     CrossAtMostLinks(a, x, maxOriginalIntersections) &&
                     extra.CrossAtMostLinks(a, x, maxIntersections) &&
-                    !outline.VenturesOutside(a, x)
+                    (!outline.VenturesOutside(a, x) || (a.Beltway ^ x.Beltway))
                     ).ToList();
 
                 if (candidates[a].Count == 0)
@@ -1488,7 +1585,7 @@ namespace AhyangyiMaps
                     }
                     if (!CrossAtMostLinks(c, d, maxOriginalIntersections)
                         || !extra.CrossAtMostLinks(c, d, maxIntersections)
-                        || outline.VenturesOutside(c, d))
+                        || (outline.VenturesOutside(c, d) && !(c.Beltway ^ d.Beltway)))
                     {
                         // This link group isn't actually valid, rolling back
                         for (int j = 0; j < i; ++j)

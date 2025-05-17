@@ -41,8 +41,9 @@ namespace AhyangyiMaps.Tessellation
         public void MakeGrid(int outerPath, int aspectRatioIndex, int galaxyShape, int symmetry, ParameterService par)
         {
             // `rows` & `columns`: The base grid size
-            int rows = par.AddParameter("rows", 1, 35, 7);
-            int columns = par.AddParameter("columns", 1, 35, symmetry == 10001 ? 9 : 10);
+            int rows = par.AddParameter("rows", 2, 35, 7);
+            int columns = par.AddParameter("columns", 2, 35, symmetry == 10001 ? 9 : 10);
+            int oddity = par.AddParameter("oddity", 0, 1, 0);
 
             if (symmetry == 150 && columns % 2 == 0) return;
             if (symmetry >= 300 && symmetry < 10000)
@@ -56,7 +57,7 @@ namespace AhyangyiMaps.Tessellation
             if (symmetry == 10001 && columns % 3 != 2) return;
             if (symmetry == 10101 && columns % 2 != 1) return;
 
-            FakeGalaxy g = MakeGrid(rows, columns, false);
+            FakeGalaxy g = MakeGrid(rows, columns, oddity, false);
 
             if (symmetry == 150)
             {
@@ -64,7 +65,8 @@ namespace AhyangyiMaps.Tessellation
             }
             else if (symmetry >= 300 && symmetry < 10000)
             {
-                g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50, false);
+                //.FIXME: need refactor
+                // g.MakeRotationalGeneric((columns + 1) * unit, (rows + 1) * 2 * unit, dunit, symmetry / 100, symmetry % 100 == 50, false);
             }
             else if (symmetry == 10000)
             {
@@ -89,7 +91,7 @@ namespace AhyangyiMaps.Tessellation
             {
                 columns = (columns + 3) / 4;
                 rows = (rows * 4 / 3) / 2 * 2 + columns % 2;
-                g = MakeGrid(rows, columns, false);
+                g = MakeGrid(rows, columns, oddity, false);
                 g.MakeY((AspectRatio)aspectRatioIndex, dunit, columns * 2 * unit);
             }
 
@@ -111,12 +113,12 @@ namespace AhyangyiMaps.Tessellation
             par.Commit(g, p, outline);
         }
 
-        private static FakeGalaxy MakeGrid(int rows, int columns, bool flip)
+        private static FakeGalaxy MakeGrid(int rows, int columns, int oddity, bool flip)
         {
             FakeGalaxy g = new FakeGalaxy();
             for (int i = 0; i < rows; ++i)
                 for (int j = 0; j < columns; ++j)
-                    if ((i + j) % 2 == 0)
+                    if ((i + j) % 2 == oddity)
                         (flip ? diamondYFlipped : diamondY).Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
 
             return g;
