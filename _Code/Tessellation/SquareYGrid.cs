@@ -397,10 +397,15 @@ namespace AhyangyiMaps.Tessellation
             for (int i = 0; i < rows; ++i)
                 for (int j = 0; j < columns; ++j)
                 {
-                    var curSpare = flip == 2 ? squareYFlipped : squareY;
+                    var curSpare = (flip == 2 || flip == 1 && i < rows / 2 ? squareYFlipped : squareY);
                     int k = j % columns;
                     if ((i + k) < octagonalSideLength) continue;
                     if ((i + columns - 1 - k) < octagonalSideLength) continue;
+                    if (flip == 1)
+                    {
+                        if ((rows - 1 - i + k) < octagonalSideLength) continue;
+                        if ((rows - 1 - i + columns - 1 - k) < octagonalSideLength) continue;
+                    }
                     curSpare.Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
                 }
 
