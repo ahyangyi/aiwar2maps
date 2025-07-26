@@ -247,8 +247,6 @@ namespace AhyangyiMaps.Tessellation
                     (Math.Min(rows, columns) - 1) / 2,
                     (Math.Min(rows, columns / parts) + 2) / 3 | (rows % 2));
             }
-            if (galaxyShape == 1 && rows <= sp * 2) return;
-            if (galaxyShape == 2 && ((rows + sp) % 2 != 0 || rows < sp + 2)) return;
 
             // `overlap`, fine control how multi-part galaxies look like
             int overlap;
@@ -299,7 +297,7 @@ namespace AhyangyiMaps.Tessellation
                 int cellSize = (symmetry >= 200 && symmetry <= 250 || symmetry == 10002) ? Math.Min(rows, f) : f;
                 FInt idealX = cellSize / FInt.Create(4000, false);
                 par.AddInfo("Ideal Y", idealX.ToString());
-                if (par.AddBadness("Y Shape", (sp - idealX).Abs())) return;
+                if (par.AddBadness("Y Shape", (sp - idealX).Abs() * 3)) return;
             }
 
             // `offset`
@@ -420,10 +418,21 @@ namespace AhyangyiMaps.Tessellation
                 for (int j = 0; j < columns; ++j)
                 {
                     var curSpare = flip == 1 && i < rows / 2 ? squareYFlipped : squareY;
+
+                    int effectiveI;
+                    if (flip == 1)
+                    {
+                        effectiveI = Math.Max(rows - 1 - i, i);
+                    }
+                    else
+                    {
+                        effectiveI = i;
+                    }
+
                     int k = j % columns;
-                    if (k < (columns - 1) / 2 - size && i + k < rows - size) continue;
-                    if (k >= (columns + 1) / 2 + size && i + columns - 1 - k < rows - size) continue;
-                    if (i + k >= rows - 1 + size && i - k >= rows - columns + size) continue;
+                    if (k < (columns - 1) / 2 - size + 1 && effectiveI + k < rows - size) continue;
+                    if (k >= (columns + 1) / 2 + size - 1 && effectiveI + columns - 1 - k < rows - size) continue;
+                    if (effectiveI + k >= rows - 1 + size && effectiveI - k >= rows - columns + size && (flip == 0 || effectiveI > rows / 2)) continue;
 
                     curSpare.Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
                 }

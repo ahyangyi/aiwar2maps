@@ -253,8 +253,6 @@ namespace AhyangyiMaps.Tessellation
                     (Math.Min(rows, columns) - 1) / 2,
                     (Math.Min(rows, columns / parts) + 2) / 3 | (rows % 2));
             }
-            if (galaxyShape == 1 && rows <= sp * 2) return;
-            if (galaxyShape == 2 && ((rows + sp) % 2 != 0 || rows < sp + 2)) return;
 
             // `overlap`, fine control how multi-part galaxies look like
             int overlap;
