@@ -136,7 +136,7 @@ namespace AhyangyiMaps.Tessellation
             if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
             par.AddInfo("Ideal bevel", idealBevel.ToString());
             if (par.AddBadness("Bevel Difference", (bevel - idealBevel).Abs() * 10)) return null;
-            return MakeGridSemioctagonal(rows, columns, bevel);
+            return MakeGridSemioctagonal(rows, columns, 2, bevel);
         }
 
         private static FakeGalaxy NonagonalStyle(ParameterService par, FInt sectorSlope, int rows, int columns, int actualColumns)
@@ -159,7 +159,7 @@ namespace AhyangyiMaps.Tessellation
             if (par.AddBadness("Rows Difference", (rows - idealR).Abs() * 5)) return null;
             par.AddInfo("Ideal bevel", idealBevel.ToString());
             if (par.AddBadness("Bevel Difference", (bevel - idealBevel).Abs() * 10)) return null;
-            return MakeGridSemioctagonal(rows, columns, bevel);
+            return MakeGridSemioctagonal(rows, columns, 2, bevel);
         }
 
         private static FakeGalaxy AsteriskStyle(ParameterService par, FInt sectorSlope, int rows, int columns, ref int connectThreshold, int actualColumns)
@@ -207,13 +207,117 @@ namespace AhyangyiMaps.Tessellation
             }
 
             // `rows` & `columns`: The base grid size
-            int rows = par.AddParameter("rows", 1, 21, 7);
-            int columns = par.AddParameter("columns", 1, 21, symmetry == 10001 ? 9 : 10);
+            int rows = par.AddParameter("rows", 1, 25, 7);
+            int columns = par.AddParameter("columns", 1, 35, symmetry == 10001 ? 9 : 10);
 
             if ((symmetry == 200 || symmetry == 250) && rows % 2 == 1) return;
             if (symmetry == 10001 && columns == 1) return;
 
-            FakeGalaxy g = MakeGridRectangular(rows, columns, (symmetry >= 200 && symmetry <= 250 || symmetry == 10002) ? 1 : 0);
+            // `parts`: We divide the columns into this many parts.
+            int parts;
+            if (symmetry == 10000 || symmetry == 10002)
+            {
+                parts = 2;
+            }
+            else if (symmetry == 10001)
+            {
+                parts = 3;
+            }
+            else
+            {
+                parts = 1;
+            }
+            if (columns % parts > 1 && columns % parts < parts - 1) return;
+
+            // `sp`: extra shape parameter for shape 1 & 2
+            // For shape 1, it is the "bevel" size for the octagon
+            // For shape 2, it is the cross width
+            int sp = 0;
+            if (galaxyShape == 1)
+            {
+                sp = par.AddParameter("bevel",
+                    (Math.Min(rows, columns) + 14) / 15,
+                    (Math.Min(rows, columns) * 2 + 2) / 3,
+                    (Math.Min(rows, columns / parts) + 3) / 4);
+            }
+            else if (galaxyShape == 2)
+            {
+                sp = par.AddParameter("cross_width",
+                    (Math.Min(rows, columns) + 14) / 15,
+                    (Math.Min(rows, columns) - 1) / 2,
+                    (Math.Min(rows, columns / parts) + 2) / 3 | (rows % 2));
+            }
+
+            // `overlap`, fine control how multi-part galaxies look like
+            int overlap;
+            if (parts == 1)
+                overlap = 0;
+            else
+                overlap = par.AddParameter("overlap", -1, 1, parts == 2 ? 1 : 0);
+            int d = overlap * (parts - 1);
+            if ((columns + d) % parts != 0) return;
+
+            if (parts == 2)
+            {
+                if (overlap < 0)
+                {
+                    if (par.AddBadness("Two-part Galaxies not touching", (FInt)7, true)) return;
+                }
+                else if (overlap > 0)
+                {
+                    if (par.AddBadness("Two-part Galaxies overlapping", (FInt)12, true)) return;
+                }
+            }
+            else if (parts == 3 && columns % 3 != 0)
+            {
+                if (overlap < 0)
+                {
+                    if (par.AddBadness("Three-part Galaxies not touching", (FInt)12, true)) return;
+                }
+                else if (overlap > 0)
+                {
+                    if (par.AddBadness("Three-part Galaxies overlapping", (FInt)7, true)) return;
+                }
+            }
+
+            // `f`: the actual number of columns per part
+            int f = (columns + d) / parts;
+            if (galaxyShape == 1 && f <= sp * 2) return;
+            if (galaxyShape == 2 && f % 2 == 0) return;
+
+            if (galaxyShape == 1)
+            {
+                int cellSize = (symmetry >= 200 && symmetry <= 250 || symmetry == 10002) ? Math.Min(rows, f) : f;
+                FInt idealO = cellSize / FInt.Create(3414, false);
+                par.AddInfo("Ideal O", idealO.ToString());
+                if (par.AddBadness("Octagon Shape", (sp - idealO).Abs())) return;
+            }
+            else if (galaxyShape == 2)
+            {
+                int cellSize = (symmetry >= 200 && symmetry <= 250 || symmetry == 10002) ? Math.Min(rows, f) : f;
+                FInt idealX = cellSize / FInt.Create(4000, false);
+                par.AddInfo("Ideal Y", idealX.ToString());
+                if (par.AddBadness("Y Shape", (sp - idealX).Abs() * 3)) return;
+            }
+
+            // `offset`
+            int offset = parts == 1 ? columns : (columns - f) / (parts - 1);
+            if (offset == 0) return;
+
+            FakeGalaxy g = null;
+
+            if (galaxyShape == 0)
+            {
+                g = MakeGridRectangular(rows, columns, (symmetry >= 200 && symmetry <= 250 || symmetry == 10002) ? 1 : 0);
+            }
+            else if (galaxyShape == 1)
+            {
+                g = MakeGridSemioctagonal(rows, columns, (symmetry >= 200 && symmetry <= 250 || symmetry == 10002) ? 1 : 0, sp, f, offset);
+            }
+            else
+            {
+                g = MakeGridY(rows, columns, (symmetry >= 200 && symmetry <= 250 || symmetry == 10002) ? 1 : 0, sp, f, offset);
+            }
 
             if (symmetry == 150)
             {
@@ -286,16 +390,59 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        protected static FakeGalaxy MakeGridSemioctagonal(int rows, int columns, int octagonalSideLength)
+        protected static FakeGalaxy MakeGridSemioctagonal(int rows, int columns, int flip, int octagonalSideLength, int sectionColumns = 0, int sectionOffset = 0)
         {
             FakeGalaxy g = new FakeGalaxy();
+            if (sectionColumns == 0)
+            {
+                sectionColumns = sectionOffset = columns;
+            }
             for (int i = 0; i < rows; ++i)
                 for (int j = 0; j < columns; ++j)
                 {
-                    int k = j % columns;
+                    var curSpare = (flip == 2 || flip == 1 && i < rows / 2 ? squareYFlipped : squareY);
+                    int k = j % sectionOffset % sectionColumns;
                     if ((i + k) < octagonalSideLength) continue;
-                    if ((i + columns - 1 - k) < octagonalSideLength) continue;
-                    squareY.Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
+                    if ((i + sectionColumns - 1 - k) < octagonalSideLength) continue;
+                    if (flip == 1)
+                    {
+                        if ((rows - 1 - i + k) < octagonalSideLength) continue;
+                        if ((rows - 1 - i + sectionColumns - 1 - k) < octagonalSideLength) continue;
+                    }
+                    curSpare.Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
+                }
+
+            return g;
+        }
+
+        protected static FakeGalaxy MakeGridY(int rows, int columns, int flip, int size, int sectionColumns = 0, int sectionOffset = 0)
+        {
+            FakeGalaxy g = new FakeGalaxy();
+            if (sectionColumns == 0)
+            {
+                sectionColumns = sectionOffset = columns;
+            }
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < columns; ++j)
+                {
+                    var curSpare = flip == 1 && i < rows / 2 ? squareYFlipped : squareY;
+
+                    int effectiveI;
+                    if (flip == 1)
+                    {
+                        effectiveI = Math.Max(rows - 1 - i, i);
+                    }
+                    else
+                    {
+                        effectiveI = i;
+                    }
+
+                    int k = j % sectionOffset % sectionColumns;
+                    if (k < (sectionColumns - 1) / 2 - size + 1 && effectiveI + k < rows - size) continue;
+                    if (k >= (sectionColumns + 1) / 2 + size - 1 && effectiveI + sectionColumns - 1 - k < rows - size) continue;
+                    if (effectiveI + k >= rows - 1 + size && effectiveI - k >= rows - sectionColumns + size && (flip == 0 || effectiveI >= rows / 2 + Math.Max(1, size - 2))) continue;
+
+                    curSpare.Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
                 }
 
             return g;
