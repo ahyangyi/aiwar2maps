@@ -187,6 +187,10 @@ namespace AhyangyiMaps
             {
                 RunTableGenVenti(tessellation);
             }
+            else if (tableGen == 6)
+            {
+                RunTableGenTrenta();
+            }
 
             ParameterService par = new ParameterService((TableGenMode)(tableGen >= 3 ? 0 : tableGen),
                 tessellation, symmetry, galaxyShape, numPlanets, dissonance, aspectRatioIndex, outerPath);
@@ -204,6 +208,13 @@ namespace AhyangyiMaps
             o = par.o;
 
             g.MakeSymmetricGroups();
+        }
+        private static void RunTableGenTrenta()
+        {
+            foreach (int tessellation in GridGenerators.Keys)
+            {
+                RunTableGenVenti(tessellation);
+            }
         }
         private static void RunTableGenVenti(int tessellation)
         {
