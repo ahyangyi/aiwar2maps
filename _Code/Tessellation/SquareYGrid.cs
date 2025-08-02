@@ -259,9 +259,9 @@ namespace AhyangyiMaps.Tessellation
 
             if (parts == 2)
             {
-                if (overlap == 0)
+                if (overlap < 0)
                 {
-                    if (par.AddBadness("Two-part Galaxies sharing an edge", (FInt)7, true)) return;
+                    if (par.AddBadness("Two-part Galaxies not touching", (FInt)7, true)) return;
                 }
                 else if (overlap > 0)
                 {
@@ -316,7 +316,7 @@ namespace AhyangyiMaps.Tessellation
             }
             else
             {
-                g = MakeGridY(rows, columns, (symmetry >= 200 && symmetry <= 250 || symmetry == 10002) ? 1 : 0, sp);
+                g = MakeGridY(rows, columns, (symmetry >= 200 && symmetry <= 250 || symmetry == 10002) ? 1 : 0, sp, f, offset);
             }
 
             if (symmetry == 150)
@@ -415,9 +415,13 @@ namespace AhyangyiMaps.Tessellation
             return g;
         }
 
-        protected static FakeGalaxy MakeGridY(int rows, int columns, int flip, int size)
+        protected static FakeGalaxy MakeGridY(int rows, int columns, int flip, int size, int sectionColumns = 0, int sectionOffset = 0)
         {
             FakeGalaxy g = new FakeGalaxy();
+            if (sectionColumns == 0)
+            {
+                sectionColumns = sectionOffset = columns;
+            }
             for (int i = 0; i < rows; ++i)
                 for (int j = 0; j < columns; ++j)
                 {
@@ -433,10 +437,10 @@ namespace AhyangyiMaps.Tessellation
                         effectiveI = i;
                     }
 
-                    int k = j % columns;
-                    if (k < (columns - 1) / 2 - size + 1 && effectiveI + k < rows - size) continue;
-                    if (k >= (columns + 1) / 2 + size - 1 && effectiveI + columns - 1 - k < rows - size) continue;
-                    if (effectiveI + k >= rows - 1 + size && effectiveI - k >= rows - columns + size && (flip == 0 || effectiveI > rows / 2)) continue;
+                    int k = j % sectionOffset % sectionColumns;
+                    if (k < (sectionColumns - 1) / 2 - size + 1 && effectiveI + k < rows - size) continue;
+                    if (k >= (sectionColumns + 1) / 2 + size - 1 && effectiveI + sectionColumns - 1 - k < rows - size) continue;
+                    if (effectiveI + k >= rows - 1 + size && effectiveI - k >= rows - sectionColumns + size && (flip == 0 || effectiveI > rows / 2)) continue;
 
                     curSpare.Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
                 }
