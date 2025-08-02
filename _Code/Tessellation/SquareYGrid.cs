@@ -207,8 +207,8 @@ namespace AhyangyiMaps.Tessellation
             }
 
             // `rows` & `columns`: The base grid size
-            int rows = par.AddParameter("rows", 1, 21, 7);
-            int columns = par.AddParameter("columns", 1, 21, symmetry == 10001 ? 9 : 10);
+            int rows = par.AddParameter("rows", 1, 25, 7);
+            int columns = par.AddParameter("columns", 1, 35, symmetry == 10001 ? 9 : 10);
 
             if ((symmetry == 200 || symmetry == 250) && rows % 2 == 1) return;
             if (symmetry == 10001 && columns == 1) return;
@@ -440,7 +440,7 @@ namespace AhyangyiMaps.Tessellation
                     int k = j % sectionOffset % sectionColumns;
                     if (k < (sectionColumns - 1) / 2 - size + 1 && effectiveI + k < rows - size) continue;
                     if (k >= (sectionColumns + 1) / 2 + size - 1 && effectiveI + sectionColumns - 1 - k < rows - size) continue;
-                    if (effectiveI + k >= rows - 1 + size && effectiveI - k >= rows - sectionColumns + size && (flip == 0 || effectiveI > rows / 2)) continue;
+                    if (effectiveI + k >= rows - 1 + size && effectiveI - k >= rows - sectionColumns + size && (flip == 0 || effectiveI >= rows / 2 + Math.Max(1, size - 2))) continue;
 
                     curSpare.Imprint(g, ArcenPoint.Create(j * unit * 2, i * unit * 2));
                 }
