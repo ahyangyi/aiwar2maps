@@ -167,7 +167,7 @@ namespace AhyangyiMaps.Tessellation
 
             // `rows` & `columns`: The base grid size
             int rows = par.AddParameter("rows", 2, 35, 7);
-            int columns = par.AddParameter("columns", 2, 60, 10);
+            int columns = par.AddParameter("columns", 2, 70, 10);
 
             // `parts`: We divide the columns into this many parts.
             int parts;
@@ -316,10 +316,10 @@ namespace AhyangyiMaps.Tessellation
             }
 
             // symmetry-specific conditions
-            if ((symmetry == 10000 || symmetry == 10001) && offset % 2 == 1) return;
+            if ((symmetry == 10000 || symmetry == 10001 || symmetry == 10002) && offset % 2 == 1) return;
 
             if (symmetry == 150 && columns % 2 == 0) return;
-            if (symmetry == 200 && (rows + columns) % 2 == 1) return;
+            if ((symmetry == 200 || symmetry == 10002) && (rows + columns) % 2 == 1) return;
             if (symmetry == 250 && (rows % 2 == 0 || columns % 2 == 0)) return;
             if (symmetry == 10101 && columns % 2 != 1) return;
 
